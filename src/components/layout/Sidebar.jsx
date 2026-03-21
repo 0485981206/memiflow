@@ -24,6 +24,7 @@ const mainMenu = [
 
 const prestatieMenu = [
   { label: "Kalender", path: "/prestaties/kalender" },
+  { label: "Kalenderoverzicht", path: "/prestaties/kalenderoverzicht" },
   { label: "Overzicht", path: "/prestaties/overzicht" },
   { label: "Codes", path: "/prestaties/codes" },
 ];
