@@ -116,7 +116,7 @@ export default function Kalender() {
               <SelectContent>
                 <SelectItem value="alle">Alle werknemers</SelectItem>
                 {werknemers
-                  .filter((w) => w.status === "actief")
+                  .filter((w) => !w.status || w.status === "actief")
                   .map((w) => (
                     <SelectItem key={w.id} value={w.id}>
                       {w.voornaam} {w.achternaam}
