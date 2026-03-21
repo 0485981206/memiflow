@@ -1,7 +1,7 @@
 import React from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { FileText, Clock, CheckCircle2, AlertCircle, Eye, Loader2 } from "lucide-react";
+import { FileText, Clock, CheckCircle2, AlertCircle, Eye, Loader2, X } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 
