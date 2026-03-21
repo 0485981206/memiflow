@@ -72,6 +72,16 @@ export default function EndklantTemplateAgent() {
     setNewField({ fieldType: "", regex: "", beschrijving: "" });
   };
 
+  const handleFieldsExtracted = (extractedFields) => {
+    const newFields = extractedFields.map((f) => ({
+      id: Date.now() + Math.random(),
+      fieldType: f.fieldType,
+      regex: f.regex || "",
+      beschrijving: f.beschrijving || "",
+    }));
+    setTemplates([...templates, ...newFields]);
+  };
+
   const removeField = (id) => {
     setTemplates(templates.filter((f) => f.id !== id));
   };
