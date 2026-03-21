@@ -216,8 +216,9 @@ export default function EndklantTemplateAgent() {
               </Button>
             </div>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+          </>
+          )}
     </div>
   );
 }
