@@ -114,7 +114,7 @@ export default function PrestatieDialog({
             >
               <option value="">Kies werknemer</option>
               {werknemers
-                .filter((w) => w.status === "actief")
+                .filter((w) => !w.status || w.status === "actief")
                 .map((w) => (
                   <option key={w.id} value={w.id}>
                     {w.voornaam} {w.achternaam}
