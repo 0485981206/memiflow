@@ -103,25 +103,14 @@ export default function Kalender() {
             </Button>
           </div>
 
-          <div className="w-60">
-            <Select
-              value={selectedWerknemer}
-              onValueChange={setSelectedWerknemer}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Alle werknemers" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="alle">Alle werknemers</SelectItem>
-                {werknemers
-                  .filter((w) => !w.status || w.status === "actief")
-                  .map((w) => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {w.voornaam} {w.achternaam}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+          <div className="w-64">
+            <WerknemerCombobox
+              werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
+              value={selectedWerknemer === "alle" ? "" : selectedWerknemer}
+              onChange={(id) => setSelectedWerknemer(id || "alle")}
+              placeholder="Alle werknemers"
+              allowEmpty
+            />
           </div>
         </div>
 
