@@ -12,7 +12,7 @@ const STATUS_CONFIG = {
   fout: { label: "Fout", color: "bg-red-100 text-red-700", icon: AlertCircle },
 };
 
-export default function ImportBatchLijst({ batches, onSelectBatch }) {
+export default function ImportBatchLijst({ batches, onSelectBatch, onAnnuleer }) {
   if (batches.length === 0) return null;
 
   return (
