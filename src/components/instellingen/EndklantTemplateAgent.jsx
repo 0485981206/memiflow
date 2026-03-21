@@ -219,6 +219,6 @@ export default function EndklantTemplateAgent() {
           </Card>
           </>
           )}
-    </div>
-  );
-}
+          </div>
+          );
+          }
