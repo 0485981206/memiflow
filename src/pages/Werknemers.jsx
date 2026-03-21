@@ -230,6 +230,22 @@ export default function Werknemers() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
+                <Label>Overeenkomstnummer</Label>
+                <Input
+                  value={form.overeenkomstnummer}
+                  onChange={(e) => setForm({ ...form, overeenkomstnummer: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Extern ID</Label>
+                <Input
+                  value={form.externe_id}
+                  onChange={(e) => setForm({ ...form, externe_id: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <Label>Voornaam *</Label>
                 <Input
                   required
