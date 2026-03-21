@@ -8,6 +8,7 @@ import { Upload, FileText, Loader2, Building2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImportBatchLijst from "../../components/prestaties/ImportBatchLijst";
 import ReviewOffCanvas from "../../components/prestaties/ReviewOffCanvas";
+import { extractTextFromPdf, parsePrestatiesFromText } from "@/lib/ocr-processor";
 
 export default function PrestatieImport() {
   const [isUploading, setIsUploading] = useState(false);
