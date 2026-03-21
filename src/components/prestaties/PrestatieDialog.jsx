@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
-import WerknemerCombobox from "./WerknemerCombobox";
+import WerknemerCombobox from "./WerknemerCombobox.jsx";
 
 export default function PrestatieDialog({
   open, onClose, date, werknemers, codes, plaatsingen,
