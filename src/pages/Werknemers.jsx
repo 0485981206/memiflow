@@ -154,6 +154,8 @@ export default function Werknemers() {
           <TableHeader>
             <TableRow className="bg-muted/50">
               <TableHead>Naam</TableHead>
+              <TableHead className="hidden lg:table-cell">Overeenkomstnr.</TableHead>
+              <TableHead className="hidden lg:table-cell">Extern ID</TableHead>
               <TableHead className="hidden md:table-cell">E-mail</TableHead>
               <TableHead className="hidden md:table-cell">Functie</TableHead>
               <TableHead>Status</TableHead>
