@@ -58,7 +58,12 @@ export default function ImportBatchLijst({ batches, onSelectBatch, onAnnuleer })
                   <Icon className={`w-3 h-3 ${cfg.spin ? "animate-spin" : ""}`} />
                   {cfg.label}
                 </span>
-                {(batch.status === "klaar_voor_review") && (
+                {batch.status === "verwerken" && onAnnuleer && (
+                  <Button size="sm" variant="ghost" className="text-muted-foreground hover:text-destructive" onClick={() => onAnnuleer(batch)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                )}
+                {batch.status === "klaar_voor_review" && (
                   <Button size="sm" variant="outline" onClick={() => onSelectBatch(batch)}>
                     Bekijken
                   </Button>
