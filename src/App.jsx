@@ -12,6 +12,7 @@ import Werknemers from './pages/Werknemers';
 import Eindklanten from './pages/Eindklanten';
 import Plaatsingen from './pages/Plaatsingen';
 import Kalender from './pages/prestaties/Kalender';
+import Kalenderoverzicht from './pages/prestaties/Kalenderoverzicht';
 import Overzicht from './pages/prestaties/Overzicht';
 import Codes from './pages/prestaties/Codes';
 import Loonfiches from './pages/Loonfiches';
