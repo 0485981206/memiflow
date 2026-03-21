@@ -110,31 +110,29 @@ export default function PrestatieDialog({
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label>Werknemer</Label>
-            <Select
+            <select
               value={form.werknemer_id}
-              onValueChange={(v) => setForm({ ...form, werknemer_id: v })}
+              onChange={(e) => setForm({ ...form, werknemer_id: e.target.value })}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Kies werknemer" />
-              </SelectTrigger>
-              <SelectContent>
-                {werknemers
-                  .filter((w) => w.status === "actief")
-                  .map((w) => (
-                    <SelectItem key={w.id} value={w.id}>
-                      {w.voornaam} {w.achternaam}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
+              <option value="">Kies werknemer</option>
+              {werknemers
+                .filter((w) => w.status === "actief")
+                .map((w) => (
+                  <option key={w.id} value={w.id}>
+                    {w.voornaam} {w.achternaam}
+                  </option>
+                ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
               <Label>Code</Label>
-              <Select
+              <select
                 value={form.code}
-                onValueChange={(v) => {
+                onChange={(e) => {
+                  const v = e.target.value;
                   const codeObj = codes.find((c) => c.code === v);
                   setForm({
                     ...form,
@@ -142,24 +140,15 @@ export default function PrestatieDialog({
                     uren: codeObj?.standaard_uren ? String(codeObj.standaard_uren) : form.uren,
                   });
                 }}
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
-                <SelectTrigger>
-                  <SelectValue placeholder="Kies code" />
-                </SelectTrigger>
-                <SelectContent>
-                  {codes.map((c) => (
-                    <SelectItem key={c.code} value={c.code}>
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: c.kleur || "#3b82f6" }}
-                        />
-                        {c.code} — {c.naam}
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                <option value="">Kies code</option>
+                {codes.map((c) => (
+                  <option key={c.code} value={c.code}>
+                    {c.code} — {c.naam}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <Label>Uren</Label>
