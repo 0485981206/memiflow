@@ -4,13 +4,11 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { format, addMonths, subMonths } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
 import PrestatieDialog from "../../components/prestaties/PrestatieDialog";
+import WerknemerCombobox from "../../components/prestaties/WerknemerCombobox.jsx";
 
 export default function Kalender() {
   const [currentMonth, setCurrentMonth] = useState(new Date());
