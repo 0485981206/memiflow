@@ -15,6 +15,7 @@ import Kalender from './pages/prestaties/Kalender';
 import Kalenderoverzicht from './pages/prestaties/Kalenderoverzicht';
 import Overzicht from './pages/prestaties/Overzicht';
 import Codes from './pages/prestaties/Codes';
+import PrestatieImport from './pages/prestaties/PrestatieImport';
 import Loonfiches from './pages/Loonfiches';
 import Rapporten from './pages/Rapporten';
 import Instellingen from './pages/Instellingen';
@@ -50,6 +51,7 @@ const AuthenticatedApp = () => {
         <Route path="/prestaties/kalenderoverzicht" element={<Kalenderoverzicht />} />
         <Route path="/prestaties/overzicht" element={<Overzicht />} />
         <Route path="/prestaties/codes" element={<Codes />} />
+        <Route path="/prestaties/import" element={<PrestatieImport />} />
         <Route path="/loonfiches" element={<Loonfiches />} />
         <Route path="/rapporten" element={<Rapporten />} />
         <Route path="/instellingen" element={<Instellingen />} />
