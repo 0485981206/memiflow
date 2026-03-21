@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash2, Save } from "lucide-react";
+import PdfTemplateBuilder from "./PdfTemplateBuilder";
 
 const fieldTypes = [
   { id: "werknemer_naam", label: "Werknemersnaam" },
