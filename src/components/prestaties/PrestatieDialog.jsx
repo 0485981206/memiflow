@@ -106,14 +106,16 @@ export default function PrestatieDialog({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label>Werknemer</Label>
-            <WerknemerCombobox
-              werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
-              value={form.werknemer_id}
-              onChange={(id) => setForm({ ...form, werknemer_id: id })}
-            />
-          </div>
+          {!selectedWerknemer && (
+            <div>
+              <Label>Werknemer</Label>
+              <WerknemerCombobox
+                werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
+                value={form.werknemer_id}
+                onChange={(id) => setForm({ ...form, werknemer_id: id })}
+              />
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
