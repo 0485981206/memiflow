@@ -15,7 +15,7 @@ import Kalender from './pages/prestaties/Kalender';
 import Kalenderoverzicht from './pages/prestaties/Kalenderoverzicht';
 import Overzicht from './pages/prestaties/Overzicht';
 import Codes from './pages/prestaties/Codes';
-import PrestatieImport from './pages/prestaties/PrestatieImport';
+import PrestatieImport from './pages/prestaties/PrestatieImport.jsx';
 import Loonfiches from './pages/Loonfiches';
 import Rapporten from './pages/Rapporten';
 import Instellingen from './pages/Instellingen';
