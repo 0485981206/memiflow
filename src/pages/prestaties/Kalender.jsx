@@ -114,7 +114,7 @@ export default function Kalender() {
                 <SelectValue placeholder="Alle werknemers" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value={null}>Alle werknemers</SelectItem>
+                <SelectItem value="alle">Alle werknemers</SelectItem>
                 {werknemers
                   .filter((w) => w.status === "actief")
                   .map((w) => (
