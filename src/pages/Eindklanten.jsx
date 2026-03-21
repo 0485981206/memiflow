@@ -29,6 +29,8 @@ export default function Eindklanten() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = React.useRef(null);
   const queryClient = useQueryClient();
 
   const { data: klanten = [], isLoading } = useQuery({
