@@ -151,7 +151,7 @@ export default function Kalender() {
         existingPrestaties={dayPrestaties}
         onSave={(data) => createMut.mutate(data)}
         onDelete={(id) => deleteMut.mutate(id)}
-        selectedWerknemer={selectedWerknemer !== "alle" ? selectedWerknemer : ""}
+        selectedWerknemer={selectedWerknemer}
       />
     </div>
   );
