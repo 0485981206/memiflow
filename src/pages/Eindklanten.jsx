@@ -109,6 +109,7 @@ export default function Eindklanten() {
               <TableHead className="hidden md:table-cell">Contactpersoon</TableHead>
               <TableHead className="hidden md:table-cell">E-mail</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead className="hidden md:table-cell">PDF</TableHead>
               <TableHead className="w-24">Acties</TableHead>
             </TableRow>
           </TableHeader>
