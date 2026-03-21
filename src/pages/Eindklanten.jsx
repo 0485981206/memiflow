@@ -15,8 +15,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Upload, FileText, X, Loader2 } from "lucide-react";
-import { useRef, useState as useStateRef } from "react";
+import { Plus, Search, Pencil, Trash2, Upload, FileText, X, Loader2, Bot } from "lucide-react";
 
 const emptyForm = {
   naam: "", contactpersoon: "", email: "", telefoon: "",
