@@ -107,11 +107,13 @@ export default function Kalender() {
           <div className="w-64">
             <WerknemerCombobox
               werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
-              value={selectedWerknemer === "alle" ? "" : selectedWerknemer}
-              onChange={(id) => setSelectedWerknemer(id || "alle")}
-              placeholder="Alle werknemers"
-              allowEmpty
+              value={selectedWerknemer}
+              onChange={(id) => setSelectedWerknemer(id || "")}
+              placeholder="Selecteer een werknemer..."
             />
+            {!selectedWerknemer && (
+              <p className="text-xs text-muted-foreground mt-1">Selecteer eerst een werknemer om prestaties in te geven.</p>
+            )}
           </div>
         </div>
 
