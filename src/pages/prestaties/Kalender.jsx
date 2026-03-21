@@ -49,11 +49,12 @@ export default function Kalender() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] }),
   });
 
-  const filteredPrestaties = selectedWerknemer && selectedWerknemer !== "alle"
+  const filteredPrestaties = selectedWerknemer
     ? prestaties.filter((p) => p.werknemer_id === selectedWerknemer)
-    : prestaties;
+    : [];
 
   const handleDayClick = (day) => {
+    if (!selectedWerknemer) return;
     setSelectedDay(day);
     setDialogOpen(true);
   };
