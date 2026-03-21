@@ -16,6 +16,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, Upload, FileText, X, Loader2, Bot } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 
 const emptyForm = {
   naam: "", contactpersoon: "", email: "", telefoon: "",
