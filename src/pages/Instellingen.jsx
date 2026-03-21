@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings, Zap } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import EndklantTemplateAgent from "@/components/instellingen/EndklantTemplateAgent";
 
 export default function Instellingen() {
@@ -14,22 +14,19 @@ export default function Instellingen() {
         Instellingen
       </h1>
 
-      <Card>
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0">
-            <TabsTrigger
-              value="templates"
-              className="rounded-none border-b-2 border-transparent data-[state=active]:border-accent data-[state=active]:bg-transparent"
-            >
-              <Zap className="w-4 h-4 mr-2" />
-              Eindklant Template Agent
-            </TabsTrigger>
-          </TabsList>
+      <div className="flex gap-2 border-b">
+        <Button
+          variant={activeTab === "templates" ? "default" : "ghost"}
+          onClick={() => setActiveTab("templates")}
+          className="rounded-none gap-2"
+        >
+          <Zap className="w-4 h-4" />
+          Eindklant Template Agent
+        </Button>
+      </div>
 
-          <TabsContent value="templates" className="p-6">
-            <EndklantTemplateAgent />
-          </TabsContent>
-        </Tabs>
+      <Card className="p-6">
+        {activeTab === "templates" && <EndklantTemplateAgent />}
       </Card>
     </div>
   );
