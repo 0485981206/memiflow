@@ -119,14 +119,19 @@ export default function Sidebar() {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`block px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
                   isActive(item.path)
                     ? "text-[#38bdf8] font-semibold"
                     : "text-white/60 hover:text-white"
                 }`}
                 onClick={() => setMobileOpen(false)}
               >
-                {item.label}
+                <span>{item.label}</span>
+                {item.path === "/prestaties/import" && importBadge > 0 && (
+                  <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
+                    {importBadge}
+                  </span>
+                )}
               </Link>
             ))}
           </div>
