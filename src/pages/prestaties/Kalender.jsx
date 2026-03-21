@@ -51,7 +51,7 @@ export default function Kalender() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] }),
   });
 
-  const filteredPrestaties = selectedWerknemer
+  const filteredPrestaties = selectedWerknemer && selectedWerknemer !== "alle"
     ? prestaties.filter((p) => p.werknemer_id === selectedWerknemer)
     : prestaties;
 
