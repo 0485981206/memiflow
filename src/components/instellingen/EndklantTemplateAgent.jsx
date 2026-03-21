@@ -117,14 +117,17 @@ export default function EndklantTemplateAgent() {
       </div>
 
       {selectedKlant && (
-        <Card>
-          <CardHeader>
-            <CardTitle>PDF Template voor {selectedKlant.naam}</CardTitle>
-            <CardDescription>
-              Definieer welke velden de agent uit de PDF moet halen en hoe deze te herkennen zijn.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        <>
+          <PdfTemplateBuilder klant={selectedKlant} onFieldsExtracted={handleFieldsExtracted} />
+
+          <Card>
+            <CardHeader>
+              <CardTitle>PDF Template voor {selectedKlant.naam}</CardTitle>
+              <CardDescription>
+                Definieer welke velden de agent uit de PDF moet halen en hoe deze te herkennen zijn.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
             {/* Bestaande velden */}
             {templates.length > 0 && (
               <div>
