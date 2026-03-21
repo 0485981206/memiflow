@@ -118,6 +118,10 @@ export default function PrestatieImport() {
           <ImportBatchLijst
             batches={batches}
             onSelectBatch={setSelectedBatch}
+            onAnnuleer={async (batch) => {
+              await base44.entities.PrestatieImportBatch.update(batch.id, { status: "fout" });
+              queryClient.invalidateQueries({ queryKey: ["importbatches"] });
+            }}
           />
         </Card>
       )}
