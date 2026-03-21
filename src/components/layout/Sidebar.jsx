@@ -27,6 +27,7 @@ const prestatieMenu = [
   { label: "Kalenderoverzicht", path: "/prestaties/kalenderoverzicht" },
   { label: "Overzicht", path: "/prestaties/overzicht" },
   { label: "Codes", path: "/prestaties/codes" },
+  { label: "PDF Import", path: "/prestaties/import" },
 ];
 
 const beheerMenu = [
