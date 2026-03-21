@@ -37,6 +37,14 @@ export default function PrestatieImport() {
 
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
+    // Extract text via OCR
+    let ocrText = "";
+    try {
+      ocrText = await extractTextFromPdf(file);
+    } catch (err) {
+      console.error("OCR failed:", err);
+    }
+
     const batch = await base44.entities.PrestatieImportBatch.create({
       bestandsnaam: file.name,
       bestand_url: file_url,
@@ -52,8 +60,11 @@ export default function PrestatieImport() {
       conversation_id: conversation.id,
     });
 
-    // Bouw het bericht op met klant-specifieke instructies indien aanwezig
+    // Bouw het bericht op met OCR tekst en klant-specifieke instructies
     let bericht = `Verwerk de bijgevoegde prestatie-PDF en maak concept-regels aan. batch_id: ${batch.id}`;
+    if (ocrText) {
+      bericht += `\n\n=== OCR GEËXTRAHEERDE TEKST ===\n${ocrText}\n=== EINDE OCR ===`;
+    }
     if (selectedEindklant) {
       bericht += `\nEindklant: ${selectedEindklant.naam} (id: ${selectedEindklant.id})`;
       if (selectedEindklant.pdf_instructies) {
