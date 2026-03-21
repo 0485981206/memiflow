@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 
-export default function WerknemerCombobox({ werknemers, value, onChange }) {
+export default function WerknemerCombobox({ werknemers, value, onChange, placeholder = "Zoek werknemer...", allowEmpty = false }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
@@ -12,7 +12,6 @@ export default function WerknemerCombobox({ werknemers, value, onChange }) {
     return naam.includes(query.toLowerCase());
   });
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -25,17 +24,21 @@ export default function WerknemerCombobox({ werknemers, value, onChange }) {
   }, []);
 
   const handleSelect = (w) => {
-    onChange(w.id);
+    onChange(w ? w.id : "");
     setQuery("");
     setOpen(false);
   };
+
+  const displayPlaceholder = selected
+    ? `${selected.voornaam} ${selected.achternaam}`
+    : placeholder;
 
   return (
     <div ref={containerRef} className="relative w-full">
       <input
         type="text"
         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        placeholder={selected ? `${selected.voornaam} ${selected.achternaam}` : "Zoek werknemer..."}
+        placeholder={displayPlaceholder}
         value={query}
         onChange={(e) => {
           setQuery(e.target.value);
@@ -43,8 +46,19 @@ export default function WerknemerCombobox({ werknemers, value, onChange }) {
         }}
         onFocus={() => setOpen(true)}
       />
-      {open && filtered.length > 0 && (
+      {open && (
         <ul className="absolute z-50 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover text-sm shadow-md">
+          {allowEmpty && (
+            <li
+              className={`cursor-pointer px-3 py-2 hover:bg-accent hover:text-accent-foreground ${!value ? "bg-accent/50 font-medium" : ""}`}
+              onMouseDown={() => handleSelect(null)}
+            >
+              {placeholder}
+            </li>
+          )}
+          {filtered.length === 0 && (
+            <li className="px-3 py-2 text-muted-foreground">Geen resultaten</li>
+          )}
           {filtered.map((w) => (
             <li
               key={w.id}
@@ -55,11 +69,6 @@ export default function WerknemerCombobox({ werknemers, value, onChange }) {
             </li>
           ))}
         </ul>
-      )}
-      {open && filtered.length === 0 && (
-        <div className="absolute z-50 mt-1 w-full rounded-md border bg-popover px-3 py-2 text-sm text-muted-foreground shadow-md">
-          Geen resultaten
-        </div>
       )}
     </div>
   );
