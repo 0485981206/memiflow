@@ -164,6 +164,24 @@ export default function Eindklanten() {
               <div><Label>BTW-nummer</Label><Input value={form.btw_nummer} onChange={(e) => setForm({ ...form, btw_nummer: e.target.value })} /></div>
             </div>
             <div><Label>Adres</Label><Input value={form.adres} onChange={(e) => setForm({ ...form, adres: e.target.value })} /></div>
+            <div>
+              <Label>Prestatie PDF bijlage</Label>
+              <input type="file" accept=".pdf" ref={fileInputRef} onChange={handlePdfUpload} className="hidden" />
+              {form.prestatie_pdf_url ? (
+                <div className="flex items-center gap-2 mt-1 p-2 border rounded-md bg-muted/30">
+                  <FileText className="w-4 h-4 text-accent shrink-0" />
+                  <span className="text-sm flex-1 truncate">{form.prestatie_pdf_naam || "PDF bijlage"}</span>
+                  <button type="button" onClick={() => setForm(f => ({ ...f, prestatie_pdf_url: "", prestatie_pdf_naam: "" }))} className="text-muted-foreground hover:text-foreground">
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <Button type="button" variant="outline" className="mt-1 w-full gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {isUploading ? "Uploaden..." : "PDF uploaden"}
+                </Button>
+              )}
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
