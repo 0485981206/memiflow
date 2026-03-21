@@ -128,6 +128,16 @@ export default function Eindklanten() {
                     {k.status}
                   </Badge>
                 </TableCell>
+                <TableCell className="hidden md:table-cell">
+                  {k.prestatie_pdf_url ? (
+                    <a href={k.prestatie_pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-accent hover:underline">
+                      <FileText className="w-3 h-3" />
+                      <span className="max-w-[100px] truncate">{k.prestatie_pdf_naam || "PDF"}</span>
+                    </a>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell>
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" onClick={() => openEdit(k)}><Pencil className="w-4 h-4" /></Button>
