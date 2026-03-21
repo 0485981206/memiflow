@@ -71,6 +71,7 @@ export default function Eindklanten() {
       telefoon: k.telefoon || "", adres: k.adres || "", btw_nummer: k.btw_nummer || "",
       status: k.status || "actief", facturatie_tarief: k.facturatie_tarief || "",
       prestatie_pdf_url: k.prestatie_pdf_url || "", prestatie_pdf_naam: k.prestatie_pdf_naam || "",
+      pdf_instructies: k.pdf_instructies || "",
     });
     setEditId(k.id);
     setDialogOpen(true);
