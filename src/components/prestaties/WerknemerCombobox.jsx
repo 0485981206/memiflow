@@ -4,6 +4,7 @@ export default function WerknemerCombobox({ werknemers, value, onChange, placeho
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const containerRef = useRef(null);
+  const inputRef = useRef(null);
 
   const selected = werknemers.find((w) => w.id === value);
 
@@ -31,28 +32,34 @@ export default function WerknemerCombobox({ werknemers, value, onChange, placeho
     setOpen(false);
   };
 
-  const displayPlaceholder = selected
-    ? `${selected.voornaam} ${selected.achternaam}`
-    : placeholder;
+  const displayValue = open
+    ? query
+    : selected
+      ? `${selected.voornaam} ${selected.achternaam}${selected.overeenkomstnummer ? ` (${selected.overeenkomstnummer})` : ""}`
+      : "";
 
   return (
     <div ref={containerRef} className="relative w-full">
       <input
+        ref={inputRef}
         type="text"
         className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        placeholder={displayPlaceholder}
-        value={query}
+        placeholder={placeholder}
+        value={displayValue}
         onChange={(e) => {
           setQuery(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => setOpen(true)}
+        onFocus={() => {
+          setQuery("");
+          setOpen(true);
+        }}
       />
       {open && (
         <ul className="absolute z-50 mt-1 max-h-52 w-full overflow-auto rounded-md border bg-popover text-sm shadow-md">
           {allowEmpty && (
             <li
-              className={`cursor-pointer px-3 py-2 hover:bg-accent hover:text-accent-foreground ${!value ? "bg-accent/50 font-medium" : ""}`}
+              className={`cursor-pointer px-3 py-2 hover:bg-accent hover:text-accent-foreground ${!value ? "bg-accent font-medium text-accent-foreground" : ""}`}
               onMouseDown={() => handleSelect(null)}
             >
               {placeholder}
@@ -64,12 +71,12 @@ export default function WerknemerCombobox({ werknemers, value, onChange, placeho
           {filtered.map((w) => (
             <li
               key={w.id}
-              className={`cursor-pointer px-3 py-2 hover:bg-accent hover:text-accent-foreground ${value === w.id ? "bg-accent/50 font-medium" : ""}`}
+              className={`cursor-pointer px-3 py-2 hover:bg-accent hover:text-accent-foreground ${value === w.id ? "bg-accent font-medium text-accent-foreground" : ""}`}
               onMouseDown={() => handleSelect(w)}
             >
               {w.voornaam} {w.achternaam}
               {w.overeenkomstnummer && (
-                <span className="ml-2 text-muted-foreground text-xs">({w.overeenkomstnummer})</span>
+                <span className="ml-2 text-xs opacity-70">({w.overeenkomstnummer})</span>
               )}
             </li>
           ))}
