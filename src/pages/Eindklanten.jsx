@@ -55,11 +55,22 @@ export default function Eindklanten() {
 
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditId(null); };
 
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setIsUploading(true);
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    setForm(f => ({ ...f, prestatie_pdf_url: file_url, prestatie_pdf_naam: file.name }));
+    setIsUploading(false);
+    e.target.value = "";
+  };
+
   const openEdit = (k) => {
     setForm({
       naam: k.naam || "", contactpersoon: k.contactpersoon || "", email: k.email || "",
       telefoon: k.telefoon || "", adres: k.adres || "", btw_nummer: k.btw_nummer || "",
       status: k.status || "actief", facturatie_tarief: k.facturatie_tarief || "",
+      prestatie_pdf_url: k.prestatie_pdf_url || "", prestatie_pdf_naam: k.prestatie_pdf_naam || "",
     });
     setEditId(k.id);
     setDialogOpen(true);
