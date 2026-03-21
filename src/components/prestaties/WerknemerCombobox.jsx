@@ -9,7 +9,9 @@ export default function WerknemerCombobox({ werknemers, value, onChange, placeho
 
   const filtered = werknemers.filter((w) => {
     const naam = `${w.voornaam} ${w.achternaam}`.toLowerCase();
-    return naam.includes(query.toLowerCase());
+    const ovnr = (w.overeenkomstnummer || "").toLowerCase();
+    const q = query.toLowerCase();
+    return naam.includes(q) || ovnr.includes(q);
   });
 
   useEffect(() => {
