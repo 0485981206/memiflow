@@ -151,8 +151,11 @@ export default function Kalenderoverzicht() {
           {/* Rows per werknemer */}
           {activeWerknemers.map((w) => (
             <div key={w.id} className="flex items-center mb-0.5">
-              <div className="w-44 flex-shrink-0 pr-2 text-xs truncate text-primary font-medium">
+              <div className="w-44 flex-shrink-0 pr-2 text-xs truncate text-primary font-medium" title={`${w.voornaam} ${w.achternaam}${w.overeenkomstnummer ? ` (${w.overeenkomstnummer})` : ""}`}>
                 {w.voornaam} {w.achternaam}
+                {w.overeenkomstnummer && (
+                  <span className="ml-1 text-muted-foreground font-normal">({w.overeenkomstnummer})</span>
+                )}
               </div>
               {days.map((day) => (
                 <div key={day.toISOString()} className="w-7 h-6 flex-shrink-0 px-0.5 py-0.5">
