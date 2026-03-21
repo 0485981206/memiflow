@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 const emptyForm = {
   naam: "", contactpersoon: "", email: "", telefoon: "",
   adres: "", btw_nummer: "", status: "actief", facturatie_tarief: "",
-  prestatie_pdf_url: "", prestatie_pdf_naam: "",
+  prestatie_pdf_url: "", prestatie_pdf_naam: "", pdf_instructies: "",
 };
 
 export default function Eindklanten() {
