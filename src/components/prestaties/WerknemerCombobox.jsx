@@ -68,6 +68,9 @@ export default function WerknemerCombobox({ werknemers, value, onChange, placeho
               onMouseDown={() => handleSelect(w)}
             >
               {w.voornaam} {w.achternaam}
+              {w.overeenkomstnummer && (
+                <span className="ml-2 text-muted-foreground text-xs">({w.overeenkomstnummer})</span>
+              )}
             </li>
           ))}
         </ul>
