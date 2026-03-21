@@ -181,6 +181,12 @@ export default function Werknemers() {
                   <TableCell className="font-medium">
                     {w.voornaam} {w.achternaam}
                   </TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">
+                    {w.overeenkomstnummer}
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">
+                    {w.externe_id}
+                  </TableCell>
                   <TableCell className="hidden md:table-cell text-muted-foreground">
                     {w.email}
                   </TableCell>
