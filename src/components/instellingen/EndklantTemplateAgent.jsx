@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +46,7 @@ export default function EndklantTemplateAgent() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["eindklant", selectedKlantId] }),
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (selectedKlant?.pdf_instructies) {
       try {
         const parsed = JSON.parse(selectedKlant.pdf_instructies);
