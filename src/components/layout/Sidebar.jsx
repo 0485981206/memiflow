@@ -43,6 +43,17 @@ export default function Sidebar() {
     location.pathname.startsWith("/prestaties")
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [importBadge, setImportBadge] = useState(0);
+
+  useEffect(() => {
+    const fetchBadge = async () => {
+      const batches = await base44.entities.PrestatieImportBatch.filter({ status: "klaar_voor_review" });
+      setImportBadge(batches.length);
+    };
+    fetchBadge();
+    const interval = setInterval(fetchBadge, 10000);
+    return () => clearInterval(interval);
+  }, []);
 
   const isActive = (path) => {
     if (path === "/") return location.pathname === "/";
