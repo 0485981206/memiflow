@@ -183,6 +183,18 @@ export default function Eindklanten() {
                 </Button>
               )}
             </div>
+            <div>
+              <Label className="flex items-center gap-1.5">
+                <Bot className="w-4 h-4" /> PDF-instructies voor de agent
+              </Label>
+              <Textarea
+                value={form.pdf_instructies}
+                onChange={(e) => setForm({ ...form, pdf_instructies: e.target.value })}
+                placeholder="Beschrijf het formaat van de PDF, welke kolommen gebruikt worden, bijzonderheden per werknemer, enz. De agent gebruikt dit om prestaties sneller en accurater uit te lezen."
+                className="mt-1 h-28 text-sm"
+              />
+              <p className="text-xs text-muted-foreground mt-1">De agent gebruikt deze instructies automatisch bij het importeren van PDF's van deze klant.</p>
+            </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Status</Label>
