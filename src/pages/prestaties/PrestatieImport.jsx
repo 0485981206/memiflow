@@ -3,13 +3,16 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Upload, FileText, Loader2 } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Upload, FileText, Loader2, Building2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import ImportBatchLijst from "../../components/prestaties/ImportBatchLijst";
 import ReviewOffCanvas from "../../components/prestaties/ReviewOffCanvas";
 
 export default function PrestatieImport() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [selectedEindklantId, setSelectedEindklantId] = useState("");
   const fileInputRef = useRef(null);
   const queryClient = useQueryClient();
 
@@ -19,35 +22,47 @@ export default function PrestatieImport() {
     refetchInterval: 5000,
   });
 
+  const { data: eindklanten = [] } = useQuery({
+    queryKey: ["eindklanten"],
+    queryFn: () => base44.entities.Eindklant.filter({ status: "actief" }),
+  });
+
+  const selectedEindklant = eindklanten.find(k => k.id === selectedEindklantId);
+
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     setIsUploading(true);
 
-    // Upload het bestand
     const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
-    // Maak de batch aan
     const batch = await base44.entities.PrestatieImportBatch.create({
       bestandsnaam: file.name,
       bestand_url: file_url,
+      eindklant_naam: selectedEindklant?.naam || "",
       status: "verwerken",
     });
 
-    // Start de agent conversatie
     const conversation = await base44.agents.createConversation({
       agent_name: "prestatie_import",
     });
 
-    // Sla conversation_id op in batch
     await base44.entities.PrestatieImportBatch.update(batch.id, {
       conversation_id: conversation.id,
     });
 
-    // Stuur de PDF naar de agent
+    // Bouw het bericht op met klant-specifieke instructies indien aanwezig
+    let bericht = `Verwerk de bijgevoegde prestatie-PDF en maak concept-regels aan. batch_id: ${batch.id}`;
+    if (selectedEindklant) {
+      bericht += `\nEindklant: ${selectedEindklant.naam} (id: ${selectedEindklant.id})`;
+      if (selectedEindklant.pdf_instructies) {
+        bericht += `\n\nKlant-specifieke instructies:\n${selectedEindklant.pdf_instructies}`;
+      }
+    }
+
     await base44.agents.addMessage(conversation, {
       role: "user",
-      content: `Verwerk de bijgevoegde prestatie-PDF en maak concept-regels aan. batch_id: ${batch.id}`,
+      content: bericht,
       file_urls: [file_url],
     });
 
@@ -80,7 +95,36 @@ export default function PrestatieImport() {
       )}
 
       {/* Upload zone */}
-      <Card className="p-8">
+      <Card className="p-6 space-y-5">
+        {/* Eindklant selectie */}
+        <div className="space-y-1.5">
+          <Label className="flex items-center gap-1.5">
+            <Building2 className="w-4 h-4 text-muted-foreground" />
+            Eindklant (optioneel)
+          </Label>
+          <Select value={selectedEindklantId} onValueChange={setSelectedEindklantId}>
+            <SelectTrigger className="max-w-sm">
+              <SelectValue placeholder="Selecteer eindklant..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={null}>— Geen specifieke klant —</SelectItem>
+              {eindklanten.map(k => (
+                <SelectItem key={k.id} value={k.id}>{k.naam}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {selectedEindklant?.pdf_instructies && (
+            <div className="mt-2 p-3 rounded-md bg-green-50 border border-green-200 text-xs text-green-800">
+              <span className="font-semibold">✓ Klant-instructies gevonden</span> — de agent gebruikt deze bij de verwerking.
+            </div>
+          )}
+          {selectedEindklant && !selectedEindklant.pdf_instructies && (
+            <p className="text-xs text-muted-foreground mt-1">
+              Nog geen instructies voor deze klant. Voeg ze toe via <span className="font-medium">Eindklanten → bewerken → PDF-instructies</span>.
+            </p>
+          )}
+        </div>
+
         <input
           type="file"
           accept=".pdf"
@@ -89,7 +133,7 @@ export default function PrestatieImport() {
           className="hidden"
         />
         <div
-          className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-4 py-12 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
+          className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-4 py-10 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
           onClick={() => !isUploading && fileInputRef.current?.click()}
         >
           {isUploading ? (
