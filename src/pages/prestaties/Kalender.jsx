@@ -6,6 +6,8 @@ import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, FileText } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
 import WeekView from "../../components/prestaties/WeekView";
 import DayView from "../../components/prestaties/DayView";
@@ -119,6 +121,23 @@ export default function Kalender() {
             >
               Vandaag
             </Button>
+            {/* Date picker */}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2 ml-2">
+                  <CalIcon className="w-4 h-4" />
+                  {format(currentDate, "d MMM yyyy")}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarPicker
+                  mode="single"
+                  selected={currentDate}
+                  onSelect={(date) => date && setCurrentDate(date)}
+                  disabled={(date) => false}
+                />
+              </PopoverContent>
+            </Popover>
             {/* View toggle */}
             <div className="flex rounded-md border overflow-hidden ml-2">
               {["maand", "week", "dag"].map(v => (
