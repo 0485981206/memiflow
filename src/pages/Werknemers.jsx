@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Upload } from "lucide-react";
+import { Plus, Search, Pencil, Upload, UserX } from "lucide-react";
 import WerknemerDetail from "@/components/werknemers/WerknemerDetail";
 import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDialog";
 
@@ -181,7 +181,11 @@ export default function Werknemers() {
                 <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMut.mutate(w.id)}><Trash2 className="w-4 h-4" /></Button>
+                    {w.status !== "inactief" && (
+                      <Button size="sm" variant="outline" className="text-xs text-muted-foreground h-8 px-2" onClick={() => updateMut.mutate({ id: w.id, data: { status: "inactief" } })}>
+                        <UserX className="w-3 h-3 mr-1" />Niet actief
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -241,6 +245,7 @@ export default function Werknemers() {
           werknemer={selectedWerknemer}
           onClose={() => setSelectedWerknemer(null)}
           onSave={handleFieldSave}
+          onDelete={(id) => { deleteMut.mutate(id); setSelectedWerknemer(null); }}
         />
       )}
     </div>

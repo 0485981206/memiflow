@@ -1,4 +1,9 @@
 import React, { useState, useEffect } from "react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -71,7 +76,7 @@ const Section = ({ title, children }) => (
   </div>
 );
 
-export default function WerknemerDetail({ werknemer, onClose, onSave }) {
+export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }) {
   const handleSave = async (key, value) => {
     await onSave(werknemer.id, { [key]: value });
   };
@@ -158,6 +163,27 @@ export default function WerknemerDetail({ werknemer, onClose, onSave }) {
             <EditableField label="Sturingsgroep" value={f("sturingsgroep")} fieldKey="sturingsgroep" onSave={handleSave} />
             <EditableField label="Kostenplaats" value={f("kostenplaats")} fieldKey="kostenplaats" onSave={handleSave} />
           </Section>
+          {werknemer.status === "inactief" && (
+            <div className="mt-6 pt-4 border-t border-destructive/30">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button variant="destructive" className="w-full">Verwijder personeel</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Werknemer verwijderen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Ben je zeker dat je <strong>{werknemer.voornaam} {werknemer.achternaam}</strong> permanent wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuleren</AlertDialogCancel>
+                    <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={() => { onDelete(werknemer.id); onClose(); }}>Ja, verwijderen</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
       </div>
     </div>
