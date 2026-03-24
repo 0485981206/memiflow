@@ -5,7 +5,7 @@ import { format, addMonths, subMonths } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, FileText } from "lucide-react";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
 import PrestatieDialog from "../../components/prestaties/PrestatieDialog";
 import WerknemerCombobox from "../../components/prestaties/WerknemerCombobox.jsx";
@@ -153,6 +153,61 @@ export default function Kalender() {
         onDelete={(id) => deleteMut.mutate(id)}
         selectedWerknemer={selectedWerknemer}
       />
+
+      {/* Geïmporteerde records */}
+      <div>
+        <h2 className="text-base font-semibold flex items-center gap-2 mb-3">
+          <FileText className="w-4 h-4 text-accent" />
+          Geïmporteerde records — {format(currentMonth, "MMMM yyyy", { locale: nl })}
+        </h2>
+        <Card className="overflow-hidden">
+          {prestaties.filter(p => p.bron).length === 0 ? (
+            <div className="py-10 text-center text-muted-foreground text-sm">Geen geïmporteerde records voor deze maand</div>
+          ) : (
+            <div className="overflow-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-muted/60">
+                  <tr>
+                    <th className="text-left p-2 font-semibold">Werknemer</th>
+                    <th className="text-left p-2 font-semibold">Datum</th>
+                    <th className="text-left p-2 font-semibold">Dag</th>
+                    <th className="text-left p-2 font-semibold">Firma</th>
+                    <th className="text-right p-2 font-semibold">Uren</th>
+                    <th className="text-left p-2 font-semibold">In/Uit tijden</th>
+                    <th className="text-left p-2 font-semibold">Bron</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {prestaties
+                    .filter(p => p.bron)
+                    .sort((a, b) => (a.datum || "").localeCompare(b.datum || ""))
+                    .map((p, i) => {
+                      const tijden = [1,2,3,4,5,6].map(n => {
+                        const inn = p[`in_${n}`]; const uit = p[`uit_${n}`];
+                        return inn ? `${inn}–${uit || "?"}` : null;
+                      }).filter(Boolean).join(" | ");
+                      return (
+                        <tr key={p.id || i} className="border-t hover:bg-muted/30">
+                          <td className="p-2 font-medium">{p.werknemer_naam || "—"}</td>
+                          <td className="p-2">{p.datum}</td>
+                          <td className="p-2 text-muted-foreground">{p.dag || "—"}</td>
+                          <td className="p-2 text-muted-foreground">{p.firma || "—"}</td>
+                          <td className="p-2 text-right font-medium">{p.totaal_uren ?? p.uren ?? "—"}</td>
+                          <td className="p-2 text-muted-foreground font-mono">{tijden || "—"}</td>
+                          <td className="p-2">
+                            <span className="inline-flex items-center gap-1 text-[10px] bg-accent/10 text-accent px-1.5 py-0.5 rounded">
+                              <Clock className="w-2.5 h-2.5" />{p.bron}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </div>
     </div>
   );
 }
