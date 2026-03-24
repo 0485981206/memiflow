@@ -45,6 +45,7 @@ Deno.serve(async (req) => {
           eindklant_naam: ek?.naam || r.eindklant_naam || r.firma || "",
           datum: r.datum,
           dag: r.dag || "",
+          code: "R",
           bron: r.firma || "",
           firma: r.firma || "",
           dagschema: r.dagschema || "",
