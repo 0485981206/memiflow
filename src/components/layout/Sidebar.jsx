@@ -62,6 +62,18 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    if (!isCollapsed || !openDropdown) return;
+    
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+    };
+    
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [isCollapsed, openDropdown]);
+
   const isActive = (path) => {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
@@ -77,7 +89,9 @@ export default function Sidebar() {
 
   const handleNavClick = () => {
     setMobileOpen(false);
-    closeDropdown();
+    if (!isCollapsed) {
+      closeDropdown();
+    }
   };
 
   const MenuLink = ({ item }) => (
@@ -128,7 +142,11 @@ export default function Sidebar() {
 
     if (isCollapsed) {
       return (
-        <div className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10">
+        <div className="fixed bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10" style={{
+          left: '5rem',
+          top: '0',
+          marginTop: '0'
+        }}>
           {items.map((item) => (
             <Link
               key={item.path}
