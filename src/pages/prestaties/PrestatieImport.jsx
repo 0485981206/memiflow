@@ -164,9 +164,7 @@ export default function PrestatieImport() {
     setDeleteBatchId(null);
     try {
       const regels = await base44.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
-      for (const r of regels) {
-        try { await base44.entities.PrestatieConceptRegel.delete(r.id); } catch (_) {}
-      }
+      await Promise.all(regels.map(r => base44.entities.PrestatieConceptRegel.delete(r.id).catch(() => {})));
       await base44.entities.PrestatieImportBatch.delete(batchId);
       queryClient.invalidateQueries({ queryKey: ["importbatches"] });
       toast.success("Batch verwijderd");
@@ -310,7 +308,7 @@ export default function PrestatieImport() {
         )}
       </div>
 
-      <AlertDialog open={!!deleteBatchId} onOpenChange={open => !open && setDeleteBatchId(null)}>
+      <AlertDialog open={!!deleteBatchId}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Batch verwijderen?</AlertDialogTitle>
