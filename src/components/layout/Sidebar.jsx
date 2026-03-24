@@ -29,6 +29,7 @@ const prestatieMenu = [
   { label: "Overzicht", path: "/prestaties/overzicht" },
   { label: "Codes", path: "/prestaties/codes" },
   { label: "PDF Import", path: "/prestaties/import" },
+  { label: "Records", path: "/prestaties/records" },
 ];
 
 const acertaMenu = [

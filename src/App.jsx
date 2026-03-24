@@ -16,6 +16,7 @@ import Kalenderoverzicht from './pages/prestaties/Kalenderoverzicht';
 import Overzicht from './pages/prestaties/Overzicht';
 import Codes from './pages/prestaties/Codes';
 import PrestatieImport from './pages/prestaties/PrestatieImport.jsx';
+import Records from './pages/prestaties/Records.jsx';
 import Loonfiches from './pages/Loonfiches';
 import Rapporten from './pages/Rapporten';
 import Instellingen from './pages/Instellingen';
@@ -53,6 +54,7 @@ const AuthenticatedApp = () => {
         <Route path="/prestaties/overzicht" element={<Overzicht />} />
         <Route path="/prestaties/codes" element={<Codes />} />
         <Route path="/prestaties/import" element={<PrestatieImport />} />
+        <Route path="/prestaties/records" element={<Records />} />
         <Route path="/loonfiches" element={<Loonfiches />} />
         <Route path="/rapporten" element={<Rapporten />} />
         <Route path="/instellingen" element={<Instellingen />} />
