@@ -114,12 +114,21 @@ function EditableField({ label, value, fieldKey, onSave, type = "text", hidden }
   );
 }
 
-const Section = ({ title, children }) => (
-  <div className="mb-2">
-    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1 mt-4">{title}</h3>
-    <div className="bg-card rounded-lg border px-3">{children}</div>
-  </div>
-);
+function Section({ title, children, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="mb-2">
+      <button
+        className="flex items-center justify-between w-full mt-4 mb-1 group"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground group-hover:text-foreground transition-colors">{title}</h3>
+        <span className={`text-muted-foreground transition-transform duration-200 ${open ? "rotate-0" : "-rotate-90"}`}>▾</span>
+      </button>
+      {open && <div className="bg-card rounded-lg border px-3">{children}</div>}
+    </div>
+  );
+}
 
 export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }) {
   const [fieldSearch, setFieldSearch] = useState("");
