@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Trash2 } from "lucide-react";
 import WerknemerCombobox from "./WerknemerCombobox.jsx";
 
@@ -17,7 +14,6 @@ export default function PrestatieDialog({
 }) {
   const [form, setForm] = useState({
     werknemer_id: selectedWerknemer || "",
-    code: "",
     uren: "",
     opmerking: "",
   });
@@ -26,7 +22,6 @@ export default function PrestatieDialog({
     setForm((f) => ({
       ...f,
       werknemer_id: selectedWerknemer || "",
-      code: "",
       uren: "",
       opmerking: "",
     }));
@@ -38,7 +33,6 @@ export default function PrestatieDialog({
     const p = plaatsingen.find(
       (x) => x.werknemer_id === form.werknemer_id && x.status === "actief"
     );
-    const codeObj = codes.find((c) => c.code === form.code);
 
     onSave({
       werknemer_id: form.werknemer_id,
@@ -47,100 +41,79 @@ export default function PrestatieDialog({
       eindklant_naam: p?.eindklant_naam || "",
       plaatsing_id: p?.id || "",
       datum: format(date, "yyyy-MM-dd"),
-      code: form.code,
-      uren: Number(form.uren) || (codeObj?.standaard_uren || 8),
+      uren: Number(form.uren) || 8,
       opmerking: form.opmerking,
-      status: "ingevoerd",
       maand: format(date, "yyyy-MM"),
     });
 
-    setForm({ ...form, code: "", uren: "", opmerking: "" });
-  };
-
-  const getCodeColor = (code) => {
-    const found = codes.find((c) => c.code === code);
-    return found?.kleur || "#3b82f6";
+    setForm({ ...form, uren: "", opmerking: "" });
   };
 
   if (!date) return null;
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>
+    <div className={`fixed inset-0 z-50 flex justify-end transition-opacity ${open ? "opacity-100" : "opacity-0 pointer-events-none"}`} onClick={onClose}>
+      <div className={`w-full max-w-lg bg-background border-l shadow-xl flex flex-col transform transition-transform ${open ? "translate-x-0" : "translate-x-full"}`} onClick={e => e.stopPropagation()}>
+        {/* Header */}
+        <div className="sticky top-0 bg-background border-b px-5 py-4 flex items-center justify-between">
+          <h2 className="font-semibold text-base">
             Prestaties — {format(date, "EEEE d MMMM yyyy", { locale: nl })}
-          </DialogTitle>
-        </DialogHeader>
+          </h2>
+          <button onClick={onClose} className="p-1 hover:bg-muted rounded">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
 
-        {/* Existing prestaties for this day */}
-        {existingPrestaties.length > 0 && (
-          <div className="space-y-2 mb-4">
-            <p className="text-sm font-medium text-muted-foreground">Bestaande prestaties</p>
-            {existingPrestaties.map((p) => (
-              <div
-                key={p.id}
-                className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/30"
-              >
-                <div className="flex items-center gap-2">
-                  <Badge
-                    className="text-white text-xs"
-                    style={{ backgroundColor: getCodeColor(p.code) }}
-                  >
-                    {p.code}
-                  </Badge>
-                  <span className="text-sm font-medium">{p.werknemer_naam}</span>
-                  <span className="text-sm text-muted-foreground">{p.uren}u</span>
-                </div>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="h-7 w-7 text-destructive"
-                  onClick={() => onDelete(p.id)}
+        {/* Body */}
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+          {/* Existing prestaties for this day */}
+          {existingPrestaties.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-muted-foreground">Bestaande prestaties</p>
+              {existingPrestaties.map((p) => (
+                <div
+                  key={p.id}
+                  className="border rounded-lg p-3 space-y-2 bg-muted/30"
                 >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!selectedWerknemer && (
-            <div>
-              <Label>Werknemer</Label>
-              <WerknemerCombobox
-                werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
-                value={form.werknemer_id}
-                onChange={(id) => setForm({ ...form, werknemer_id: id })}
-              />
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">{p.werknemer_naam}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{p.eindklant_naam}</div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="text-right">
+                        <div className="text-xs font-semibold bg-blue-500 text-white px-2 py-1 rounded">{p.totaal_uren ?? p.uren ?? 0}u</div>
+                      </div>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7 text-destructive"
+                        onClick={() => onDelete(p.id)}
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+        </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label>Code</Label>
-              <select
-                value={form.code}
-                onChange={(e) => {
-                  const v = e.target.value;
-                  const codeObj = codes.find((c) => c.code === v);
-                  setForm({
-                    ...form,
-                    code: v,
-                    uren: codeObj?.standaard_uren ? String(codeObj.standaard_uren) : form.uren,
-                  });
-                }}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">Kies code</option>
-                {codes.map((c) => (
-                  <option key={c.code} value={c.code}>
-                    {c.code} — {c.naam}
-                  </option>
-                ))}
-              </select>
-            </div>
+        {/* Footer */}
+        <div className="sticky bottom-0 bg-background border-t px-5 py-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!selectedWerknemer && (
+              <div>
+                <Label>Werknemer</Label>
+                <WerknemerCombobox
+                  werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
+                  value={form.werknemer_id}
+                  onChange={(id) => setForm({ ...form, werknemer_id: id })}
+                />
+              </div>
+            )}
+
             <div>
               <Label>Uren</Label>
               <Input
@@ -153,30 +126,30 @@ export default function PrestatieDialog({
                 placeholder="8"
               />
             </div>
-          </div>
 
-          <div>
-            <Label>Opmerking</Label>
-            <Input
-              value={form.opmerking}
-              onChange={(e) => setForm({ ...form, opmerking: e.target.value })}
-              placeholder="Optioneel..."
-            />
-          </div>
+            <div>
+              <Label>Opmerking</Label>
+              <Input
+                value={form.opmerking}
+                onChange={(e) => setForm({ ...form, opmerking: e.target.value })}
+                placeholder="Optioneel..."
+              />
+            </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="outline" onClick={onClose}>
-              Sluiten
-            </Button>
-            <Button
-              type="submit"
-              disabled={!form.werknemer_id || !form.code}
-            >
-              Toevoegen
-            </Button>
-          </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button type="button" variant="outline" onClick={onClose}>
+                Sluiten
+              </Button>
+              <Button
+                type="submit"
+                disabled={!form.werknemer_id || !form.uren}
+              >
+                Toevoegen
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   );
 }
