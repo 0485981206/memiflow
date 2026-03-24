@@ -54,6 +54,7 @@ export default function Sidebar() {
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
+  const [hoveredDropdown, setHoveredDropdown] = useState(null);
   const [importBadge, setImportBadge] = useState(0);
 
   useEffect(() => {
@@ -70,13 +71,6 @@ export default function Sidebar() {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   };
-
-  const linkClass = (path) =>
-    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-      isActive(path)
-        ? "bg-[#1e3a5f] text-white"
-        : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-    }`;
 
   const sidebarContent = (
     <div className="flex flex-col h-full" style={{ backgroundColor: "#152d4a" }}>
@@ -98,7 +92,7 @@ export default function Sidebar() {
         </button>
       </div>
 
-      <nav className={`flex-1 px-3 py-4 space-y-1 overflow-y-auto transition-all ${isCollapsed ? "px-1" : "px-3"}`}>
+      <nav className={`flex-1 py-4 overflow-y-auto transition-all ${isCollapsed ? "px-1.5" : "px-3 space-y-1"}`}>
         {!isCollapsed && (
           <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
             Hoofdmenu
@@ -109,99 +103,153 @@ export default function Sidebar() {
           <Link
             key={item.path}
             to={item.path}
-            className={linkClass(item.path)}
-            onClick={() => setMobileOpen(false)}
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group ${
+              isActive(item.path)
+                ? "bg-[#1e3a5f] text-white"
+                : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+            }`}
             title={isCollapsed ? item.label : ""}
+            onClick={() => setMobileOpen(false)}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
             {!isCollapsed && <span>{item.label}</span>}
+            {isCollapsed && (
+              <div className="absolute left-full ml-2 px-3 py-1.5 bg-[#1e3a5f] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                {item.label}
+              </div>
+            )}
           </Link>
         ))}
 
         {/* Prestaties dropdown */}
-        <button
-          onClick={() => setPrestatiesOpen(!prestatiesOpen)}
-          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-            location.pathname.startsWith("/prestaties")
-              ? "bg-[#1e3a5f] text-white"
-              : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-          }`}
+        <div
+          className="relative"
+          onMouseEnter={() => isCollapsed && setHoveredDropdown("prestaties")}
+          onMouseLeave={() => setHoveredDropdown(null)}
         >
-          <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            <span>Prestaties</span>
-          </div>
-          {prestatiesOpen ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </button>
+          <button
+            onClick={() => !isCollapsed && setPrestatiesOpen(!prestatiesOpen)}
+            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              location.pathname.startsWith("/prestaties")
+                ? "bg-[#1e3a5f] text-white"
+                : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+            }`}
+            title={isCollapsed ? "Prestaties" : ""}
+          >
+            <div className="flex items-center gap-3">
+              <Clock className="w-4 h-4 flex-shrink-0" />
+              {!isCollapsed && <span>Prestaties</span>}
+            </div>
+            {!isCollapsed && (prestatiesOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
+          </button>
 
-        {prestatiesOpen && (
-          <div className="ml-7 space-y-0.5">
-            {prestatieMenu.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                  isActive(item.path)
-                    ? "text-[#38bdf8] font-semibold"
-                    : "text-white/60 hover:text-white"
-                }`}
-                onClick={() => setMobileOpen(false)}
-              >
-                <span>{item.label}</span>
-                {item.path === "/prestaties/import" && importBadge > 0 && (
-                  <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
-                    {importBadge}
-                  </span>
-                )}
-              </Link>
-            ))}
-          </div>
-        )}
+          {/* Collapsed dropdown panel */}
+          {isCollapsed && hoveredDropdown === "prestaties" && (
+            <div className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10">
+              {prestatieMenu.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className="flex items-center justify-between px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-[#2a4a6f] transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span>{item.label}</span>
+                  {item.path === "/prestaties/import" && importBadge > 0 && (
+                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {importBadge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* Expanded dropdown */}
+          {!isCollapsed && prestatiesOpen && (
+            <div className="ml-7 space-y-0.5">
+              {prestatieMenu.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                    isActive(item.path)
+                      ? "text-[#38bdf8] font-semibold"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span>{item.label}</span>
+                  {item.path === "/prestaties/import" && importBadge > 0 && (
+                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {importBadge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
         {/* Acerta dropdown */}
-        <button
-          onClick={() => setAcertaOpen(!acertaOpen)}
-          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-            location.pathname.startsWith("/acerta")
-              ? "bg-[#1e3a5f] text-white"
-              : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-          }`}
+        <div
+          className="relative"
+          onMouseEnter={() => isCollapsed && setHoveredDropdown("acerta")}
+          onMouseLeave={() => setHoveredDropdown(null)}
         >
-          <div className="flex items-center gap-3">
-            <FileText className="w-4 h-4 flex-shrink-0" />
-            <span>Acerta</span>
-          </div>
-          {acertaOpen ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
+          <button
+            onClick={() => !isCollapsed && setAcertaOpen(!acertaOpen)}
+            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              location.pathname.startsWith("/acerta")
+                ? "bg-[#1e3a5f] text-white"
+                : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+            }`}
+            title={isCollapsed ? "Acerta" : ""}
+          >
+            <div className="flex items-center gap-3">
+              <FileText className="w-4 h-4 flex-shrink-0" />
+              {!isCollapsed && <span>Acerta</span>}
+            </div>
+            {!isCollapsed && (acertaOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />)}
+          </button>
+
+          {/* Collapsed dropdown panel */}
+          {isCollapsed && hoveredDropdown === "acerta" && (
+            <div className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10">
+              {acertaMenu.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-[#2a4a6f] transition-colors"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
           )}
-        </button>
 
-        {acertaOpen && (
-          <div className="ml-7 space-y-0.5">
-            {acertaMenu.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                  isActive(item.path)
-                    ? "text-[#38bdf8] font-semibold"
-                    : "text-white/60 hover:text-white"
-                }`}
-                onClick={() => setMobileOpen(false)}
-              >
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
+          {/* Expanded dropdown */}
+          {!isCollapsed && acertaOpen && (
+            <div className="ml-7 space-y-0.5">
+              {acertaMenu.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                    isActive(item.path)
+                      ? "text-[#38bdf8] font-semibold"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span>{item.label}</span>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
 
-        <div className="pt-4">
+        <div className={`pt-4 ${!isCollapsed ? "space-y-1" : ""}`}>
           {!isCollapsed && (
             <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
               Beheer
@@ -209,15 +257,24 @@ export default function Sidebar() {
           )}
           {beheerMenu.map((item) => (
             <Link
-                key={item.path}
-                to={item.path}
-                className={linkClass(item.path)}
-                onClick={() => setMobileOpen(false)}
-                title={isCollapsed ? item.label : ""}
-              >
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                {!isCollapsed && <span>{item.label}</span>}
-              </Link>
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group ${
+                isActive(item.path)
+                  ? "bg-[#1e3a5f] text-white"
+                  : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+              }`}
+              onClick={() => setMobileOpen(false)}
+              title={isCollapsed ? item.label : ""}
+            >
+              <item.icon className="w-4 h-4 flex-shrink-0" />
+              {!isCollapsed && <span>{item.label}</span>}
+              {isCollapsed && (
+                <div className="absolute left-full ml-2 px-3 py-1.5 bg-[#1e3a5f] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
+                  {item.label}
+                </div>
+              )}
+            </Link>
           ))}
         </div>
       </nav>
