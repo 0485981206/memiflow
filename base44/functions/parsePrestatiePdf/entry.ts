@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
     const formData = new FormData();
     formData.append('file', fileBlob, filename);
 
-    const apiUrl = `http://31.97.176.25:8000/api/parse?format=${format}&active_only=${active_only}`;
+    const apiUrl = `https://agentapi.my/api/parse?format=${format}&active_only=${active_only}`;
     const response = await fetch(apiUrl, { method: 'POST', body: formData });
 
     if (format === 'csv') {
