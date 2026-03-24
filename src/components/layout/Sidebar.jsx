@@ -31,6 +31,10 @@ const prestatieMenu = [
   { label: "PDF Import", path: "/prestaties/import" },
 ];
 
+const acertaMenu = [
+  { label: "Kalender", path: "/acerta/kalender" },
+];
+
 const beheerMenu = [
   { label: "Loonfiches", path: "/loonfiches", icon: FileText },
   { label: "Rapporten", path: "/rapporten", icon: BarChart3 },
@@ -41,6 +45,9 @@ export default function Sidebar() {
   const location = useLocation();
   const [prestatiesOpen, setPrestatiesOpen] = useState(
     location.pathname.startsWith("/prestaties")
+  );
+  const [acertaOpen, setAcertaOpen] = useState(
+    location.pathname.startsWith("/acerta")
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [importBadge, setImportBadge] = useState(0);
@@ -132,6 +139,45 @@ export default function Sidebar() {
                     {importBadge}
                   </span>
                 )}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Acerta dropdown */}
+        <button
+          onClick={() => setAcertaOpen(!acertaOpen)}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            location.pathname.startsWith("/acerta")
+              ? "bg-[#1e3a5f] text-white"
+              : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <FileText className="w-4 h-4 flex-shrink-0" />
+            <span>Acerta</span>
+          </div>
+          {acertaOpen ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+        </button>
+
+        {acertaOpen && (
+          <div className="ml-7 space-y-0.5">
+            {acertaMenu.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "text-[#38bdf8] font-semibold"
+                    : "text-white/60 hover:text-white"
+                }`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span>{item.label}</span>
               </Link>
             ))}
           </div>
