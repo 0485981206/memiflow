@@ -19,6 +19,7 @@ import {
 import { Plus, Search, Upload, UserX } from "lucide-react";
 import WerknemerDetail from "@/components/werknemers/WerknemerDetail";
 import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDialog";
+import WerknemerWizard from "@/components/werknemers/WerknemerWizard";
 
 const emptyForm = {
   voornaam: "", achternaam: "", overeenkomstnummer: "", externe_id: "",
@@ -173,51 +174,7 @@ export default function Werknemers() {
       </Card>
 
       {/* Nieuwe werknemer dialog */}
-      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { setDialogOpen(false); setForm(emptyForm); } }}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Nieuwe werknemer</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Overeenkomstnummer</Label><Input value={form.overeenkomstnummer} onChange={(e) => setForm({ ...form, overeenkomstnummer: e.target.value })} /></div>
-              <div><Label>Extern ID</Label><Input value={form.externe_id} onChange={(e) => setForm({ ...form, externe_id: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Voornaam *</Label><Input required value={form.voornaam} onChange={(e) => setForm({ ...form, voornaam: e.target.value })} /></div>
-              <div><Label>Achternaam *</Label><Input required value={form.achternaam} onChange={(e) => setForm({ ...form, achternaam: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-              <div><Label>Telefoon</Label><Input value={form.telefoon} onChange={(e) => setForm({ ...form, telefoon: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Functie</Label><Input value={form.functie} onChange={(e) => setForm({ ...form, functie: e.target.value })} /></div>
-              <div>
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="actief">Actief</SelectItem>
-                    <SelectItem value="inactief">Inactief</SelectItem>
-                    <SelectItem value="ziekteverlof">Ziekteverlof</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Startdatum</Label><Input type="date" value={form.startdatum} onChange={(e) => setForm({ ...form, startdatum: e.target.value })} /></div>
-              <div><Label>Uurloon (€)</Label><Input type="number" step="0.01" value={form.uurloon} onChange={(e) => setForm({ ...form, uurloon: e.target.value })} /></div>
-            </div>
-            <div><Label>Rijksregisternummer</Label><Input value={form.rijksregisternummer} onChange={(e) => setForm({ ...form, rijksregisternummer: e.target.value })} /></div>
-            <div><Label>Adres</Label><Input value={form.adres} onChange={(e) => setForm({ ...form, adres: e.target.value })} /></div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setForm(emptyForm); }}>Annuleren</Button>
-              <Button type="submit">Toevoegen</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <WerknemerWizard open={dialogOpen} onClose={() => setDialogOpen(false)} />
 
       <UploadWerknemersDialog open={uploadOpen} onClose={() => setUploadOpen(false)} />
       {selectedWerknemer && (
