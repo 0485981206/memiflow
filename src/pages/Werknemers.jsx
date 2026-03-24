@@ -143,6 +143,8 @@ export default function Werknemers() {
               <TableHead className="hidden lg:table-cell">Extern ID</TableHead>
               <TableHead className="hidden md:table-cell">E-mail</TableHead>
               <TableHead className="hidden md:table-cell">Functie</TableHead>
+              <TableHead className="hidden lg:table-cell">In dienst sinds</TableHead>
+              <TableHead className="hidden lg:table-cell">Kostenplaats</TableHead>
               <TableHead>Status</TableHead>
               <TableHead className="w-20">Acties</TableHead>
             </TableRow>
@@ -159,6 +161,8 @@ export default function Werknemers() {
                 <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">{w.externe_id}</TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground">{w.email}</TableCell>
                 <TableCell className="hidden md:table-cell text-muted-foreground">{w.functie}</TableCell>
+                <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">{w.startdatum || "—"}</TableCell>
+                <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">{w.kostenplaats || "—"}</TableCell>
                 <TableCell>
                   <Badge className={statusColors[w.status] || ""} variant="secondary">{w.status}</Badge>
                 </TableCell>
