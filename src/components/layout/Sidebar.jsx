@@ -99,7 +99,7 @@ export default function Sidebar() {
   const MenuButton = ({ icon: Icon, label, name, onClick, isActive: active }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full ${
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full relative ${
         active
           ? "bg-[#1e3a5f] text-white"
           : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
@@ -116,6 +116,9 @@ export default function Sidebar() {
             }`}
           />
         </>
+      )}
+      {isCollapsed && openDropdown === name && (
+        <div className="absolute w-1 h-1 rounded-full bg-white right-1.5"></div>
       )}
     </button>
   );
@@ -236,10 +239,7 @@ export default function Sidebar() {
               onClick={() => toggleDropdown("prestaties")}
               isActive={location.pathname.startsWith("/prestaties")}
             />
-            {isCollapsed && openDropdown === "prestaties" && (
-              <Dropdown isOpen={true} items={prestatieMenu} />
-            )}
-            {!isCollapsed && openDropdown === "prestaties" && (
+            {openDropdown === "prestaties" && (
               <Dropdown isOpen={true} items={prestatieMenu} />
             )}
           </div>
@@ -253,10 +253,7 @@ export default function Sidebar() {
               onClick={() => toggleDropdown("acerta")}
               isActive={location.pathname.startsWith("/acerta")}
             />
-            {isCollapsed && openDropdown === "acerta" && (
-              <Dropdown isOpen={true} items={acertaMenu} />
-            )}
-            {!isCollapsed && openDropdown === "acerta" && (
+            {openDropdown === "acerta" && (
               <Dropdown isOpen={true} items={acertaMenu} />
             )}
           </div>
