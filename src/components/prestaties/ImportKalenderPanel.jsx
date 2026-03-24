@@ -64,7 +64,7 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
 
   const handleImport = async () => {
     setIsSaving(true);
-    let opgeslagen = 0, overgeslagen = 0, updates = 0;
+    let opgeslagen = 0;
 
     const teImporteren = regels.filter(r => selected.has(r.werknemer_naam || "Onbekend"));
 
@@ -80,13 +80,44 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
       eindklantMap[firma] = ek;
     }
 
+    // Create Prestatie records from concept rules
+    for (const r of teImporteren) {
+      try {
+        const ek = r.firma ? eindklantMap[r.firma] : null;
+        const payload = {
+          werknemer_id: r.werknemer_id,
+          werknemer_naam: r.werknemer_naam,
+          eindklant_id: ek?.id || r.eindklant_id || "",
+          eindklant_naam: ek?.naam || r.eindklant_naam || r.firma || "",
+          datum: r.datum,
+          bron: r.bron || r.firma || "",
+          firma: r.firma || "",
+          dag: r.dag || "",
+          dagschema: r.dagschema || "",
+          totaal_uren: r.uren || 0,
+          externe_id: r.externe_id || "",
+          maand: r.datum ? r.datum.substring(0, 7) : "",
+          in_1: r.in_1 || "", uit_1: r.uit_1 || "",
+          in_2: r.in_2 || "", uit_2: r.uit_2 || "",
+          in_3: r.in_3 || "", uit_3: r.uit_3 || "",
+          in_4: r.in_4 || "", uit_4: r.uit_4 || "",
+          in_5: r.in_5 || "", uit_5: r.uit_5 || "",
+          in_6: r.in_6 || "", uit_6: r.uit_6 || "",
+        };
+        await base44.entities.Prestatie.create(payload);
+        opgeslagen++;
+      } catch (err) {
+        console.error("Fout bij importeren:", err);
+      }
+    }
+
     // Mark batch as goedgekeurd
     await base44.entities.PrestatieImportBatch.update(batch.id, {
       status: "goedgekeurd",
-      aantal_goedgekeurd: opgeslagen + updates,
+      aantal_goedgekeurd: opgeslagen,
     });
 
-    toast.success(`✓ ${opgeslagen} nieuw, ${updates} bijgewerkt${overgeslagen > 0 ? `, ${overgeslagen} overgeslagen` : ""}`, { duration: 6000 });
+    toast.success(`✓ ${opgeslagen} records geïmporteerd naar kalender`, { duration: 6000 });
     setIsSaving(false);
     onImported();
     onClose();
