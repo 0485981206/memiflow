@@ -45,7 +45,7 @@ export default function PrestatieImport() {
   const { data: batches = [], isLoading: batchesLoading } = useQuery({
     queryKey: ["importbatches"],
     queryFn: () => base44.entities.PrestatieImportBatch.list("-created_date"),
-    refetchInterval: (data) => (data || []).some(b => b.status === "verwerken") ? 3000 : false,
+    refetchInterval: isProcessing ? 3000 : false,
   });
 
   const findWerknemer = (externeId, naam) => {
