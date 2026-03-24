@@ -138,12 +138,12 @@ export default function PrestatieImport() {
             externe_id: r.externe_id || "",
             firma: r.firma || "",
             dagschema: r.dagschema || "",
-            in_1: r.entries?.[0]?.in || "", uit_1: r.entries?.[0]?.out || "",
-            in_2: r.entries?.[1]?.in || "", uit_2: r.entries?.[1]?.out || "",
-            in_3: r.entries?.[2]?.in || "", uit_3: r.entries?.[2]?.out || "",
-            in_4: r.entries?.[3]?.in || "", uit_4: r.entries?.[3]?.out || "",
-            in_5: r.entries?.[4]?.in || "", uit_5: r.entries?.[4]?.out || "",
-            in_6: r.entries?.[5]?.in || "", uit_6: r.entries?.[5]?.out || "",
+            in_1: r.entries?.[0]?.in || r.in_1 || "", uit_1: r.entries?.[0]?.out || r.uit_1 || "",
+            in_2: r.entries?.[1]?.in || r.in_2 || "", uit_2: r.entries?.[1]?.out || r.uit_2 || "",
+            in_3: r.entries?.[2]?.in || r.in_3 || "", uit_3: r.entries?.[2]?.out || r.uit_3 || "",
+            in_4: r.entries?.[3]?.in || r.in_4 || "", uit_4: r.entries?.[3]?.out || r.uit_4 || "",
+            in_5: r.entries?.[4]?.in || r.in_5 || "", uit_5: r.entries?.[4]?.out || r.uit_5 || "",
+            in_6: r.entries?.[5]?.in || r.in_6 || "", uit_6: r.entries?.[5]?.out || r.uit_6 || "",
             werknemer_niet_gevonden: !werknemer,
           };
         });
