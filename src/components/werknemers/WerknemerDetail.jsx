@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { base44 } from "@/api/base44Client";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel,
   AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
@@ -60,11 +62,12 @@ function EditableStatusField({ value, onSave }) {
   );
 }
 
-function EditableField({ label, value, fieldKey, onSave, type = "text", hidden }) {
+function EditableField({ label, value, fieldKey, onSave, type = "text", hidden, options = [] }) {
   if (hidden) return null;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value || "");
   const [saving, setSaving] = useState(false);
+  const listId = options.length ? `dl-detail-${fieldKey}` : undefined;
 
   useEffect(() => { setVal(value || ""); }, [value]);
 
@@ -98,14 +101,16 @@ function EditableField({ label, value, fieldKey, onSave, type = "text", hidden }
     <div className="py-2 border-b border-border/50 last:border-0 px-2 -mx-2">
       <p className="text-xs text-muted-foreground mb-1">{label}</p>
       <div className="flex gap-1">
-        <Input
+        <input
           autoFocus
+          list={listId}
           type={type}
           value={val}
           onChange={(e) => setVal(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="h-7 text-sm"
+          className="flex h-7 w-full rounded-md border border-input bg-transparent px-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
         />
+        {listId && <datalist id={listId}>{options.map((o) => <option key={o} value={o} />)}</datalist>}
         <Button size="icon" className="h-7 w-7 shrink-0" onClick={handleSave} disabled={saving}>
           {saving ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
         </Button>
@@ -132,6 +137,13 @@ function Section({ title, children, defaultOpen = true }) {
 
 export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }) {
   const [fieldSearch, setFieldSearch] = useState("");
+
+  const { data: alleWerknemers = [] } = useQuery({
+    queryKey: ["werknemers"],
+    queryFn: () => base44.entities.Werknemer.list("-created_date"),
+  });
+  const uniq = (key) => [...new Set(alleWerknemers.map((w) => w[key]).filter(Boolean))].sort();
+
   const handleSave = async (key, value) => {
     await onSave(werknemer.id, { [key]: value });
   };
@@ -185,9 +197,9 @@ export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }
             <EditableField label="Extern ID" value={f("externe_id")} fieldKey="externe_id" onSave={handleSave} hidden={!matchesSearch("Extern ID", f("externe_id"))} />
             <EditableField label="Rijksregisternummer" value={f("rijksregisternummer")} fieldKey="rijksregisternummer" onSave={handleSave} hidden={!matchesSearch("Rijksregisternummer", f("rijksregisternummer"))} />
             <EditableField label="Geboortedatum" value={f("geboortedatum")} fieldKey="geboortedatum" onSave={handleSave} type="date" hidden={!matchesSearch("Geboortedatum", f("geboortedatum"))} />
-            <EditableField label="Geslacht" value={f("geslacht")} fieldKey="geslacht" onSave={handleSave} hidden={!matchesSearch("Geslacht", f("geslacht"))} />
-            <EditableField label="Nationaliteit" value={f("nationaliteit")} fieldKey="nationaliteit" onSave={handleSave} hidden={!matchesSearch("Nationaliteit", f("nationaliteit"))} />
-            <EditableField label="Officiële taal" value={f("officiele_taal")} fieldKey="officiele_taal" onSave={handleSave} hidden={!matchesSearch("Officiële taal", f("officiele_taal"))} />
+            <EditableField label="Geslacht" value={f("geslacht")} fieldKey="geslacht" onSave={handleSave} hidden={!matchesSearch("Geslacht", f("geslacht"))} options={["Man","Vrouw","X",...uniq("geslacht")]} />
+            <EditableField label="Nationaliteit" value={f("nationaliteit")} fieldKey="nationaliteit" onSave={handleSave} hidden={!matchesSearch("Nationaliteit", f("nationaliteit"))} options={uniq("nationaliteit")} />
+            <EditableField label="Officiële taal" value={f("officiele_taal")} fieldKey="officiele_taal" onSave={handleSave} hidden={!matchesSearch("Officiële taal", f("officiele_taal"))} options={uniq("officiele_taal")} />
             {matchesSearch("Status", f("status")) && <EditableStatusField value={f("status")} onSave={handleSave} />}
           </Section>
 
@@ -204,7 +216,7 @@ export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }
           </Section>
 
           <Section title="Persoonlijk">
-            <EditableField label="Burgerlijke staat" value={f("burgerlijke_staat")} fieldKey="burgerlijke_staat" onSave={handleSave} hidden={!matchesSearch("Burgerlijke staat", f("burgerlijke_staat"))} />
+            <EditableField label="Burgerlijke staat" value={f("burgerlijke_staat")} fieldKey="burgerlijke_staat" onSave={handleSave} hidden={!matchesSearch("Burgerlijke staat", f("burgerlijke_staat"))} options={uniq("burgerlijke_staat")} />
             <EditableField label="Aantal kinderen ten laste" value={f("aantal_kinderen_ten_laste")} fieldKey="aantal_kinderen_ten_laste" onSave={handleSave} hidden={!matchesSearch("Aantal kinderen ten laste", f("aantal_kinderen_ten_laste"))} />
             <EditableField label="Personen 65+ ten laste" value={f("personen_65_plus_ten_laste")} fieldKey="personen_65_plus_ten_laste" onSave={handleSave} hidden={!matchesSearch("Personen 65+ ten laste", f("personen_65_plus_ten_laste"))} />
             <EditableField label="Persoon met handicap" value={f("persoon_met_handicap")} fieldKey="persoon_met_handicap" onSave={handleSave} hidden={!matchesSearch("Persoon met handicap", f("persoon_met_handicap"))} />
@@ -213,14 +225,14 @@ export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }
           <Section title="Tewerkstelling">
             <EditableField label="Datum in dienst" value={f("startdatum")} fieldKey="startdatum" onSave={handleSave} type="date" hidden={!matchesSearch("Datum in dienst", f("startdatum"))} />
             <EditableField label="Einddatum" value={f("einddatum")} fieldKey="einddatum" onSave={handleSave} type="date" hidden={!matchesSearch("Einddatum", f("einddatum"))} />
-            <EditableField label="Functie" value={f("functie")} fieldKey="functie" onSave={handleSave} hidden={!matchesSearch("Functie", f("functie"))} />
-            <EditableField label="Type overeenkomst" value={f("type_overeenkomst")} fieldKey="type_overeenkomst" onSave={handleSave} hidden={!matchesSearch("Type overeenkomst", f("type_overeenkomst"))} />
-            <EditableField label="Werknemerstypering" value={f("werknemerstypering")} fieldKey="werknemerstypering" onSave={handleSave} hidden={!matchesSearch("Werknemerstypering", f("werknemerstypering"))} />
-            <EditableField label="Paritair Comité" value={f("paritair_comite")} fieldKey="paritair_comite" onSave={handleSave} hidden={!matchesSearch("Paritair Comité", f("paritair_comite"))} />
-            <EditableField label="Type werktijd" value={f("type_werktijd")} fieldKey="type_werktijd" onSave={handleSave} hidden={!matchesSearch("Type werktijd", f("type_werktijd"))} />
-            <EditableField label="Werkregime" value={f("werkregime")} fieldKey="werkregime" onSave={handleSave} hidden={!matchesSearch("Werkregime", f("werkregime"))} />
-            <EditableField label="Tewerkstellingsbreuk" value={f("tewerkstellingsbreuk")} fieldKey="tewerkstellingsbreuk" onSave={handleSave} hidden={!matchesSearch("Tewerkstellingsbreuk", f("tewerkstellingsbreuk"))} />
-            <EditableField label="Berekeningswijze" value={f("berekeningswijze")} fieldKey="berekeningswijze" onSave={handleSave} hidden={!matchesSearch("Berekeningswijze", f("berekeningswijze"))} />
+            <EditableField label="Functie" value={f("functie")} fieldKey="functie" onSave={handleSave} hidden={!matchesSearch("Functie", f("functie"))} options={uniq("functie")} />
+            <EditableField label="Type overeenkomst" value={f("type_overeenkomst")} fieldKey="type_overeenkomst" onSave={handleSave} hidden={!matchesSearch("Type overeenkomst", f("type_overeenkomst"))} options={uniq("type_overeenkomst")} />
+            <EditableField label="Werknemerstypering" value={f("werknemerstypering")} fieldKey="werknemerstypering" onSave={handleSave} hidden={!matchesSearch("Werknemerstypering", f("werknemerstypering"))} options={uniq("werknemerstypering")} />
+            <EditableField label="Paritair Comité" value={f("paritair_comite")} fieldKey="paritair_comite" onSave={handleSave} hidden={!matchesSearch("Paritair Comité", f("paritair_comite"))} options={uniq("paritair_comite")} />
+            <EditableField label="Type werktijd" value={f("type_werktijd")} fieldKey="type_werktijd" onSave={handleSave} hidden={!matchesSearch("Type werktijd", f("type_werktijd"))} options={uniq("type_werktijd")} />
+            <EditableField label="Werkregime" value={f("werkregime")} fieldKey="werkregime" onSave={handleSave} hidden={!matchesSearch("Werkregime", f("werkregime"))} options={uniq("werkregime")} />
+            <EditableField label="Tewerkstellingsbreuk" value={f("tewerkstellingsbreuk")} fieldKey="tewerkstellingsbreuk" onSave={handleSave} hidden={!matchesSearch("Tewerkstellingsbreuk", f("tewerkstellingsbreuk"))} options={uniq("tewerkstellingsbreuk")} />
+            <EditableField label="Berekeningswijze" value={f("berekeningswijze")} fieldKey="berekeningswijze" onSave={handleSave} hidden={!matchesSearch("Berekeningswijze", f("berekeningswijze"))} options={uniq("berekeningswijze")} />
           </Section>
 
           <Section title="Barema & Loon">
