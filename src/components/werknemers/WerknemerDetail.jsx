@@ -236,18 +236,18 @@ export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }
           </Section>
 
           <Section title="Barema & Loon">
-            <EditableField label="Barema type" value={f("barema_type")} fieldKey="barema_type" onSave={handleSave} hidden={!matchesSearch("Barema type", f("barema_type"))} />
-            <EditableField label="Barema code" value={f("barema_code")} fieldKey="barema_code" onSave={handleSave} hidden={!matchesSearch("Barema code", f("barema_code"))} />
+            <EditableField label="Barema type" value={f("barema_type")} fieldKey="barema_type" onSave={handleSave} hidden={!matchesSearch("Barema type", f("barema_type"))} options={uniq("barema_type")} />
+            <EditableField label="Barema code" value={f("barema_code")} fieldKey="barema_code" onSave={handleSave} hidden={!matchesSearch("Barema code", f("barema_code"))} options={uniq("barema_code")} />
             <EditableField label="Uurloon (€)" value={f("uurloon")} fieldKey="uurloon" onSave={handleSave} type="number" hidden={!matchesSearch("Uurloon", f("uurloon"))} />
-            <EditableField label="Looncode 411 (Kledij)" value={f("looncode_411")} fieldKey="looncode_411" onSave={handleSave} hidden={!matchesSearch("Looncode 411", f("looncode_411"))} />
-            <EditableField label="Looncode 591 (Maaltijdcheques)" value={f("looncode_591")} fieldKey="looncode_591" onSave={handleSave} hidden={!matchesSearch("Looncode 591", f("looncode_591"))} />
-            <EditableField label="Looncode 691 (Werkgeversbijdr. MC)" value={f("looncode_691")} fieldKey="looncode_691" onSave={handleSave} hidden={!matchesSearch("Looncode 691", f("looncode_691"))} />
-            <EditableField label="Looncode 104 (Nachtploeg)" value={f("looncode_104")} fieldKey="looncode_104" onSave={handleSave} hidden={!matchesSearch("Looncode 104", f("looncode_104"))} />
+            <EditableField label="Looncode 411 (Kledij)" value={f("looncode_411")} fieldKey="looncode_411" onSave={handleSave} hidden={!matchesSearch("Looncode 411", f("looncode_411"))} options={uniq("looncode_411")} />
+            <EditableField label="Looncode 591 (Maaltijdcheques)" value={f("looncode_591")} fieldKey="looncode_591" onSave={handleSave} hidden={!matchesSearch("Looncode 591", f("looncode_591"))} options={uniq("looncode_591")} />
+            <EditableField label="Looncode 691 (Werkgeversbijdr. MC)" value={f("looncode_691")} fieldKey="looncode_691" onSave={handleSave} hidden={!matchesSearch("Looncode 691", f("looncode_691"))} options={uniq("looncode_691")} />
+            <EditableField label="Looncode 104 (Nachtploeg)" value={f("looncode_104")} fieldKey="looncode_104" onSave={handleSave} hidden={!matchesSearch("Looncode 104", f("looncode_104"))} options={uniq("looncode_104")} />
           </Section>
 
           <Section title="Organisatie">
-            <EditableField label="Sturingsgroep" value={f("sturingsgroep")} fieldKey="sturingsgroep" onSave={handleSave} hidden={!matchesSearch("Sturingsgroep", f("sturingsgroep"))} />
-            <EditableField label="Kostenplaats" value={f("kostenplaats")} fieldKey="kostenplaats" onSave={handleSave} hidden={!matchesSearch("Kostenplaats", f("kostenplaats"))} />
+            <EditableField label="Sturingsgroep" value={f("sturingsgroep")} fieldKey="sturingsgroep" onSave={handleSave} hidden={!matchesSearch("Sturingsgroep", f("sturingsgroep"))} options={uniq("sturingsgroep")} />
+            <EditableField label="Kostenplaats" value={f("kostenplaats")} fieldKey="kostenplaats" onSave={handleSave} hidden={!matchesSearch("Kostenplaats", f("kostenplaats"))} options={uniq("kostenplaats")} />
           </Section>
           {werknemer.status === "inactief" && (
             <div className="mt-4">
