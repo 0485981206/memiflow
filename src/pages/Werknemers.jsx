@@ -17,6 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, Upload } from "lucide-react";
+import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDialog";
 
 const emptyForm = {
   voornaam: "", achternaam: "", overeenkomstnummer: "", externe_id: "",
@@ -26,6 +27,7 @@ const emptyForm = {
 
 export default function Werknemers() {
   const [search, setSearch] = useState("");
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -101,7 +103,7 @@ export default function Werknemers() {
         <h1 className="text-2xl font-bold">Werknemers</h1>
         <div className="flex gap-2">
           {showUpload && (
-            <Button variant="outline" className="gap-2" onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.csv,.xlsx'; inp.click(); }}>
+            <Button variant="outline" className="gap-2" onClick={() => setUploadOpen(true)}>
               <Upload className="w-4 h-4" /> Werknemers uploaden
             </Button>
           )}
@@ -201,6 +203,7 @@ export default function Werknemers() {
           </form>
         </DialogContent>
       </Dialog>
+      <UploadWerknemersDialog open={uploadOpen} onClose={() => setUploadOpen(false)} />
     </div>
   );
 }
