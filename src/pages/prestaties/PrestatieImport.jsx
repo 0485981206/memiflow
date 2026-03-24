@@ -6,9 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  FileText, Loader2, Upload, Download, AlertTriangle,
+  FileText, Loader2, Upload, AlertTriangle,
   CheckCircle2, X, Clock, Ban, Calendar, Trash2
 } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel,
+  AlertDialogContent, AlertDialogDescription, AlertDialogFooter,
+  AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import ImportKalenderPanel from "@/components/prestaties/ImportKalenderPanel";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
@@ -27,6 +32,7 @@ export default function PrestatieImport() {
   const [queue, setQueue] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [reviewBatch, setReviewBatch] = useState(null);
+  const [deleteBatchId, setDeleteBatchId] = useState(null);
   const fileInputRef = useRef(null);
   const cancelledRef = useRef(false);
   const queryClient = useQueryClient();
@@ -153,15 +159,20 @@ export default function PrestatieImport() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleDeleteBatch = async (batchId) => {
-    // Delete concept regels first (ignore not-found errors)
-    const regels = await base44.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
-    for (const r of regels) {
-      try { await base44.entities.PrestatieConceptRegel.delete(r.id); } catch (_) {}
+  const handleDeleteBatch = async () => {
+    const batchId = deleteBatchId;
+    setDeleteBatchId(null);
+    try {
+      const regels = await base44.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
+      for (const r of regels) {
+        try { await base44.entities.PrestatieConceptRegel.delete(r.id); } catch (_) {}
+      }
+      await base44.entities.PrestatieImportBatch.delete(batchId);
+      queryClient.invalidateQueries({ queryKey: ["importbatches"] });
+      toast.success("Batch verwijderd");
+    } catch (err) {
+      toast.error("Verwijderen mislukt: " + err.message);
     }
-    await base44.entities.PrestatieImportBatch.delete(batchId);
-    queryClient.invalidateQueries({ queryKey: ["importbatches"] });
-    toast.success("Batch verwijderd");
   };
 
   const queueStatusIcon = (status) => {
@@ -288,7 +299,7 @@ export default function PrestatieImport() {
                     size="icon"
                     variant="ghost"
                     className="shrink-0 text-muted-foreground hover:text-red-500"
-                    onClick={() => handleDeleteBatch(batch.id)}
+                    onClick={() => setDeleteBatchId(batch.id)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
@@ -298,6 +309,21 @@ export default function PrestatieImport() {
           </div>
         )}
       </div>
+
+      <AlertDialog open={!!deleteBatchId} onOpenChange={open => !open && setDeleteBatchId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batch verwijderen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ben je zeker dat je deze import batch en alle bijhorende records wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteBatch}>Ja, verwijderen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {reviewBatch && (
         <ImportKalenderPanel
