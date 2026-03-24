@@ -1,23 +1,27 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, addMonths, subMonths } from "date-fns";
+import { format, addMonths, subMonths, addDays, subDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, FileText } from "lucide-react";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
+import WeekView from "../../components/prestaties/WeekView";
+import DayView from "../../components/prestaties/DayView";
 import PrestatieDialog from "../../components/prestaties/PrestatieDialog";
 import WerknemerCombobox from "../../components/prestaties/WerknemerCombobox.jsx";
 
 export default function Kalender() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState("maand"); // maand | week | dag
   const [selectedDay, setSelectedDay] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedWerknemer, setSelectedWerknemer] = useState("");
-  const queryClient = useQueryClient();
 
-  const maandStr = format(currentMonth, "yyyy-MM");
+  // For month query always use month of currentDate
+  const currentMonth = currentDate;
+  const maandStr = format(currentDate, "yyyy-MM");
 
   const { data: prestaties = [] } = useQuery({
     queryKey: ["prestaties", maandStr],
@@ -80,28 +84,55 @@ export default function Kalender() {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+              onClick={() => {
+                if (view === "maand") setCurrentDate(subMonths(currentDate, 1));
+                else if (view === "week") setCurrentDate(subWeeks(currentDate, 1));
+                else setCurrentDate(subDays(currentDate, 1));
+              }}
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
             <h2 className="text-lg font-semibold min-w-[160px] text-center capitalize">
-              {format(currentMonth, "MMMM yyyy", { locale: nl })}
+              {view === "maand" && format(currentDate, "MMMM yyyy", { locale: nl })}
+              {view === "week" && (() => {
+                const ws = startOfWeek(currentDate, { weekStartsOn: 1 });
+                return `${format(ws, "d MMM", { locale: nl })} – ${format(addDays(ws, 6), "d MMM yyyy", { locale: nl })}`;
+              })()}
+              {view === "dag" && format(currentDate, "d MMMM yyyy", { locale: nl })}
             </h2>
             <Button
               variant="outline"
               size="icon"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+              onClick={() => {
+                if (view === "maand") setCurrentDate(addMonths(currentDate, 1));
+                else if (view === "week") setCurrentDate(addWeeks(currentDate, 1));
+                else setCurrentDate(addDays(currentDate, 1));
+              }}
             >
               <ChevronRight className="w-4 h-4" />
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setCurrentMonth(new Date())}
+              onClick={() => setCurrentDate(new Date())}
               className="ml-2 text-sm"
             >
               Vandaag
             </Button>
+            {/* View toggle */}
+            <div className="flex rounded-md border overflow-hidden ml-2">
+              {["maand", "week", "dag"].map(v => (
+                <button
+                  key={v}
+                  onClick={() => setView(v)}
+                  className={`px-3 py-1 text-xs font-medium capitalize transition-colors ${
+                    view === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"
+                  }`}
+                >
+                  {v}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="w-64">
@@ -117,13 +148,32 @@ export default function Kalender() {
           </div>
         </div>
 
-        <CalendarGrid
-          currentMonth={currentMonth}
-          prestaties={filteredPrestaties}
-          codes={codes}
-          onDayClick={handleDayClick}
-          selectedWerknemer={selectedWerknemer}
-        />
+        {view === "maand" && (
+          <CalendarGrid
+            currentMonth={currentDate}
+            prestaties={filteredPrestaties}
+            codes={codes}
+            onDayClick={handleDayClick}
+            selectedWerknemer={selectedWerknemer}
+          />
+        )}
+        {view === "week" && (
+          <WeekView
+            currentDate={currentDate}
+            prestaties={filteredPrestaties}
+            codes={codes}
+            onDayClick={handleDayClick}
+            selectedWerknemer={selectedWerknemer}
+          />
+        )}
+        {view === "dag" && (
+          <DayView
+            currentDate={currentDate}
+            prestaties={filteredPrestaties}
+            codes={codes}
+            onDayClick={handleDayClick}
+          />
+        )}
 
         {/* Legend */}
         <div className="flex flex-wrap gap-3 mt-4 pt-3 border-t">

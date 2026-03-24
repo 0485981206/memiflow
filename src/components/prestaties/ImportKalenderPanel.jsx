@@ -59,39 +59,16 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
 
     const teImporteren = regels.filter(r => selected.has(r.werknemer_naam || "Onbekend"));
 
-    for (const r of teImporteren) {
-      if (!r.werknemer_id) { overgeslagen++; continue; }
-
-      const werknemer = werknemers.find(w => w.id === r.werknemer_id);
-      if (!werknemer) { overgeslagen++; continue; }
-
-      const payload = {
-        werknemer_id: r.werknemer_id,
-        werknemer_naam: r.werknemer_naam,
-        datum: r.datum,
-        dag: r.dag || "",
-        bron: r.bron || "",
-        externe_id: r.externe_id || "",
-        firma: r.firma || "",
-        dagschema: r.dagschema || "",
-        totaal_uren: r.uren || 0,
-        maand: r.datum ? r.datum.substring(0, 7) : "",
-        in_1: r.in_1 || "", uit_1: r.uit_1 || "",
-        in_2: r.in_2 || "", uit_2: r.uit_2 || "",
-        in_3: r.in_3 || "", uit_3: r.uit_3 || "",
-        in_4: r.in_4 || "", uit_4: r.uit_4 || "",
-        in_5: r.in_5 || "", uit_5: r.uit_5 || "",
-        in_6: r.in_6 || "", uit_6: r.uit_6 || "",
-      };
-
-      const existing = await base44.entities.Prestatie.filter({ werknemer_id: r.werknemer_id, datum: r.datum });
-      if (existing && existing.length > 0) {
-        await base44.entities.Prestatie.update(existing[0].id, payload);
-        updates++;
-      } else {
-        await base44.entities.Prestatie.create(payload);
-        opgeslagen++;
+    // Resolve eindklanten: firma → eindklant_id (aanmaken indien nodig)
+    const firmaSet = [...new Set(teImporteren.map(r => r.firma).filter(Boolean))];
+    const bestaandeEindklanten = await base44.entities.Eindklant.list();
+    const eindklantMap = {};
+    for (const firma of firmaSet) {
+      let ek = bestaandeEindklanten.find(e => e.naam?.toLowerCase() === firma.toLowerCase());
+      if (!ek) {
+        ek = await base44.entities.Eindklant.create({ naam: firma, tarief: 29, facturatie_tarief: 29, status: "actief" });
       }
+      eindklantMap[firma] = ek;
     }
 
     // Mark batch as goedgekeurd
