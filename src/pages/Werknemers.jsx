@@ -22,13 +22,14 @@ import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDial
 
 const emptyForm = {
   voornaam: "", achternaam: "", overeenkomstnummer: "", externe_id: "",
-  email: "", telefoon: "", functie: "", status: "actief",
+  email: "", telefoon: "", contactnummer: "", noodcontact: "", functie: "", status: "actief",
   startdatum: "", einddatum: "", uurloon: "", rijksregisternummer: "", adres: "",
 };
 
 export default function Werknemers() {
   const [search, setSearch] = useState("");
   const [selectedWerknemer, setSelectedWerknemer] = useState(null);
+  const [filters, setFilters] = useState({ type_overeenkomst: "", functie: "", werkregime: "", tewerkstellingsbreuk: "", barema_type: "", kostenplaats: "" });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -62,13 +63,21 @@ export default function Werknemers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["werknemers"] }),
   });
 
+  const handleFieldSave = async (id, data) => {
+    await base44.entities.Werknemer.update(id, data);
+    queryClient.invalidateQueries({ queryKey: ["werknemers"] });
+    setSelectedWerknemer((prev) => prev ? { ...prev, ...data } : prev);
+  };
+
   const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditId(null); };
 
   const openEdit = (w) => {
     setForm({
       voornaam: w.voornaam || "", achternaam: w.achternaam || "",
       overeenkomstnummer: w.overeenkomstnummer || "", externe_id: w.externe_id || "",
-      email: w.email || "", telefoon: w.telefoon || "", functie: w.functie || "",
+      email: w.email || "", telefoon: w.telefoon || "",
+      contactnummer: w.contactnummer || "", noodcontact: w.noodcontact || "",
+      functie: w.functie || "",
       status: w.status || "actief", startdatum: w.startdatum || "",
       einddatum: w.einddatum || "", uurloon: w.uurloon || "",
       rijksregisternummer: w.rijksregisternummer || "", adres: w.adres || "",
@@ -83,14 +92,19 @@ export default function Werknemers() {
     editId ? updateMut.mutate({ id: editId, data }) : createMut.mutate(data);
   };
 
+  const uniqueVals = (key) => [...new Set(werknemers.map((w) => w[key]).filter(Boolean))].sort();
+
   const filtered = werknemers.filter((w) => {
     const q = search.toLowerCase();
-    return (
+    const matchSearch = (
       (w.voornaam || "").toLowerCase().includes(q) ||
       (w.achternaam || "").toLowerCase().includes(q) ||
       (w.email || "").toLowerCase().includes(q) ||
-      (w.functie || "").toLowerCase().includes(q)
+      (w.functie || "").toLowerCase().includes(q) ||
+      (w.overeenkomstnummer || "").toLowerCase().includes(q)
     );
+    const matchFilters = Object.entries(filters).every(([k, v]) => !v || w[k] === v);
+    return matchSearch && matchFilters;
   });
 
   const statusColors = {
@@ -115,9 +129,25 @@ export default function Werknemers() {
         </div>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Zoeken..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input placeholder="Zoeken..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 w-56" />
+        </div>
+        {["type_overeenkomst", "functie", "werkregime", "tewerkstellingsbreuk", "barema_type", "kostenplaats"].map((key) => (
+          <Select key={key} value={filters[key] || "__all__"} onValueChange={(v) => setFilters((f) => ({ ...f, [key]: v === "__all__" ? "" : v }))}>
+            <SelectTrigger className="h-9 w-44 text-xs">
+              <SelectValue placeholder={key.replace(/_/g, " ")} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__all__">Alle {key.replace(/_/g, " ")}</SelectItem>
+              {uniqueVals(key).map((v) => <SelectItem key={v} value={v}>{v}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        ))}
+        {Object.values(filters).some(Boolean) && (
+          <Button variant="ghost" size="sm" onClick={() => setFilters({ type_overeenkomst: "", functie: "", werkregime: "", tewerkstellingsbreuk: "", barema_type: "", kostenplaats: "" })}>Filters wissen</Button>
+        )}
       </div>
 
       <Card className="overflow-hidden">
@@ -210,7 +240,7 @@ export default function Werknemers() {
         <WerknemerDetail
           werknemer={selectedWerknemer}
           onClose={() => setSelectedWerknemer(null)}
-          onEdit={() => { openEdit(selectedWerknemer); setSelectedWerknemer(null); }}
+          onSave={handleFieldSave}
         />
       )}
     </div>
