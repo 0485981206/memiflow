@@ -45,7 +45,7 @@ export default function PrestatieImport() {
   const { data: batches = [], isLoading: batchesLoading } = useQuery({
     queryKey: ["importbatches"],
     queryFn: () => base44.entities.PrestatieImportBatch.list("-created_date"),
-    refetchInterval: isProcessing ? 3000 : false,
+    refetchInterval: (data) => (data || []).some(b => b.status === "verwerken") ? 3000 : false,
   });
 
   const findWerknemer = (externeId, naam) => {
@@ -96,6 +96,13 @@ export default function PrestatieImport() {
       updateQueue(i, { status: STATUS.BEZIG });
 
       try {
+        // Create batch immediately so it shows up in the list
+        const batch = await base44.entities.PrestatieImportBatch.create({
+          bestandsnaam: file.name,
+          status: "verwerken",
+        });
+        queryClient.invalidateQueries({ queryKey: ["importbatches"] });
+
         // Upload file
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
 
@@ -106,14 +113,14 @@ export default function PrestatieImport() {
         const json = response.data;
         const records = json.data || [];
 
-        // Create batch in DB
-        const batch = await base44.entities.PrestatieImportBatch.create({
-          bestandsnaam: file.name,
+        // Update batch with results
+        await base44.entities.PrestatieImportBatch.update(batch.id, {
           bestand_url: file_url,
           status: "klaar_voor_review",
           aantal_prestaties: records.length,
           agent_samenvatting: `${records.length} records geladen uit ${file.name}`,
         });
+        queryClient.invalidateQueries({ queryKey: ["importbatches"] });
 
         // Save concept regels
         const conceptRegels = records.map(r => {
@@ -139,10 +146,8 @@ export default function PrestatieImport() {
           };
         });
 
-        // Bulk save concept regels
-        for (const regel of conceptRegels) {
-          await base44.entities.PrestatieConceptRegel.create(regel);
-        }
+        // Bulk save concept regels parallel
+        await Promise.all(conceptRegels.map(regel => base44.entities.PrestatieConceptRegel.create(regel)));
 
         updateQueue(i, { status: STATUS.KLAAR });
         toast.success(`✓ ${file.name} verwerkt — ${records.length} records opgeslagen`, { duration: 5000 });
