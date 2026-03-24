@@ -16,6 +16,50 @@ const statusColors = {
   ziekteverlof: "bg-chart-4/10 text-chart-4",
 };
 
+function EditableStatusField({ value, onSave }) {
+  const [editing, setEditing] = useState(false);
+  const [val, setVal] = useState(value || "actief");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => { setVal(value || "actief"); }, [value]);
+
+  const handleChange = async (newVal) => {
+    setVal(newVal);
+    setSaving(true);
+    await onSave("status", newVal);
+    setSaving(false);
+    setEditing(false);
+  };
+
+  if (!editing) {
+    return (
+      <div
+        className="py-2 border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/30 rounded px-2 -mx-2 group"
+        onClick={() => setEditing(true)}
+      >
+        <p className="text-xs text-muted-foreground mb-0.5">Status</p>
+        <p className="text-sm font-medium text-foreground group-hover:text-primary transition-colors">
+          {saving ? <Loader2 className="w-3 h-3 animate-spin inline" /> : (value || "actief")}
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="py-2 border-b border-border/50 last:border-0 px-2 -mx-2">
+      <p className="text-xs text-muted-foreground mb-1">Status</p>
+      <Select value={val} onValueChange={handleChange}>
+        <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value="actief">Actief</SelectItem>
+          <SelectItem value="inactief">Inactief</SelectItem>
+          <SelectItem value="ziekteverlof">Ziekteverlof</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
 function EditableField({ label, value, fieldKey, onSave, type = "text", hidden }) {
   if (hidden) return null;
   const [editing, setEditing] = useState(false);
@@ -129,11 +173,13 @@ export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }
             <EditableField label="Voornaam" value={f("voornaam")} fieldKey="voornaam" onSave={handleSave} hidden={!matchesSearch("Voornaam", f("voornaam"))} />
             <EditableField label="Achternaam" value={f("achternaam")} fieldKey="achternaam" onSave={handleSave} hidden={!matchesSearch("Achternaam", f("achternaam"))} />
             <EditableField label="Overeenkomstnummer" value={f("overeenkomstnummer")} fieldKey="overeenkomstnummer" onSave={handleSave} hidden={!matchesSearch("Overeenkomstnummer", f("overeenkomstnummer"))} />
+            <EditableField label="Extern ID" value={f("externe_id")} fieldKey="externe_id" onSave={handleSave} hidden={!matchesSearch("Extern ID", f("externe_id"))} />
             <EditableField label="Rijksregisternummer" value={f("rijksregisternummer")} fieldKey="rijksregisternummer" onSave={handleSave} hidden={!matchesSearch("Rijksregisternummer", f("rijksregisternummer"))} />
             <EditableField label="Geboortedatum" value={f("geboortedatum")} fieldKey="geboortedatum" onSave={handleSave} type="date" hidden={!matchesSearch("Geboortedatum", f("geboortedatum"))} />
             <EditableField label="Geslacht" value={f("geslacht")} fieldKey="geslacht" onSave={handleSave} hidden={!matchesSearch("Geslacht", f("geslacht"))} />
             <EditableField label="Nationaliteit" value={f("nationaliteit")} fieldKey="nationaliteit" onSave={handleSave} hidden={!matchesSearch("Nationaliteit", f("nationaliteit"))} />
             <EditableField label="Officiële taal" value={f("officiele_taal")} fieldKey="officiele_taal" onSave={handleSave} hidden={!matchesSearch("Officiële taal", f("officiele_taal"))} />
+            {matchesSearch("Status", f("status")) && <EditableStatusField value={f("status")} onSave={handleSave} />}
           </Section>
 
           <Section title="Contact">

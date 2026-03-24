@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Upload, UserX } from "lucide-react";
+import { Plus, Search, Upload, UserX } from "lucide-react";
 import WerknemerDetail from "@/components/werknemers/WerknemerDetail";
 import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDialog";
 
@@ -34,7 +34,6 @@ export default function Werknemers() {
   const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [editId, setEditId] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -48,14 +47,9 @@ export default function Werknemers() {
     queryFn: () => base44.entities.Werknemer.list("-created_date"),
   });
 
-  const createMut = useMutation({
-    mutationFn: (data) => base44.entities.Werknemer.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["werknemers"] }); closeDialog(); },
-  });
-
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Werknemer.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["werknemers"] }); closeDialog(); },
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["werknemers"] }),
   });
 
   const deleteMut = useMutation({
@@ -69,27 +63,14 @@ export default function Werknemers() {
     setSelectedWerknemer((prev) => prev ? { ...prev, ...data } : prev);
   };
 
-  const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditId(null); };
-
-  const openEdit = (w) => {
-    setForm({
-      voornaam: w.voornaam || "", achternaam: w.achternaam || "",
-      overeenkomstnummer: w.overeenkomstnummer || "", externe_id: w.externe_id || "",
-      email: w.email || "", telefoon: w.telefoon || "",
-      contactnummer: w.contactnummer || "", noodcontact: w.noodcontact || "",
-      functie: w.functie || "",
-      status: w.status || "actief", startdatum: w.startdatum || "",
-      einddatum: w.einddatum || "", uurloon: w.uurloon || "",
-      rijksregisternummer: w.rijksregisternummer || "", adres: w.adres || "",
-    });
-    setEditId(w.id);
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = (e) => {
+  const handleCreate = (e) => {
     e.preventDefault();
-    const data = { ...form, uurloon: form.uurloon ? Number(form.uurloon) : undefined };
-    editId ? updateMut.mutate({ id: editId, data }) : createMut.mutate(data);
+    base44.entities.Werknemer.create({ ...form, uurloon: form.uurloon ? Number(form.uurloon) : undefined })
+      .then(() => {
+        queryClient.invalidateQueries({ queryKey: ["werknemers"] });
+        setDialogOpen(false);
+        setForm(emptyForm);
+      });
   };
 
   const uniqueVals = (key) => [...new Set(werknemers.map((w) => w[key]).filter(Boolean))].sort();
@@ -160,7 +141,7 @@ export default function Werknemers() {
               <TableHead className="hidden md:table-cell">E-mail</TableHead>
               <TableHead className="hidden md:table-cell">Functie</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead className="w-24">Acties</TableHead>
+              <TableHead className="w-20">Acties</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -179,14 +160,11 @@ export default function Werknemers() {
                   <Badge className={statusColors[w.status] || ""} variant="secondary">{w.status}</Badge>
                 </TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()}>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button>
-                    {w.status !== "inactief" && (
-                      <Button size="sm" variant="outline" className="text-xs text-muted-foreground h-8 px-2" onClick={() => updateMut.mutate({ id: w.id, data: { status: "inactief" } })}>
-                        <UserX className="w-3 h-3 mr-1" />Niet actief
-                      </Button>
-                    )}
-                  </div>
+                  {w.status !== "inactief" && (
+                    <Button size="sm" variant="outline" className="text-xs text-muted-foreground h-8 px-2" onClick={() => updateMut.mutate({ id: w.id, data: { status: "inactief" } })}>
+                      <UserX className="w-3 h-3 mr-1" />Niet actief
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -194,12 +172,13 @@ export default function Werknemers() {
         </Table>
       </Card>
 
-      <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
+      {/* Nieuwe werknemer dialog */}
+      <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { setDialogOpen(false); setForm(emptyForm); } }}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editId ? "Werknemer bewerken" : "Nieuwe werknemer"}</DialogTitle>
+            <DialogTitle>Nieuwe werknemer</DialogTitle>
           </DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Overeenkomstnummer</Label><Input value={form.overeenkomstnummer} onChange={(e) => setForm({ ...form, overeenkomstnummer: e.target.value })} /></div>
               <div><Label>Extern ID</Label><Input value={form.externe_id} onChange={(e) => setForm({ ...form, externe_id: e.target.value })} /></div>
@@ -233,12 +212,13 @@ export default function Werknemers() {
             <div><Label>Rijksregisternummer</Label><Input value={form.rijksregisternummer} onChange={(e) => setForm({ ...form, rijksregisternummer: e.target.value })} /></div>
             <div><Label>Adres</Label><Input value={form.adres} onChange={(e) => setForm({ ...form, adres: e.target.value })} /></div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={closeDialog}>Annuleren</Button>
-              <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>{editId ? "Opslaan" : "Toevoegen"}</Button>
+              <Button type="button" variant="outline" onClick={() => { setDialogOpen(false); setForm(emptyForm); }}>Annuleren</Button>
+              <Button type="submit">Toevoegen</Button>
             </div>
           </form>
         </DialogContent>
       </Dialog>
+
       <UploadWerknemersDialog open={uploadOpen} onClose={() => setUploadOpen(false)} />
       {selectedWerknemer && (
         <WerknemerDetail
