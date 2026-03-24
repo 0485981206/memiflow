@@ -34,18 +34,43 @@ function parseCSV(text) {
 }
 
 function rowToWerknemer(row) {
+  // Handle BOM on first column
   const overeenkomstnummer = row["overeenkomstnummer"] || row["\uFEFFovereenkomstnummer"] || "";
-  const adresDelen = [row["Straat"], row["Huisnummer"], row["Postcode"], row["Gemeente"]].filter(Boolean);
-  const adres = adresDelen.length ? `${row["Straat"] || ""} ${row["Huisnummer"] || ""}, ${row["Postcode"] || ""} ${row["Gemeente"] || ""}`.trim() : "";
+  const adres = [row["Straat"], row["Huisnummer"]].filter(Boolean).join(" ")
+    + (row["Postcode"] || row["Gemeente"] ? ", " + [row["Postcode"], row["Gemeente"]].filter(Boolean).join(" ") : "");
 
   return {
     overeenkomstnummer,
     voornaam: row["Voornaam"] || "",
     achternaam: row["familienaam"] || "",
     rijksregisternummer: row["Rijksregisternummer"] || "",
-    startdatum: parseDate(row["Datum in dienst"]),
-    functie: row["Functie"] || "",
+    geboortedatum: parseDate(row["Geboortedatum"]),
+    geslacht: row["Geslacht"] || "",
+    nationaliteit: row["Nationaliteit"] || "",
+    officiele_taal: row["Officiële taal"] || "",
     adres,
+    land: row["Land"] || "",
+    burgerlijke_staat: row["Burgerlijke staat"] || "",
+    aantal_kinderen_ten_laste: row["Aantal kinderen ten laste"] || "",
+    personen_65_plus_ten_laste: row["Personen 65+ ten laste"] || "",
+    persoon_met_handicap: row["Persoon met handicap"] || "",
+    startdatum: parseDate(row["Datum in dienst"]),
+    type_overeenkomst: row["Type overeenkomst"] || "",
+    werknemerstypering: row["Werknemerstypering"] || "",
+    paritair_comite: row["Paritair Comité"] || "",
+    functie: row["Functie"] || "",
+    type_werktijd: row["Type werktijd"] || "",
+    werkregime: row["Werkregime"] || "",
+    tewerkstellingsbreuk: row["Tewerkstellingsbreuk"] || "",
+    berekeningswijze: row["Berekeningswijze"] || "",
+    barema_type: row["Barema type"] || "",
+    barema_code: row["Barema code"] || "",
+    looncode_411: row["Looncode 411 (Kledij)"] || "",
+    looncode_591: row["Looncode 591 (Maaltijdcheques)"] || "",
+    looncode_691: row["Looncode 691 (Werkgeversbijdr. MC)"] || "",
+    looncode_104: row["Looncode 104 (nachtploeg)"] || "",
+    sturingsgroep: row["Sturingsgroep"] || "",
+    kostenplaats: row["Kostenplaats"] || "",
     status: "actief",
   };
 }
