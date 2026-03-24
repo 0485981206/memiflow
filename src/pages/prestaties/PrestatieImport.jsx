@@ -323,7 +323,7 @@ export default function PrestatieImport() {
         )}
       </div>
 
-      <AlertDialog open={!!deleteBatchId}>
+      <AlertDialog open={!!deleteBatchId} onOpenChange={(open) => !open && setDeleteBatchId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Batch verwijderen?</AlertDialogTitle>
@@ -332,7 +332,7 @@ export default function PrestatieImport() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setDeleteBatchId(null)}>Annuleren</AlertDialogCancel>
             <AlertDialogAction className="bg-destructive hover:bg-destructive/90" onClick={handleDeleteBatch}>Ja, verwijderen</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
