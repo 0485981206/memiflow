@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { getUISetting } from "@/lib/ui-settings";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -27,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Upload } from "lucide-react";
 
 const emptyForm = {
   voornaam: "",
@@ -47,6 +49,13 @@ const emptyForm = {
 
 export default function Werknemers() {
   const [search, setSearch] = useState("");
+  const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
+
+  useEffect(() => {
+    const handler = () => setShowUpload(getUISetting("showUploadWerknemers", true));
+    window.addEventListener("ui-settings-changed", handler);
+    return () => window.removeEventListener("ui-settings-changed", handler);
+  }, []);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const [editId, setEditId] = useState(null);
@@ -134,9 +143,16 @@ export default function Werknemers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Werknemers</h1>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Werknemer toevoegen
-        </Button>
+        <div className="flex gap-2">
+          {showUpload && (
+            <Button variant="outline" className="gap-2" onClick={() => { const inp = document.createElement('input'); inp.type='file'; inp.accept='.csv,.xlsx'; inp.click(); }}>
+              <Upload className="w-4 h-4" /> Werknemers uploaden
+            </Button>
+          )}
+          <Button onClick={() => setDialogOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> Werknemer toevoegen
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
