@@ -12,10 +12,18 @@ export default function Instellingen() {
   const [showUploadWerknemers, setShowUploadWerknemers] = useState(
     () => getUISetting("showUploadWerknemers", true)
   );
+  const [showExportWerknemers, setShowExportWerknemers] = useState(
+    () => getUISetting("showExportWerknemers", true)
+  );
 
   const handleToggle = (value) => {
     setShowUploadWerknemers(value);
     setUISetting("showUploadWerknemers", value);
+  };
+
+  const handleExportToggle = (value) => {
+    setShowExportWerknemers(value);
+    setUISetting("showExportWerknemers", value);
   };
 
   return (
@@ -53,6 +61,13 @@ export default function Instellingen() {
               <p className="text-sm text-muted-foreground">Pas de zichtbaarheid van knoppen en elementen aan.</p>
             </div>
             <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <Label className="font-medium">Knop "Export personeel"</Label>
+                  <p className="text-sm text-muted-foreground mt-0.5">Toon of verberg de export-knop op de werknemerspagina.</p>
+                </div>
+                <Switch checked={showExportWerknemers} onCheckedChange={handleExportToggle} />
+              </div>
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <Label className="font-medium">Knop "Werknemers uploaden"</Label>

@@ -16,7 +16,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Upload, UserX } from "lucide-react";
+import { Plus, Search, Upload, UserX, Download } from "lucide-react";
 import WerknemerDetail from "@/components/werknemers/WerknemerDetail";
 import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDialog";
 import WerknemerWizard from "@/components/werknemers/WerknemerWizard";
@@ -33,12 +33,16 @@ export default function Werknemers() {
   const [filters, setFilters] = useState({ type_overeenkomst: "", functie: "", werkregime: "", tewerkstellingsbreuk: "", barema_type: "", kostenplaats: "" });
   const [uploadOpen, setUploadOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
+  const [showExport, setShowExport] = useState(() => getUISetting("showExportWerknemers", true));
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    const handler = () => setShowUpload(getUISetting("showUploadWerknemers", true));
+    const handler = () => {
+      setShowUpload(getUISetting("showUploadWerknemers", true));
+      setShowExport(getUISetting("showExportWerknemers", true));
+    };
     window.addEventListener("ui-settings-changed", handler);
     return () => window.removeEventListener("ui-settings-changed", handler);
   }, []);
@@ -102,6 +106,23 @@ export default function Werknemers() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold">Werknemers</h1>
         <div className="flex gap-2">
+          {showExport && (
+            <Button variant="outline" className="gap-2" onClick={() => {
+              const headers = ["Voornaam","Achternaam","Overeenkomstnummer","Extern ID","E-mail","Telefoon","Functie","Status","In dienst sinds","Kostenplaats"];
+              const rows = filtered.map((w) => [
+                w.voornaam, w.achternaam, w.overeenkomstnummer, w.externe_id,
+                w.email, w.telefoon, w.functie, w.status, w.startdatum, w.kostenplaats
+              ].map((v) => `"${(v || "").toString().replace(/"/g, '""')}"`).join(","));
+              const csv = [headers.join(","), ...rows].join("\n");
+              const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement("a");
+              a.href = url; a.download = "werknemers.csv"; a.click();
+              URL.revokeObjectURL(url);
+            }}>
+              <Download className="w-4 h-4" /> Export personeel
+            </Button>
+          )}
           {showUpload && (
             <Button variant="outline" className="gap-2" onClick={() => setUploadOpen(true)}>
               <Upload className="w-4 h-4" /> Werknemers uploaden
