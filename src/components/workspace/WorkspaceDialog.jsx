@@ -23,13 +23,13 @@ const PAGES = [
   { label: "Acerta Kalender", value: "/acerta/kalender" },
 ];
 
-export default function WorkspaceDialog({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', icon: 'grid', page: '/' });
+export default function WorkspaceDialog({ onClose, onSave, initialData }) {
+  const [form, setForm] = useState(initialData || { name: '', icon: 'grid', page: '/' });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (form.name.trim()) {
-      onSave(form);
+      onSave({ name: form.name, icon: form.icon, page: form.page });
     }
   };
 
@@ -37,7 +37,7 @@ export default function WorkspaceDialog({ onClose, onSave }) {
     <Dialog open onOpenChange={onClose}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Workspace aanmaken</DialogTitle>
+          <DialogTitle>{initialData ? 'Workspace bewerken' : 'Workspace aanmaken'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>

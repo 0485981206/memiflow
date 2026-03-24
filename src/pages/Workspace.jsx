@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
 import { Grid } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
 
 export default function Workspace() {
@@ -40,14 +41,16 @@ export default function Workspace() {
             const iconDef = AVAILABLE_ICONS.find(i => i.id === ws.icon);
             const IconComponent = iconDef?.component;
             return (
-              <Card key={ws.id} className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all cursor-pointer">
-                <div className="p-3 bg-muted rounded-lg">
-                  {IconComponent && <IconComponent className="w-8 h-8 text-accent" />}
-                </div>
-                <div className="text-center flex-1">
-                  <p className="font-medium text-sm line-clamp-2">{ws.name}</p>
-                </div>
-              </Card>
+              <Link to={ws.page} key={ws.id}>
+                <Card className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all cursor-pointer">
+                  <div className="p-3 bg-muted rounded-lg">
+                    {IconComponent && <IconComponent className="w-8 h-8 text-accent" />}
+                  </div>
+                  <div className="text-center flex-1">
+                    <p className="font-medium text-sm line-clamp-2">{ws.name}</p>
+                  </div>
+                </Card>
+              </Link>
             );
           })}
         </div>
