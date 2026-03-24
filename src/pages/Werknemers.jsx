@@ -1,4 +1,3 @@
-import React, { useState } from "react";
 import React, { useState, useEffect } from "react";
 import { getUISetting } from "@/lib/ui-settings";
 import { base44 } from "@/api/base44Client";
@@ -8,58 +7,36 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, Upload } from "lucide-react";
 
 const emptyForm = {
-  voornaam: "",
-  achternaam: "",
-  overeenkomstnummer: "",
-  externe_id: "",
-  email: "",
-  telefoon: "",
-  functie: "",
-  status: "actief",
-  startdatum: "",
-  einddatum: "",
-  uurloon: "",
-  rijksregisternummer: "",
-  adres: "",
+  voornaam: "", achternaam: "", overeenkomstnummer: "", externe_id: "",
+  email: "", telefoon: "", functie: "", status: "actief",
+  startdatum: "", einddatum: "", uurloon: "", rijksregisternummer: "", adres: "",
 };
 
 export default function Werknemers() {
   const [search, setSearch] = useState("");
   const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [editId, setEditId] = useState(null);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const handler = () => setShowUpload(getUISetting("showUploadWerknemers", true));
     window.addEventListener("ui-settings-changed", handler);
     return () => window.removeEventListener("ui-settings-changed", handler);
   }, []);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm);
-  const [editId, setEditId] = useState(null);
-  const queryClient = useQueryClient();
 
   const { data: werknemers = [], isLoading } = useQuery({
     queryKey: ["werknemers"],
@@ -68,18 +45,12 @@ export default function Werknemers() {
 
   const createMut = useMutation({
     mutationFn: (data) => base44.entities.Werknemer.create(data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["werknemers"] });
-      closeDialog();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["werknemers"] }); closeDialog(); },
   });
 
   const updateMut = useMutation({
     mutationFn: ({ id, data }) => base44.entities.Werknemer.update(id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["werknemers"] });
-      closeDialog();
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["werknemers"] }); closeDialog(); },
   });
 
   const deleteMut = useMutation({
@@ -87,27 +58,16 @@ export default function Werknemers() {
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["werknemers"] }),
   });
 
-  const closeDialog = () => {
-    setDialogOpen(false);
-    setForm(emptyForm);
-    setEditId(null);
-  };
+  const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditId(null); };
 
   const openEdit = (w) => {
     setForm({
-      voornaam: w.voornaam || "",
-      achternaam: w.achternaam || "",
-      overeenkomstnummer: w.overeenkomstnummer || "",
-      externe_id: w.externe_id || "",
-      email: w.email || "",
-      telefoon: w.telefoon || "",
-      functie: w.functie || "",
-      status: w.status || "actief",
-      startdatum: w.startdatum || "",
-      einddatum: w.einddatum || "",
-      uurloon: w.uurloon || "",
-      rijksregisternummer: w.rijksregisternummer || "",
-      adres: w.adres || "",
+      voornaam: w.voornaam || "", achternaam: w.achternaam || "",
+      overeenkomstnummer: w.overeenkomstnummer || "", externe_id: w.externe_id || "",
+      email: w.email || "", telefoon: w.telefoon || "", functie: w.functie || "",
+      status: w.status || "actief", startdatum: w.startdatum || "",
+      einddatum: w.einddatum || "", uurloon: w.uurloon || "",
+      rijksregisternummer: w.rijksregisternummer || "", adres: w.adres || "",
     });
     setEditId(w.id);
     setDialogOpen(true);
@@ -116,11 +76,7 @@ export default function Werknemers() {
   const handleSubmit = (e) => {
     e.preventDefault();
     const data = { ...form, uurloon: form.uurloon ? Number(form.uurloon) : undefined };
-    if (editId) {
-      updateMut.mutate({ id: editId, data });
-    } else {
-      createMut.mutate(data);
-    }
+    editId ? updateMut.mutate({ id: editId, data }) : createMut.mutate(data);
   };
 
   const filtered = werknemers.filter((w) => {
@@ -157,12 +113,7 @@ export default function Werknemers() {
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input
-          placeholder="Zoeken..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-9"
-        />
+        <Input placeholder="Zoeken..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
       <Card className="overflow-hidden">
@@ -180,58 +131,27 @@ export default function Werknemers() {
           </TableHeader>
           <TableBody>
             {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Laden...
-                </TableCell>
-              </TableRow>
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Laden...</TableCell></TableRow>
             ) : filtered.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                  Geen werknemers gevonden
+              <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Geen werknemers gevonden</TableCell></TableRow>
+            ) : filtered.map((w) => (
+              <TableRow key={w.id} className="hover:bg-muted/30">
+                <TableCell className="font-medium">{w.voornaam} {w.achternaam}</TableCell>
+                <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">{w.overeenkomstnummer}</TableCell>
+                <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">{w.externe_id}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{w.email}</TableCell>
+                <TableCell className="hidden md:table-cell text-muted-foreground">{w.functie}</TableCell>
+                <TableCell>
+                  <Badge className={statusColors[w.status] || ""} variant="secondary">{w.status}</Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex gap-1">
+                    <Button size="icon" variant="ghost" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button>
+                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMut.mutate(w.id)}><Trash2 className="w-4 h-4" /></Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            ) : (
-              filtered.map((w) => (
-                <TableRow key={w.id} className="hover:bg-muted/30">
-                  <TableCell className="font-medium">
-                    {w.voornaam} {w.achternaam}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">
-                    {w.overeenkomstnummer}
-                  </TableCell>
-                  <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">
-                    {w.externe_id}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {w.email}
-                  </TableCell>
-                  <TableCell className="hidden md:table-cell text-muted-foreground">
-                    {w.functie}
-                  </TableCell>
-                  <TableCell>
-                    <Badge className={statusColors[w.status] || ""} variant="secondary">
-                      {w.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => openEdit(w)}>
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive"
-                        onClick={() => deleteMut.mutate(w.id)}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
-            )}
+            ))}
           </TableBody>
         </Table>
       </Card>
@@ -239,70 +159,23 @@ export default function Werknemers() {
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              {editId ? "Werknemer bewerken" : "Nieuwe werknemer"}
-            </DialogTitle>
+            <DialogTitle>{editId ? "Werknemer bewerken" : "Nieuwe werknemer"}</DialogTitle>
           </DialogHeader>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Overeenkomstnummer</Label>
-                <Input
-                  value={form.overeenkomstnummer}
-                  onChange={(e) => setForm({ ...form, overeenkomstnummer: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Extern ID</Label>
-                <Input
-                  value={form.externe_id}
-                  onChange={(e) => setForm({ ...form, externe_id: e.target.value })}
-                />
-              </div>
+              <div><Label>Overeenkomstnummer</Label><Input value={form.overeenkomstnummer} onChange={(e) => setForm({ ...form, overeenkomstnummer: e.target.value })} /></div>
+              <div><Label>Extern ID</Label><Input value={form.externe_id} onChange={(e) => setForm({ ...form, externe_id: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Voornaam *</Label>
-                <Input
-                  required
-                  value={form.voornaam}
-                  onChange={(e) => setForm({ ...form, voornaam: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Achternaam *</Label>
-                <Input
-                  required
-                  value={form.achternaam}
-                  onChange={(e) => setForm({ ...form, achternaam: e.target.value })}
-                />
-              </div>
+              <div><Label>Voornaam *</Label><Input required value={form.voornaam} onChange={(e) => setForm({ ...form, voornaam: e.target.value })} /></div>
+              <div><Label>Achternaam *</Label><Input required value={form.achternaam} onChange={(e) => setForm({ ...form, achternaam: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>E-mail</Label>
-                <Input
-                  type="email"
-                  value={form.email}
-                  onChange={(e) => setForm({ ...form, email: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Telefoon</Label>
-                <Input
-                  value={form.telefoon}
-                  onChange={(e) => setForm({ ...form, telefoon: e.target.value })}
-                />
-              </div>
+              <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
+              <div><Label>Telefoon</Label><Input value={form.telefoon} onChange={(e) => setForm({ ...form, telefoon: e.target.value })} /></div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Functie</Label>
-                <Input
-                  value={form.functie}
-                  onChange={(e) => setForm({ ...form, functie: e.target.value })}
-                />
-              </div>
+              <div><Label>Functie</Label><Input value={form.functie} onChange={(e) => setForm({ ...form, functie: e.target.value })} /></div>
               <div>
                 <Label>Status</Label>
                 <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
@@ -316,45 +189,14 @@ export default function Werknemers() {
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Startdatum</Label>
-                <Input
-                  type="date"
-                  value={form.startdatum}
-                  onChange={(e) => setForm({ ...form, startdatum: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Uurloon (€)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={form.uurloon}
-                  onChange={(e) => setForm({ ...form, uurloon: e.target.value })}
-                />
-              </div>
+              <div><Label>Startdatum</Label><Input type="date" value={form.startdatum} onChange={(e) => setForm({ ...form, startdatum: e.target.value })} /></div>
+              <div><Label>Uurloon (€)</Label><Input type="number" step="0.01" value={form.uurloon} onChange={(e) => setForm({ ...form, uurloon: e.target.value })} /></div>
             </div>
-            <div>
-              <Label>Rijksregisternummer</Label>
-              <Input
-                value={form.rijksregisternummer}
-                onChange={(e) => setForm({ ...form, rijksregisternummer: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label>Adres</Label>
-              <Input
-                value={form.adres}
-                onChange={(e) => setForm({ ...form, adres: e.target.value })}
-              />
-            </div>
+            <div><Label>Rijksregisternummer</Label><Input value={form.rijksregisternummer} onChange={(e) => setForm({ ...form, rijksregisternummer: e.target.value })} /></div>
+            <div><Label>Adres</Label><Input value={form.adres} onChange={(e) => setForm({ ...form, adres: e.target.value })} /></div>
             <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={closeDialog}>
-                Annuleren
-              </Button>
-              <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>
-                {editId ? "Opslaan" : "Toevoegen"}
-              </Button>
+              <Button type="button" variant="outline" onClick={closeDialog}>Annuleren</Button>
+              <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>{editId ? "Opslaan" : "Toevoegen"}</Button>
             </div>
           </form>
         </DialogContent>
