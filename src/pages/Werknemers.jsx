@@ -17,6 +17,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Plus, Search, Pencil, Trash2, Upload } from "lucide-react";
+import WerknemerDetail from "@/components/werknemers/WerknemerDetail";
 import UploadWerknemersDialog from "@/components/werknemers/UploadWerknemersDialog";
 
 const emptyForm = {
@@ -27,6 +28,7 @@ const emptyForm = {
 
 export default function Werknemers() {
   const [search, setSearch] = useState("");
+  const [selectedWerknemer, setSelectedWerknemer] = useState(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [showUpload, setShowUpload] = useState(() => getUISetting("showUploadWerknemers", true));
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -137,7 +139,7 @@ export default function Werknemers() {
             ) : filtered.length === 0 ? (
               <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Geen werknemers gevonden</TableCell></TableRow>
             ) : filtered.map((w) => (
-              <TableRow key={w.id} className="hover:bg-muted/30">
+              <TableRow key={w.id} className="hover:bg-muted/30 cursor-pointer" onClick={() => setSelectedWerknemer(w)}>
                 <TableCell className="font-medium">{w.voornaam} {w.achternaam}</TableCell>
                 <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">{w.overeenkomstnummer}</TableCell>
                 <TableCell className="hidden lg:table-cell text-muted-foreground font-mono text-xs">{w.externe_id}</TableCell>
@@ -146,7 +148,7 @@ export default function Werknemers() {
                 <TableCell>
                   <Badge className={statusColors[w.status] || ""} variant="secondary">{w.status}</Badge>
                 </TableCell>
-                <TableCell>
+                <TableCell onClick={(e) => e.stopPropagation()}>
                   <div className="flex gap-1">
                     <Button size="icon" variant="ghost" onClick={() => openEdit(w)}><Pencil className="w-4 h-4" /></Button>
                     <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMut.mutate(w.id)}><Trash2 className="w-4 h-4" /></Button>
@@ -204,6 +206,13 @@ export default function Werknemers() {
         </DialogContent>
       </Dialog>
       <UploadWerknemersDialog open={uploadOpen} onClose={() => setUploadOpen(false)} />
+      {selectedWerknemer && (
+        <WerknemerDetail
+          werknemer={selectedWerknemer}
+          onClose={() => setSelectedWerknemer(null)}
+          onEdit={() => { openEdit(selectedWerknemer); setSelectedWerknemer(null); }}
+        />
+      )}
     </div>
   );
 }
