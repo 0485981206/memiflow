@@ -1,197 +1,319 @@
 import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import { Upload, FileText, Loader2, Building2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import ImportBatchLijst from "../../components/prestaties/ImportBatchLijst";
-import ReviewOffCanvas from "../../components/prestaties/ReviewOffCanvas";
-import { extractTextFromPdf, parsePrestatiesFromText } from "@/lib/ocr-processor";
+import { FileText, Loader2, Upload, Download, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+
+const API_BASE = "http://31.97.176.25:8000/api/parse";
+
+function formatEntries(entries) {
+  if (!entries || entries.length === 0) return "—";
+  return entries.map(e => `${e.in || "?"}-${e.out || "?"}`).join(" | ");
+}
 
 export default function PrestatieImport() {
-  const [isUploading, setIsUploading] = useState(false);
-  const [selectedBatch, setSelectedBatch] = useState(null);
-  const [selectedEindklantId, setSelectedEindklantId] = useState("");
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [result, setResult] = useState(null);
+  const [saveResult, setSaveResult] = useState(null);
+  const [werknemerMap, setWerknemerMap] = useState({});
   const fileInputRef = useRef(null);
-  const queryClient = useQueryClient();
 
-  const { data: batches = [] } = useQuery({
-    queryKey: ["importbatches"],
-    queryFn: () => base44.entities.PrestatieImportBatch.list("-created_date", 50),
-    refetchInterval: 5000,
+  const { data: werknemers = [] } = useQuery({
+    queryKey: ["werknemers"],
+    queryFn: () => base44.entities.Werknemer.list("-created_date"),
   });
 
-  const { data: eindklanten = [] } = useQuery({
-    queryKey: ["eindklanten"],
-    queryFn: () => base44.entities.Eindklant.filter({ status: "actief" }),
-  });
-
-  const selectedEindklant = eindklanten.find(k => k.id === selectedEindklantId);
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploading(true);
-
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-
-    // Extract text via OCR
-    let ocrText = "";
-    try {
-      ocrText = await extractTextFromPdf(file);
-    } catch (err) {
-      console.error("OCR failed:", err);
+  const findWerknemer = (externeId, naam) => {
+    if (externeId) {
+      const match = werknemers.find(w => w.externe_id === String(externeId));
+      if (match) return match;
     }
-
-    const batch = await base44.entities.PrestatieImportBatch.create({
-      bestandsnaam: file.name,
-      bestand_url: file_url,
-      eindklant_naam: selectedEindklant?.naam || "",
-      status: "verwerken",
-    });
-
-    const conversation = await base44.agents.createConversation({
-      agent_name: "prestatie_import",
-    });
-
-    await base44.entities.PrestatieImportBatch.update(batch.id, {
-      conversation_id: conversation.id,
-    });
-
-    // Bouw het bericht op met OCR tekst en klant-specifieke instructies
-    let bericht = `Verwerk de bijgevoegde prestatie-PDF en maak concept-regels aan. batch_id: ${batch.id}`;
-    if (ocrText) {
-      bericht += `\n\n=== OCR GEËXTRAHEERDE TEKST ===\n${ocrText}\n=== EINDE OCR ===`;
+    if (naam) {
+      const lower = naam.toLowerCase();
+      const parts = lower.split(/\s+/);
+      return werknemers.find(w => {
+        const full = `${w.voornaam || ""} ${w.achternaam || ""}`.toLowerCase();
+        const fullRev = `${w.achternaam || ""} ${w.voornaam || ""}`.toLowerCase();
+        return parts.every(p => full.includes(p) || fullRev.includes(p));
+      });
     }
-    if (selectedEindklant) {
-      bericht += `\nEindklant: ${selectedEindklant.naam} (id: ${selectedEindklant.id})`;
-      if (selectedEindklant.pdf_instructies) {
-        bericht += `\n\nKlant-specifieke instructies:\n${selectedEindklant.pdf_instructies}`;
+    return null;
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+    setResult(null);
+    setSaveResult(null);
+  };
+
+  const handleVerwerk = async () => {
+    if (selectedFiles.length === 0) return;
+    setIsProcessing(true);
+    setResult(null);
+    setSaveResult(null);
+
+    const allData = [];
+    let totalHours = 0;
+    const allEmployees = new Set();
+
+    for (const file of selectedFiles) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`${API_BASE}?format=json&active_only=true`, {
+        method: "POST",
+        body: formData,
+      });
+      const json = await response.json();
+      if (json.data) {
+        allData.push(...json.data);
+        json.data.forEach(r => {
+          allEmployees.add(r.employee_name);
+          totalHours += r.total_hours || 0;
+        });
       }
     }
 
-    await base44.agents.addMessage(conversation, {
-      role: "user",
-      content: bericht,
-      file_urls: [file_url],
+    // Build werknemer match map
+    const map = {};
+    allData.forEach(r => {
+      const key = r.externe_id || r.employee_name;
+      if (!(key in map)) {
+        map[key] = findWerknemer(r.externe_id, r.employee_name);
+      }
     });
+    setWerknemerMap(map);
 
-    queryClient.invalidateQueries({ queryKey: ["importbatches"] });
-    setIsUploading(false);
-    e.target.value = "";
+    setResult({
+      data: allData,
+      unique_employees: allEmployees.size,
+      total_records: allData.length,
+      total_hours: Math.round(totalHours * 100) / 100,
+    });
+    setIsProcessing(false);
   };
 
-  const readyCount = batches.filter(b => b.status === "klaar_voor_review").length;
+  const handleOpslaan = async () => {
+    if (!result) return;
+    setIsSaving(true);
+    setSaveResult(null);
+
+    let opgeslagen = 0;
+    let overgeslagen = 0;
+    let updates = 0;
+
+    for (const record of result.data) {
+      const key = record.externe_id || record.employee_name;
+      const werknemer = werknemerMap[key];
+      if (!werknemer) { overgeslagen++; continue; }
+
+      const maand = record.date ? record.date.substring(0, 7) : "";
+      const payload = {
+        werknemer_id: werknemer.id,
+        werknemer_naam: `${werknemer.voornaam || ""} ${werknemer.achternaam || ""}`.trim(),
+        datum: record.date,
+        dag: record.day_name || "",
+        bron: record.source || "",
+        externe_id: record.externe_id || "",
+        firma: record.firma || "",
+        dagschema: record.dagschema || "",
+        totaal_uren: record.total_hours || 0,
+        maand,
+        in_1: record.entries?.[0]?.in || "", uit_1: record.entries?.[0]?.out || "",
+        in_2: record.entries?.[1]?.in || "", uit_2: record.entries?.[1]?.out || "",
+        in_3: record.entries?.[2]?.in || "", uit_3: record.entries?.[2]?.out || "",
+        in_4: record.entries?.[3]?.in || "", uit_4: record.entries?.[3]?.out || "",
+        in_5: record.entries?.[4]?.in || "", uit_5: record.entries?.[4]?.out || "",
+        in_6: record.entries?.[5]?.in || "", uit_6: record.entries?.[5]?.out || "",
+      };
+
+      // Check of er al een record bestaat voor werknemer + datum
+      const existing = await base44.entities.Prestatie.filter({
+        werknemer_id: werknemer.id,
+        datum: record.date,
+      });
+
+      if (existing && existing.length > 0) {
+        await base44.entities.Prestatie.update(existing[0].id, payload);
+        updates++;
+      } else {
+        await base44.entities.Prestatie.create(payload);
+        opgeslagen++;
+      }
+    }
+
+    setSaveResult({ opgeslagen, overgeslagen, updates });
+    setIsSaving(false);
+  };
+
+  const handleDownloadCsv = async () => {
+    if (selectedFiles.length === 0) return;
+    for (const file of selectedFiles) {
+      const formData = new FormData();
+      formData.append("file", file);
+      const response = await fetch(`${API_BASE}?format=csv&active_only=true`, {
+        method: "POST",
+        body: formData,
+      });
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name.replace(".pdf", ".csv");
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <FileText className="w-6 h-6 text-accent" />
-            PDF Import
-          </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Upload prestatie-PDF's van eindklanten voor automatische verwerking.
-          </p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <FileText className="w-6 h-6 text-accent" />
+          PDF Import
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Upload prestatie-PDF's voor directe verwerking via de parse API.
+        </p>
       </div>
 
-      {readyCount > 0 && (
-        <div className="flex items-center gap-3 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-sm">
-          <span className="font-semibold">{readyCount} bestand{readyCount > 1 ? "en" : ""} klaar voor review.</span>
-          <span className="text-blue-600">Klik op "Bekijken" om te controleren en goed te keuren.</span>
-        </div>
-      )}
-
       {/* Upload zone */}
-      <Card className="p-6 space-y-5">
-        {/* Eindklant selectie */}
-        <div className="space-y-1.5">
-          <Label className="flex items-center gap-1.5">
-            <Building2 className="w-4 h-4 text-muted-foreground" />
-            Eindklant (optioneel)
-          </Label>
-          <Select value={selectedEindklantId} onValueChange={setSelectedEindklantId}>
-            <SelectTrigger className="max-w-sm">
-              <SelectValue placeholder="Selecteer eindklant..." />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={null}>— Geen specifieke klant —</SelectItem>
-              {eindklanten.map(k => (
-                <SelectItem key={k.id} value={k.id}>{k.naam}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {selectedEindklant?.pdf_instructies && (
-            <div className="mt-2 p-3 rounded-md bg-green-50 border border-green-200 text-xs text-green-800">
-              <span className="font-semibold">✓ Klant-instructies gevonden</span> — de agent gebruikt deze bij de verwerking.
-            </div>
-          )}
-          {selectedEindklant && !selectedEindklant.pdf_instructies && (
-            <p className="text-xs text-muted-foreground mt-1">
-              Nog geen instructies voor deze klant. Voeg ze toe via <span className="font-medium">Eindklanten → bewerken → PDF-instructies</span>.
-            </p>
-          )}
+      <Card className="p-6 space-y-4">
+        <div
+          className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-3 py-10 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
+          onClick={() => fileInputRef.current?.click()}
+        >
+          <Upload className="w-10 h-10 text-muted-foreground" />
+          <div className="text-center">
+            <p className="font-medium">Klik om PDF('s) te selecteren</p>
+            <p className="text-sm text-muted-foreground mt-1">Meerdere bestanden zijn toegestaan</p>
+          </div>
         </div>
-
         <input
           type="file"
           accept=".pdf"
+          multiple
           ref={fileInputRef}
-          onChange={handleFileUpload}
+          onChange={handleFileChange}
           className="hidden"
         />
-        <div
-          className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-4 py-10 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
-          onClick={() => !isUploading && fileInputRef.current?.click()}
-        >
-          {isUploading ? (
-            <>
-              <Loader2 className="w-10 h-10 text-accent animate-spin" />
-              <p className="text-sm text-muted-foreground">Bestand uploaden en verwerken...</p>
-            </>
-          ) : (
-            <>
-              <Upload className="w-10 h-10 text-muted-foreground" />
-              <div className="text-center">
-                <p className="font-medium">Klik om een PDF te uploaden</p>
-                <p className="text-sm text-muted-foreground mt-1">Ondersteunt Nextmemis/Centrale en GPS/Hofkip formaten</p>
+
+        {selectedFiles.length > 0 && (
+          <div className="space-y-1">
+            {selectedFiles.map((f, i) => (
+              <div key={i} className="flex items-center gap-2 text-sm p-2 bg-muted/50 rounded-md">
+                <FileText className="w-4 h-4 text-accent shrink-0" />
+                <span className="font-medium">{f.name}</span>
+                <span className="text-muted-foreground ml-auto">{(f.size / 1024).toFixed(1)} KB</span>
               </div>
-              <Button variant="outline" className="gap-2" disabled={isUploading}>
-                <Upload className="w-4 h-4" /> PDF selecteren
-              </Button>
-            </>
+            ))}
+          </div>
+        )}
+
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            onClick={handleVerwerk}
+            disabled={selectedFiles.length === 0 || isProcessing}
+            className="gap-2"
+          >
+            {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
+            {isProcessing ? "Verwerken..." : "Verwerk PDF"}
+          </Button>
+          {selectedFiles.length > 0 && (
+            <Button variant="outline" onClick={handleDownloadCsv} className="gap-2" disabled={isProcessing}>
+              <Download className="w-4 h-4" /> Download CSV
+            </Button>
           )}
         </div>
       </Card>
 
-      {/* Lijst van batches */}
-      {batches.length > 0 && (
-        <Card className="p-5">
-          <ImportBatchLijst
-            batches={batches}
-            onSelectBatch={setSelectedBatch}
-            onAnnuleer={async (batch) => {
-              await base44.entities.PrestatieImportBatch.update(batch.id, { status: "fout" });
-              queryClient.invalidateQueries({ queryKey: ["importbatches"] });
-            }}
-          />
-        </Card>
-      )}
+      {/* Resultaat */}
+      {result && (
+        <Card className="p-6 space-y-4">
+          {/* Samenvatting */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-2xl font-bold text-accent">{result.unique_employees}</p>
+              <p className="text-xs text-muted-foreground mt-1">Werknemers</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-2xl font-bold text-accent">{result.total_records}</p>
+              <p className="text-xs text-muted-foreground mt-1">Dagrecords</p>
+            </div>
+            <div className="p-4 rounded-lg bg-muted/50 text-center">
+              <p className="text-2xl font-bold text-accent">{result.total_hours}</p>
+              <p className="text-xs text-muted-foreground mt-1">Totaal uren</p>
+            </div>
+          </div>
 
-      {/* Review off-canvas */}
-      {selectedBatch && (
-        <ReviewOffCanvas
-          batch={selectedBatch}
-          onClose={() => setSelectedBatch(null)}
-          onGoedgekeurd={() => {
-            setSelectedBatch(null);
-            queryClient.invalidateQueries({ queryKey: ["importbatches"] });
-          }}
-        />
+          {/* Tabel */}
+          <div className="overflow-auto max-h-[500px] border rounded-lg">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-muted/90">
+                <tr>
+                  <th className="text-left p-2 font-semibold">Werknemer</th>
+                  <th className="text-left p-2 font-semibold">Extern ID</th>
+                  <th className="text-left p-2 font-semibold">Firma</th>
+                  <th className="text-left p-2 font-semibold">Datum</th>
+                  <th className="text-left p-2 font-semibold">Dag</th>
+                  <th className="text-right p-2 font-semibold">Uren</th>
+                  <th className="text-left p-2 font-semibold">Boekingen</th>
+                </tr>
+              </thead>
+              <tbody>
+                {result.data.map((r, i) => {
+                  const key = r.externe_id || r.employee_name;
+                  const gevonden = werknemerMap[key];
+                  return (
+                    <tr
+                      key={i}
+                      className={`border-t ${!gevonden ? "bg-orange-50" : "hover:bg-muted/30"}`}
+                    >
+                      <td className="p-2">
+                        <div className="flex items-center gap-1">
+                          {!gevonden && <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" />}
+                          <span className={!gevonden ? "text-orange-700 font-medium" : ""}>{r.employee_name}</span>
+                        </div>
+                        {!gevonden && <p className="text-orange-500 text-[10px]">Onbekende werknemer - wordt niet opgeslagen</p>}
+                      </td>
+                      <td className="p-2 text-muted-foreground font-mono">{r.externe_id || "—"}</td>
+                      <td className="p-2 text-muted-foreground">{r.firma || "—"}</td>
+                      <td className="p-2">{r.date}</td>
+                      <td className="p-2 text-muted-foreground">{r.day_name}</td>
+                      <td className="p-2 text-right font-medium">{r.total_hours}</td>
+                      <td className="p-2 text-muted-foreground font-mono">{formatEntries(r.entries)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Opslaan */}
+          {!saveResult && (
+            <Button onClick={handleOpslaan} disabled={isSaving} className="gap-2">
+              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+              {isSaving ? "Opslaan..." : "Opslaan in Database"}
+            </Button>
+          )}
+
+          {saveResult && (
+            <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800">
+              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+              <div className="text-sm space-y-0.5">
+                <p className="font-semibold">Opgeslagen!</p>
+                <p>✓ {saveResult.opgeslagen} nieuwe records aangemaakt</p>
+                {saveResult.updates > 0 && <p>↻ {saveResult.updates} bestaande records bijgewerkt</p>}
+                {saveResult.overgeslagen > 0 && (
+                  <p className="text-orange-600">⚠ {saveResult.overgeslagen} overgeslagen (onbekende werknemers)</p>
+                )}
+              </div>
+            </div>
+          )}
+        </Card>
       )}
     </div>
   );
