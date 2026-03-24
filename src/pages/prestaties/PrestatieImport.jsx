@@ -1,32 +1,45 @@
 import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Loader2, Upload, Download, Save, AlertTriangle, CheckCircle2, X, Clock, Ban } from "lucide-react";
-
-function formatEntries(entries) {
-  if (!entries || entries.length === 0) return "—";
-  return entries.map(e => `${e.in || "?"}-${e.out || "?"}`).join(" | ");
-}
+import { Badge } from "@/components/ui/badge";
+import {
+  FileText, Loader2, Upload, Download, AlertTriangle,
+  CheckCircle2, X, Clock, Ban, Calendar, Trash2
+} from "lucide-react";
+import ImportKalenderPanel from "@/components/prestaties/ImportKalenderPanel";
+import { format } from "date-fns";
+import { nl } from "date-fns/locale";
 
 const STATUS = { WACHTEN: "wachten", BEZIG: "bezig", KLAAR: "klaar", FOUT: "fout", GEANNULEERD: "geannuleerd" };
 
+const batchStatusConfig = {
+  verwerken: { label: "Verwerken", color: "bg-blue-100 text-blue-700", icon: Loader2 },
+  klaar_voor_review: { label: "Klaar voor review", color: "bg-amber-100 text-amber-700", icon: Clock },
+  goedgekeurd: { label: "Geïmporteerd", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
+  fout: { label: "Fout", color: "bg-red-100 text-red-700", icon: AlertTriangle },
+};
+
 export default function PrestatieImport() {
   const [selectedFiles, setSelectedFiles] = useState([]);
-  const [queue, setQueue] = useState([]); // [{file, status, error}]
+  const [queue, setQueue] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [result, setResult] = useState(null);
-  const [saveResult, setSaveResult] = useState(null);
-  const [werknemerMap, setWerknemerMap] = useState({});
+  const [reviewBatch, setReviewBatch] = useState(null);
   const fileInputRef = useRef(null);
   const cancelledRef = useRef(false);
+  const queryClient = useQueryClient();
 
   const { data: werknemers = [] } = useQuery({
     queryKey: ["werknemers"],
     queryFn: () => base44.entities.Werknemer.list("-created_date"),
+  });
+
+  const { data: batches = [], isLoading: batchesLoading } = useQuery({
+    queryKey: ["importbatches"],
+    queryFn: () => base44.entities.PrestatieImportBatch.list("-created_date"),
+    refetchInterval: isProcessing ? 3000 : false,
   });
 
   const findWerknemer = (externeId, naam) => {
@@ -49,8 +62,6 @@ export default function PrestatieImport() {
     const files = Array.from(e.target.files);
     setSelectedFiles(files);
     setQueue(files.map(f => ({ file: f, status: STATUS.WACHTEN, error: null })));
-    setResult(null);
-    setSaveResult(null);
   };
 
   const updateQueue = (index, update) => {
@@ -67,128 +78,90 @@ export default function PrestatieImport() {
   const handleVerwerk = async () => {
     if (selectedFiles.length === 0) return;
     setIsProcessing(true);
-    setResult(null);
-    setSaveResult(null);
     cancelledRef.current = false;
-
-    // Reset queue to wachten
     setQueue(selectedFiles.map(f => ({ file: f, status: STATUS.WACHTEN, error: null })));
-
-    const allData = [];
-    let totalHours = 0;
-    const allEmployees = new Set();
 
     for (let i = 0; i < selectedFiles.length; i++) {
       if (cancelledRef.current) {
         updateQueue(i, { status: STATUS.GEANNULEERD });
         continue;
       }
-
       const file = selectedFiles[i];
       updateQueue(i, { status: STATUS.BEZIG });
 
       try {
+        // Upload file
         const { file_url } = await base44.integrations.Core.UploadFile({ file });
+
+        // Parse PDF
         const response = await base44.functions.invoke("parsePrestatiePdf", {
-          file_url,
-          format: "json",
-          active_only: "true",
-          filename: file.name,
+          file_url, format: "json", active_only: "true", filename: file.name,
         });
         const json = response.data;
+        const records = json.data || [];
 
-        if (json.data) {
-          allData.push(...json.data);
-          json.data.forEach(r => {
-            allEmployees.add(r.employee_name);
-            totalHours += r.total_hours || 0;
-          });
+        // Create batch in DB
+        const batch = await base44.entities.PrestatieImportBatch.create({
+          bestandsnaam: file.name,
+          bestand_url: file_url,
+          status: "klaar_voor_review",
+          aantal_prestaties: records.length,
+          agent_samenvatting: `${records.length} records geladen uit ${file.name}`,
+        });
+
+        // Save concept regels
+        const conceptRegels = records.map(r => {
+          const werknemer = findWerknemer(r.externe_id, r.employee_name);
+          return {
+            batch_id: batch.id,
+            werknemer_naam: r.employee_name || "",
+            werknemer_id: werknemer?.id || null,
+            datum: r.date || "",
+            dag: r.day_name || "",
+            uren: r.total_hours || 0,
+            bron: r.source || "",
+            externe_id: r.externe_id || "",
+            firma: r.firma || "",
+            dagschema: r.dagschema || "",
+            in_1: r.entries?.[0]?.in || "", uit_1: r.entries?.[0]?.out || "",
+            in_2: r.entries?.[1]?.in || "", uit_2: r.entries?.[1]?.out || "",
+            in_3: r.entries?.[2]?.in || "", uit_3: r.entries?.[2]?.out || "",
+            in_4: r.entries?.[3]?.in || "", uit_4: r.entries?.[3]?.out || "",
+            in_5: r.entries?.[4]?.in || "", uit_5: r.entries?.[4]?.out || "",
+            in_6: r.entries?.[5]?.in || "", uit_6: r.entries?.[5]?.out || "",
+            werknemer_niet_gevonden: !werknemer,
+          };
+        });
+
+        // Bulk save concept regels
+        for (const regel of conceptRegels) {
+          await base44.entities.PrestatieConceptRegel.create(regel);
         }
+
         updateQueue(i, { status: STATUS.KLAAR });
+        toast.success(`✓ ${file.name} verwerkt — ${records.length} records opgeslagen`, { duration: 5000 });
       } catch (err) {
         updateQueue(i, { status: STATUS.FOUT, error: err.message });
+        toast.error(`Fout bij ${file.name}: ${err.message}`);
       }
     }
 
-    if (allData.length > 0) {
-      const map = {};
-      allData.forEach(r => {
-        const key = r.externe_id || r.employee_name;
-        if (!(key in map)) map[key] = findWerknemer(r.externe_id, r.employee_name);
-      });
-      setWerknemerMap(map);
-      setResult({
-        data: allData,
-        unique_employees: allEmployees.size,
-        total_records: allData.length,
-        total_hours: Math.round(totalHours * 100) / 100,
-      });
-    }
-
-    const klaar = allData.length > 0;
-    const fouten = queue.filter(q => q.status === STATUS.FOUT).length;
-    if (klaar) {
-      toast.success(`PDF verwerking voltooid! ${allData.length} records geladen.`, { duration: 6000 });
-    } else if (fouten > 0) {
-      toast.error(`Verwerking mislukt voor ${fouten} bestand(en).`, { duration: 6000 });
-    }
+    queryClient.invalidateQueries({ queryKey: ["importbatches"] });
     setIsProcessing(false);
+    setSelectedFiles([]);
+    setQueue([]);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleOpslaan = async () => {
-    if (!result) return;
-    setIsSaving(true);
-    setSaveResult(null);
-    let opgeslagen = 0, overgeslagen = 0, updates = 0;
-
-    for (const record of result.data) {
-      const key = record.externe_id || record.employee_name;
-      const werknemer = werknemerMap[key];
-      if (!werknemer) { overgeslagen++; continue; }
-
-      const maand = record.date ? record.date.substring(0, 7) : "";
-      const payload = {
-        werknemer_id: werknemer.id,
-        werknemer_naam: `${werknemer.voornaam || ""} ${werknemer.achternaam || ""}`.trim(),
-        datum: record.date, dag: record.day_name || "",
-        bron: record.source || "", externe_id: record.externe_id || "",
-        firma: record.firma || "", dagschema: record.dagschema || "",
-        totaal_uren: record.total_hours || 0, maand,
-        in_1: record.entries?.[0]?.in || "", uit_1: record.entries?.[0]?.out || "",
-        in_2: record.entries?.[1]?.in || "", uit_2: record.entries?.[1]?.out || "",
-        in_3: record.entries?.[2]?.in || "", uit_3: record.entries?.[2]?.out || "",
-        in_4: record.entries?.[3]?.in || "", uit_4: record.entries?.[3]?.out || "",
-        in_5: record.entries?.[4]?.in || "", uit_5: record.entries?.[4]?.out || "",
-        in_6: record.entries?.[5]?.in || "", uit_6: record.entries?.[5]?.out || "",
-      };
-
-      const existing = await base44.entities.Prestatie.filter({ werknemer_id: werknemer.id, datum: record.date });
-      if (existing && existing.length > 0) {
-        await base44.entities.Prestatie.update(existing[0].id, payload);
-        updates++;
-      } else {
-        await base44.entities.Prestatie.create(payload);
-        opgeslagen++;
-      }
+  const handleDeleteBatch = async (batchId) => {
+    // Delete concept regels first
+    const regels = await base44.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
+    for (const r of regels) {
+      await base44.entities.PrestatieConceptRegel.delete(r.id);
     }
-    setSaveResult({ opgeslagen, overgeslagen, updates });
-    toast.success(`✓ ${opgeslagen} records opgeslagen${updates > 0 ? `, ${updates} bijgewerkt` : ""}${overgeslagen > 0 ? ` (${overgeslagen} overgeslagen)` : ""}`, { duration: 7000 });
-    setIsSaving(false);
-  };
-
-  const handleDownloadCsv = async () => {
-    if (selectedFiles.length === 0) return;
-    for (const file of selectedFiles) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
-      const response = await base44.functions.invoke("parsePrestatiePdf", {
-        file_url, format: "csv", active_only: "true", filename: file.name,
-      });
-      const blob = new Blob([response.data], { type: "text/csv" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = file.name.replace(".pdf", ".csv"); a.click();
-      URL.revokeObjectURL(url);
-    }
+    await base44.entities.PrestatieImportBatch.delete(batchId);
+    queryClient.invalidateQueries({ queryKey: ["importbatches"] });
+    toast.success("Batch verwijderd");
   };
 
   const queueStatusIcon = (status) => {
@@ -215,10 +188,11 @@ export default function PrestatieImport() {
           PDF Import
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload prestatie-PDF's voor directe verwerking via de parse API.
+          Upload prestatie-PDF's. Geïmporteerde data wordt opgeslagen en kan daarna naar de kalender worden gezet.
         </p>
       </div>
 
+      {/* Upload Card */}
       <Card className="p-6 space-y-4">
         <div
           className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-3 py-10 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
@@ -232,7 +206,7 @@ export default function PrestatieImport() {
         </div>
         <input type="file" accept=".pdf" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" />
 
-        {/* Wachtrij */}
+        {/* Queue */}
         {queue.length > 0 && (
           <div className="space-y-1.5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Wachtrij</p>
@@ -243,7 +217,6 @@ export default function PrestatieImport() {
                   item.status === STATUS.BEZIG ? "bg-accent/5 border-accent/30" :
                   item.status === STATUS.KLAAR ? "bg-green-50 border-green-200" :
                   item.status === STATUS.FOUT ? "bg-red-50 border-red-200" :
-                  item.status === STATUS.GEANNULEERD ? "bg-muted/30 border-border opacity-60" :
                   "bg-muted/30 border-border"
                 }`}
               >
@@ -267,89 +240,71 @@ export default function PrestatieImport() {
               <X className="w-4 h-4" /> Annuleren
             </Button>
           )}
-          {selectedFiles.length > 0 && !isProcessing && (
-            <Button variant="outline" onClick={handleDownloadCsv} className="gap-2">
-              <Download className="w-4 h-4" /> Download CSV
-            </Button>
-          )}
         </div>
       </Card>
 
-      {result && (
-        <Card className="p-6 space-y-4">
-          <div className="grid grid-cols-3 gap-4">
-            <div className="p-4 rounded-lg bg-muted/50 text-center">
-              <p className="text-2xl font-bold text-accent">{result.unique_employees}</p>
-              <p className="text-xs text-muted-foreground mt-1">Werknemers</p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50 text-center">
-              <p className="text-2xl font-bold text-accent">{result.total_records}</p>
-              <p className="text-xs text-muted-foreground mt-1">Dagrecords</p>
-            </div>
-            <div className="p-4 rounded-lg bg-muted/50 text-center">
-              <p className="text-2xl font-bold text-accent">{result.total_hours}</p>
-              <p className="text-xs text-muted-foreground mt-1">Totaal uren</p>
-            </div>
+      {/* Batches list */}
+      <div className="space-y-3">
+        <h2 className="text-base font-semibold">Geïmporteerde PDFs</h2>
+        {batchesLoading ? (
+          <div className="text-sm text-muted-foreground flex items-center gap-2">
+            <Loader2 className="w-4 h-4 animate-spin" /> Laden...
           </div>
-
-          <div className="overflow-auto max-h-[500px] border rounded-lg">
-            <table className="w-full text-xs">
-              <thead className="sticky top-0 bg-muted/90">
-                <tr>
-                  <th className="text-left p-2 font-semibold">Werknemer</th>
-                  <th className="text-left p-2 font-semibold">Extern ID</th>
-                  <th className="text-left p-2 font-semibold">Firma</th>
-                  <th className="text-left p-2 font-semibold">Datum</th>
-                  <th className="text-left p-2 font-semibold">Dag</th>
-                  <th className="text-right p-2 font-semibold">Uren</th>
-                  <th className="text-left p-2 font-semibold">Boekingen</th>
-                </tr>
-              </thead>
-              <tbody>
-                {result.data.map((r, i) => {
-                  const key = r.externe_id || r.employee_name;
-                  const gevonden = werknemerMap[key];
-                  return (
-                    <tr key={i} className={`border-t ${!gevonden ? "bg-orange-50" : "hover:bg-muted/30"}`}>
-                      <td className="p-2">
-                        <div className="flex items-center gap-1">
-                          {!gevonden && <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" />}
-                          <span className={!gevonden ? "text-orange-700 font-medium" : ""}>{r.employee_name}</span>
-                        </div>
-                        {!gevonden && <p className="text-orange-500 text-[10px]">Onbekende werknemer - wordt niet opgeslagen</p>}
-                      </td>
-                      <td className="p-2 text-muted-foreground font-mono">{r.externe_id || "—"}</td>
-                      <td className="p-2 text-muted-foreground">{r.firma || "—"}</td>
-                      <td className="p-2">{r.date}</td>
-                      <td className="p-2 text-muted-foreground">{r.day_name}</td>
-                      <td className="p-2 text-right font-medium">{r.total_hours}</td>
-                      <td className="p-2 text-muted-foreground font-mono">{formatEntries(r.entries)}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+        ) : batches.length === 0 ? (
+          <Card className="p-8 text-center text-muted-foreground text-sm">
+            Nog geen PDF's geïmporteerd
+          </Card>
+        ) : (
+          <div className="space-y-2">
+            {batches.map(batch => {
+              const cfg = batchStatusConfig[batch.status] || batchStatusConfig.fout;
+              const Icon = cfg.icon;
+              return (
+                <Card key={batch.id} className="p-4 flex items-center gap-4">
+                  <FileText className="w-8 h-8 text-accent shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-sm truncate">{batch.bestandsnaam}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {batch.created_date ? format(new Date(batch.created_date), "d MMM yyyy HH:mm", { locale: nl }) : ""}
+                      {batch.aantal_prestaties ? ` • ${batch.aantal_prestaties} records` : ""}
+                      {batch.eindklant_naam ? ` • ${batch.eindklant_naam}` : ""}
+                    </p>
+                  </div>
+                  <span className={`inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full font-medium ${cfg.color}`}>
+                    <Icon className={`w-3 h-3 ${batch.status === "verwerken" ? "animate-spin" : ""}`} />
+                    {cfg.label}
+                  </span>
+                  {batch.status !== "goedgekeurd" && (
+                    <Button
+                      size="sm"
+                      className="gap-1.5 shrink-0"
+                      onClick={() => setReviewBatch(batch)}
+                    >
+                      <Calendar className="w-3.5 h-3.5" />
+                      Import Kalender
+                    </Button>
+                  )}
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="shrink-0 text-muted-foreground hover:text-red-500"
+                    onClick={() => handleDeleteBatch(batch.id)}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </Card>
+              );
+            })}
           </div>
+        )}
+      </div>
 
-          {!saveResult && (
-            <Button onClick={handleOpslaan} disabled={isSaving} className="gap-2">
-              {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-              {isSaving ? "Opslaan..." : "Opslaan in Database"}
-            </Button>
-          )}
-
-          {saveResult && (
-            <div className="flex items-start gap-3 p-4 rounded-lg bg-green-50 border border-green-200 text-green-800">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-              <div className="text-sm space-y-0.5">
-                <p className="font-semibold">Opgeslagen!</p>
-                <p>✓ {saveResult.opgeslagen} nieuwe records aangemaakt</p>
-                {saveResult.updates > 0 && <p>↻ {saveResult.updates} bestaande records bijgewerkt</p>}
-                {saveResult.overgeslagen > 0 && <p className="text-orange-600">⚠ {saveResult.overgeslagen} overgeslagen (onbekende werknemers)</p>}
-              </div>
-            </div>
-          )}
-        </Card>
+      {reviewBatch && (
+        <ImportKalenderPanel
+          batch={reviewBatch}
+          onClose={() => setReviewBatch(null)}
+          onImported={() => queryClient.invalidateQueries({ queryKey: ["importbatches"] })}
+        />
       )}
     </div>
   );
