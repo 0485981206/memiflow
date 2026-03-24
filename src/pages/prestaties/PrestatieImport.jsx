@@ -15,6 +15,7 @@ import {
   AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import ImportKalenderPanel from "@/components/prestaties/ImportKalenderPanel";
+import ImportBatchDetail from "@/components/prestaties/ImportBatchDetail";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 
@@ -32,6 +33,7 @@ export default function PrestatieImport() {
   const [queue, setQueue] = useState([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [reviewBatch, setReviewBatch] = useState(null);
+  const [detailBatch, setDetailBatch] = useState(null);
   const [deleteBatchId, setDeleteBatchId] = useState(null);
   const fileInputRef = useRef(null);
   const cancelledRef = useRef(false);
@@ -288,6 +290,14 @@ export default function PrestatieImport() {
                     <Icon className={`w-3 h-3 ${batch.status === "verwerken" ? "animate-spin" : ""}`} />
                     {cfg.label}
                   </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="gap-1.5 shrink-0"
+                    onClick={() => setDetailBatch(batch)}
+                  >
+                    Details
+                  </Button>
                   {batch.status !== "goedgekeurd" && (
                     <Button
                       size="sm"
@@ -333,6 +343,13 @@ export default function PrestatieImport() {
           batch={reviewBatch}
           onClose={() => setReviewBatch(null)}
           onImported={() => queryClient.invalidateQueries({ queryKey: ["importbatches"] })}
+        />
+      )}
+
+      {detailBatch && (
+        <ImportBatchDetail
+          batch={detailBatch}
+          onClose={() => setDetailBatch(null)}
         />
       )}
     </div>
