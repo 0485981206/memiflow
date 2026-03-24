@@ -1,19 +1,16 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
-import { format, addMonths, subMonths } from "date-fns";
+import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft, ChevronRight, Clock, FileText, AlertTriangle } from "lucide-react";
 
 export default function Records() {
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const maandStr = format(currentMonth, "yyyy-MM");
-
   const { data: prestaties = [], isLoading } = useQuery({
-    queryKey: ["prestaties", maandStr],
-    queryFn: () => base44.entities.Prestatie.filter({ maand: maandStr }),
+    queryKey: ["prestaties"],
+    queryFn: () => base44.entities.Prestatie.list("-created_date", 1000),
   });
 
   const geimporteerd = prestaties
@@ -22,24 +19,10 @@ export default function Records() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <FileText className="w-6 h-6 text-accent" />
-          Geïmporteerde Records
-        </h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <span className="text-base font-semibold min-w-[150px] text-center capitalize">
-            {format(currentMonth, "MMMM yyyy", { locale: nl })}
-          </span>
-          <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" onClick={() => setCurrentMonth(new Date())}>Vandaag</Button>
-        </div>
-      </div>
+      <h1 className="text-2xl font-bold flex items-center gap-2">
+        <FileText className="w-6 h-6 text-accent" />
+        Geïmporteerde Records
+      </h1>
 
       <div className="grid grid-cols-3 gap-4">
         <Card className="p-4 text-center">
@@ -66,7 +49,7 @@ export default function Records() {
         ) : geimporteerd.length === 0 ? (
           <div className="py-10 text-center text-muted-foreground text-sm flex flex-col items-center gap-2">
             <AlertTriangle className="w-8 h-8 text-muted-foreground/40" />
-            Geen geïmporteerde records voor {format(currentMonth, "MMMM yyyy", { locale: nl })}
+            Geen geïmporteerde records
           </div>
         ) : (
           <div className="overflow-auto">
