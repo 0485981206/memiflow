@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,9 +26,34 @@ function Field({ label, children }) {
   );
 }
 
+function DatalistField({ label, value, onChange, listId, options = [], placeholder = "" }) {
+  return (
+    <Field label={label}>
+      <input
+        list={listId}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+      />
+      <datalist id={listId}>
+        {options.map((o) => <option key={o} value={o} />)}
+      </datalist>
+    </Field>
+  );
+}
+
 export default function WerknemerWizard({ open, onClose }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+
+  const { data: bestaande = [] } = useQuery({
+    queryKey: ["werknemers"],
+    queryFn: () => base44.entities.Werknemer.list("-created_date"),
+    enabled: open,
+  });
+
+  const uniq = (key) => [...new Set(bestaande.map((w) => w[key]).filter(Boolean))].sort();
   const [werknemerId, setWerknemerId] = useState(null);
   const [form, setForm] = useState({
     voornaam: "", achternaam: "", overeenkomstnummer: "", externe_id: "",
@@ -139,9 +164,9 @@ export default function WerknemerWizard({ open, onClose }) {
               <Field label="Extern ID"><Input value={form.externe_id} onChange={set("externe_id")} /></Field>
               <Field label="Rijksregisternummer"><Input value={form.rijksregisternummer} onChange={set("rijksregisternummer")} /></Field>
               <Field label="Geboortedatum"><Input type="date" value={form.geboortedatum} onChange={set("geboortedatum")} /></Field>
-              <Field label="Geslacht"><Input value={form.geslacht} onChange={set("geslacht")} placeholder="bv. Man / Vrouw" /></Field>
-              <Field label="Nationaliteit"><Input value={form.nationaliteit} onChange={set("nationaliteit")} /></Field>
-              <Field label="Officiële taal"><Input value={form.officiele_taal} onChange={set("officiele_taal")} /></Field>
+              <DatalistField label="Geslacht" value={form.geslacht} onChange={set("geslacht")} listId="dl-geslacht" options={["Man","Vrouw","X",...uniq("geslacht")]} placeholder="bv. Man / Vrouw" />
+              <DatalistField label="Nationaliteit" value={form.nationaliteit} onChange={set("nationaliteit")} listId="dl-nationaliteit" options={uniq("nationaliteit")} />
+              <DatalistField label="Officiële taal" value={form.officiele_taal} onChange={set("officiele_taal")} listId="dl-taal" options={uniq("officiele_taal")} />
             </div>
           )}
           {step === 1 && (
@@ -151,22 +176,22 @@ export default function WerknemerWizard({ open, onClose }) {
               <Field label="Contactnummer"><Input value={form.contactnummer} onChange={set("contactnummer")} /></Field>
               <Field label="Noodcontact"><Input value={form.noodcontact} onChange={set("noodcontact")} /></Field>
               <div className="col-span-2"><Field label="Adres"><Input value={form.adres} onChange={set("adres")} /></Field></div>
-              <Field label="Land"><Input value={form.land} onChange={set("land")} /></Field>
+              <DatalistField label="Land" value={form.land} onChange={set("land")} listId="dl-land" options={uniq("land")} />
             </div>
           )}
           {step === 2 && (
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Burgerlijke staat"><Input value={form.burgerlijke_staat} onChange={set("burgerlijke_staat")} /></Field>
-              <Field label="Aantal kinderen ten laste"><Input value={form.aantal_kinderen_ten_laste} onChange={set("aantal_kinderen_ten_laste")} /></Field>
-              <Field label="Personen 65+ ten laste"><Input value={form.personen_65_plus_ten_laste} onChange={set("personen_65_plus_ten_laste")} /></Field>
-              <Field label="Persoon met handicap"><Input value={form.persoon_met_handicap} onChange={set("persoon_met_handicap")} /></Field>
+              <DatalistField label="Burgerlijke staat" value={form.burgerlijke_staat} onChange={set("burgerlijke_staat")} listId="dl-bst" options={uniq("burgerlijke_staat")} />
+              <DatalistField label="Aantal kinderen ten laste" value={form.aantal_kinderen_ten_laste} onChange={set("aantal_kinderen_ten_laste")} listId="dl-kind" options={uniq("aantal_kinderen_ten_laste")} />
+              <DatalistField label="Personen 65+ ten laste" value={form.personen_65_plus_ten_laste} onChange={set("personen_65_plus_ten_laste")} listId="dl-65" options={uniq("personen_65_plus_ten_laste")} />
+              <DatalistField label="Persoon met handicap" value={form.persoon_met_handicap} onChange={set("persoon_met_handicap")} listId="dl-hnd" options={uniq("persoon_met_handicap")} />
             </div>
           )}
           {step === 3 && (
             <div className="grid grid-cols-2 gap-4">
               <Field label="Startdatum"><Input type="date" value={form.startdatum} onChange={set("startdatum")} /></Field>
               <Field label="Einddatum"><Input type="date" value={form.einddatum} onChange={set("einddatum")} /></Field>
-              <Field label="Functie"><Input value={form.functie} onChange={set("functie")} /></Field>
+              <DatalistField label="Functie" value={form.functie} onChange={set("functie")} listId="dl-functie" options={uniq("functie")} />
               <Field label="Status">
                 <Select value={form.status} onValueChange={set("status")}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -177,30 +202,30 @@ export default function WerknemerWizard({ open, onClose }) {
                   </SelectContent>
                 </Select>
               </Field>
-              <Field label="Type overeenkomst"><Input value={form.type_overeenkomst} onChange={set("type_overeenkomst")} /></Field>
-              <Field label="Werknemerstypering"><Input value={form.werknemerstypering} onChange={set("werknemerstypering")} /></Field>
-              <Field label="Paritair Comité"><Input value={form.paritair_comite} onChange={set("paritair_comite")} /></Field>
-              <Field label="Type werktijd"><Input value={form.type_werktijd} onChange={set("type_werktijd")} /></Field>
-              <Field label="Werkregime"><Input value={form.werkregime} onChange={set("werkregime")} /></Field>
-              <Field label="Tewerkstellingsbreuk"><Input value={form.tewerkstellingsbreuk} onChange={set("tewerkstellingsbreuk")} /></Field>
-              <Field label="Berekeningswijze"><Input value={form.berekeningswijze} onChange={set("berekeningswijze")} /></Field>
+              <DatalistField label="Type overeenkomst" value={form.type_overeenkomst} onChange={set("type_overeenkomst")} listId="dl-tov" options={uniq("type_overeenkomst")} />
+              <DatalistField label="Werknemerstypering" value={form.werknemerstypering} onChange={set("werknemerstypering")} listId="dl-wt" options={uniq("werknemerstypering")} />
+              <DatalistField label="Paritair Comité" value={form.paritair_comite} onChange={set("paritair_comite")} listId="dl-pc" options={uniq("paritair_comite")} />
+              <DatalistField label="Type werktijd" value={form.type_werktijd} onChange={set("type_werktijd")} listId="dl-twt" options={uniq("type_werktijd")} />
+              <DatalistField label="Werkregime" value={form.werkregime} onChange={set("werkregime")} listId="dl-wr" options={uniq("werkregime")} />
+              <DatalistField label="Tewerkstellingsbreuk" value={form.tewerkstellingsbreuk} onChange={set("tewerkstellingsbreuk")} listId="dl-tb" options={uniq("tewerkstellingsbreuk")} />
+              <DatalistField label="Berekeningswijze" value={form.berekeningswijze} onChange={set("berekeningswijze")} listId="dl-bw" options={uniq("berekeningswijze")} />
               <Field label="Uurloon (€)"><Input type="number" step="0.01" value={form.uurloon} onChange={set("uurloon")} /></Field>
             </div>
           )}
           {step === 4 && (
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Barema type"><Input value={form.barema_type} onChange={set("barema_type")} /></Field>
-              <Field label="Barema code"><Input value={form.barema_code} onChange={set("barema_code")} /></Field>
-              <Field label="Looncode 411 (Kledij)"><Input value={form.looncode_411} onChange={set("looncode_411")} /></Field>
-              <Field label="Looncode 591 (Maaltijdcheques)"><Input value={form.looncode_591} onChange={set("looncode_591")} /></Field>
-              <Field label="Looncode 691 (Werkgeversbijdr. MC)"><Input value={form.looncode_691} onChange={set("looncode_691")} /></Field>
-              <Field label="Looncode 104 (Nachtploeg)"><Input value={form.looncode_104} onChange={set("looncode_104")} /></Field>
+              <DatalistField label="Barema type" value={form.barema_type} onChange={set("barema_type")} listId="dl-bt" options={uniq("barema_type")} />
+              <DatalistField label="Barema code" value={form.barema_code} onChange={set("barema_code")} listId="dl-bc" options={uniq("barema_code")} />
+              <DatalistField label="Looncode 411 (Kledij)" value={form.looncode_411} onChange={set("looncode_411")} listId="dl-411" options={uniq("looncode_411")} />
+              <DatalistField label="Looncode 591 (Maaltijdcheques)" value={form.looncode_591} onChange={set("looncode_591")} listId="dl-591" options={uniq("looncode_591")} />
+              <DatalistField label="Looncode 691 (Werkgeversbijdr. MC)" value={form.looncode_691} onChange={set("looncode_691")} listId="dl-691" options={uniq("looncode_691")} />
+              <DatalistField label="Looncode 104 (Nachtploeg)" value={form.looncode_104} onChange={set("looncode_104")} listId="dl-104" options={uniq("looncode_104")} />
             </div>
           )}
           {step === 5 && (
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Sturingsgroep"><Input value={form.sturingsgroep} onChange={set("sturingsgroep")} /></Field>
-              <Field label="Kostenplaats"><Input value={form.kostenplaats} onChange={set("kostenplaats")} /></Field>
+              <DatalistField label="Sturingsgroep" value={form.sturingsgroep} onChange={set("sturingsgroep")} listId="dl-sg" options={uniq("sturingsgroep")} />
+              <DatalistField label="Kostenplaats" value={form.kostenplaats} onChange={set("kostenplaats")} listId="dl-kp" options={uniq("kostenplaats")} />
             </div>
           )}
         </div>
