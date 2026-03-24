@@ -13,11 +13,13 @@ import {
   ChevronDown,
   ChevronRight,
   Menu,
-  X
+  X,
+  Grid3x3
 } from "lucide-react";
 
 const mainMenu = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
+  { label: "Workspaces", path: "/workspace", icon: Grid3x3 },
   { label: "Werknemers", path: "/werknemers", icon: Users },
   { label: "Eindklanten", path: "/eindklanten", icon: Building2 },
   { label: "Plaatsingen", path: "/plaatsingen", icon: Link2 },

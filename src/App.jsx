@@ -21,6 +21,7 @@ import Loonfiches from './pages/Loonfiches';
 import Rapporten from './pages/Rapporten';
 import Instellingen from './pages/Instellingen';
 import AcertaKalender from './pages/acerta/Kalender';
+import Workspace from './pages/Workspace';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -58,6 +59,7 @@ const AuthenticatedApp = () => {
         <Route path="/loonfiches" element={<Loonfiches />} />
         <Route path="/rapporten" element={<Rapporten />} />
         <Route path="/instellingen" element={<Instellingen />} />
+        <Route path="/workspace" element={<Workspace />} />
         <Route path="/acerta/kalender" element={<AcertaKalender />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
