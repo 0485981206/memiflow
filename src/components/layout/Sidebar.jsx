@@ -47,6 +47,7 @@ export default function Sidebar() {
   const location = useLocation();
   const [isCollapsed, setIsCollapsed] = useState(true);
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [hoveredDropdown, setHoveredDropdown] = useState(null);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [importBadge, setImportBadge] = useState(0);
 
@@ -110,10 +111,12 @@ export default function Sidebar() {
     </Link>
   );
 
-  const MenuButton = ({ icon: Icon, label, name, onClick, isActive: active }) => (
+  const MenuButton = ({ icon: Icon, label, name, onClick, isActive: active, onMouseEnter, onMouseLeave }) => (
     <button
       onClick={onClick}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full relative ${
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full relative group ${
         active
           ? "bg-[#1e3a5f] text-white"
           : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
@@ -131,22 +134,28 @@ export default function Sidebar() {
           />
         </>
       )}
-      {isCollapsed && openDropdown === name && (
+      {isCollapsed && (openDropdown === name || hoveredDropdown === name) && (
         <div className="absolute w-1 h-1 rounded-full bg-white right-1.5"></div>
+      )}
+      {/* Tooltip label on hover when collapsed */}
+      {isCollapsed && (
+        <div className="absolute left-full ml-2 px-3 py-1.5 bg-[#1e3a5f] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-40 border border-white/10">
+          {label}
+        </div>
       )}
     </button>
   );
 
-  const Dropdown = ({ isOpen, items }) => {
-    if (!isOpen) return null;
+  const Dropdown = ({ isOpen, items, name }) => {
+    if (!isOpen && !(isCollapsed && hoveredDropdown === name)) return null;
 
     if (isCollapsed) {
       return (
-        <div className="fixed bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10" style={{
-          left: '5rem',
-          top: '0',
-          marginTop: '0'
-        }}>
+        <div 
+          className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10"
+          onMouseEnter={() => setHoveredDropdown(name)}
+          onMouseLeave={() => setHoveredDropdown(null)}
+        >
           {items.map((item) => (
             <Link
               key={item.path}
@@ -255,10 +264,12 @@ export default function Sidebar() {
               label="Prestaties"
               name="prestaties"
               onClick={() => toggleDropdown("prestaties")}
+              onMouseEnter={() => isCollapsed && setHoveredDropdown("prestaties")}
+              onMouseLeave={() => isCollapsed && setHoveredDropdown(null)}
               isActive={location.pathname.startsWith("/prestaties")}
             />
-            {openDropdown === "prestaties" && (
-              <Dropdown isOpen={true} items={prestatieMenu} />
+            {(openDropdown === "prestaties" || (isCollapsed && hoveredDropdown === "prestaties")) && (
+              <Dropdown isOpen={true} items={prestatieMenu} name="prestaties" />
             )}
           </div>
 
@@ -269,10 +280,12 @@ export default function Sidebar() {
               label="Acerta"
               name="acerta"
               onClick={() => toggleDropdown("acerta")}
+              onMouseEnter={() => isCollapsed && setHoveredDropdown("acerta")}
+              onMouseLeave={() => isCollapsed && setHoveredDropdown(null)}
               isActive={location.pathname.startsWith("/acerta")}
             />
-            {openDropdown === "acerta" && (
-              <Dropdown isOpen={true} items={acertaMenu} />
+            {(openDropdown === "acerta" || (isCollapsed && hoveredDropdown === "acerta")) && (
+              <Dropdown isOpen={true} items={acertaMenu} name="acerta" />
             )}
           </div>
 
