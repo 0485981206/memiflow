@@ -33,20 +33,23 @@ Deno.serve(async (req) => {
       eindklantMap[firma] = ek;
     }
 
+    // Map bron to eindklant_naam
+    const bronMap = { gps: "Hofkip", uitsnext: "Meat and More" };
+    
     // Create Prestatie records
     let imported = 0;
     for (const r of regels) {
       try {
         const ek = r.firma ? eindklantMap[r.firma] : null;
+        const bronNaam = bronMap[r.bron?.toLowerCase()] || r.bron || "";
         await base44.entities.Prestatie.create({
           werknemer_id: r.werknemer_id,
           werknemer_naam: r.werknemer_naam,
           eindklant_id: ek?.id || r.eindklant_id || "",
-          eindklant_naam: ek?.naam || r.eindklant_naam || r.firma || "",
+          eindklant_naam: ek?.naam || r.eindklant_naam || bronNaam || "",
           datum: r.datum,
           dag: r.dag || "",
-          code: "R",
-          bron: r.firma || "",
+          bron: r.bron || "",
           firma: r.firma || "",
           dagschema: r.dagschema || "",
           totaal_uren: r.uren || 0,

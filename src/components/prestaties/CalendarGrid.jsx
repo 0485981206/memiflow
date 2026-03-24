@@ -18,9 +18,9 @@ export default function CalendarGrid({ currentMonth, prestaties, codes, onDayCli
     return prestaties.filter((p) => p.datum === dateStr);
   };
 
-  const getCodeColor = (code) => {
-    const found = codes.find((c) => c.code === code);
-    return found?.kleur || "#3b82f6";
+  const mapBron = (bron) => {
+    const map = { gps: "Hofkip", uitsnext: "Meat and More" };
+    return map[bron?.toLowerCase()] || bron || "";
   };
 
   return (
@@ -64,11 +64,10 @@ export default function CalendarGrid({ currentMonth, prestaties, codes, onDayCli
                 {dayPrestaties.slice(0, 3).map((p, i) => (
                   <div
                     key={i}
-                    className="text-[10px] leading-tight font-medium px-1 py-0.5 rounded truncate text-white"
-                    style={{ backgroundColor: getCodeColor(p.code) }}
-                    title={`${p.code} - ${p.uren}u ${p.werknemer_naam || ""}`}
+                    className="text-[10px] leading-tight font-medium px-1 py-0.5 rounded truncate bg-blue-500 text-white"
+                    title={`${p.uren}u - ${p.eindklant_naam || p.firma || ""}`}
                   >
-                    {selectedWerknemer ? `${p.code} ${p.uren}u` : `${p.werknemer_naam?.split(" ")[0] || ""} ${p.code}`}
+                    {p.uren}u {mapBron(p.bron)}
                   </div>
                 ))}
                 {dayPrestaties.length > 3 && (

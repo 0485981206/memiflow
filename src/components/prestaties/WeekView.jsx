@@ -8,7 +8,10 @@ export default function WeekView({ currentDate, prestaties, codes, onDayClick, s
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const getCodeColor = (code) => codes.find(c => c.code === code)?.kleur || "#3b82f6";
+  const mapBron = (bron) => {
+    const map = { gps: "Hofkip", uitsnext: "Meat and More" };
+    return map[bron?.toLowerCase()] || bron || "";
+  };
 
   return (
     <div>
@@ -37,11 +40,10 @@ export default function WeekView({ currentDate, prestaties, codes, onDayClick, s
                 {dayPrestaties.slice(0, 6).map((p, j) => (
                   <div
                     key={j}
-                    className="text-[10px] leading-tight font-medium px-1 py-0.5 rounded truncate text-white"
-                    style={{ backgroundColor: getCodeColor(p.code) }}
-                    title={`${p.code} - ${p.uren}u ${p.werknemer_naam || ""}`}
+                    className="text-[10px] leading-tight font-medium px-1 py-0.5 rounded truncate bg-blue-500 text-white"
+                    title={`${p.totaal_uren ?? p.uren}u - ${p.eindklant_naam || p.firma || ""}`}
                   >
-                    {selectedWerknemer ? `${p.code} ${p.uren}u` : `${p.werknemer_naam?.split(" ")[0] || ""} ${p.code}`}
+                    {p.totaal_uren ?? p.uren}u {mapBron(p.bron)}
                   </div>
                 ))}
                 {dayPrestaties.length > 6 && (
