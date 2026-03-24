@@ -21,7 +21,7 @@ import { nl } from "date-fns/locale";
 const STATUS = { WACHTEN: "wachten", BEZIG: "bezig", KLAAR: "klaar", FOUT: "fout", GEANNULEERD: "geannuleerd" };
 
 const batchStatusConfig = {
-  verwerken: { label: "Verwerken", color: "bg-blue-100 text-blue-700", icon: Loader2 },
+  verwerken: { label: "Bezig...", color: "bg-blue-100 text-blue-700", icon: Loader2 },
   klaar_voor_review: { label: "Klaar voor review", color: "bg-amber-100 text-amber-700", icon: Clock },
   goedgekeurd: { label: "Geïmporteerd", color: "bg-green-100 text-green-700", icon: CheckCircle2 },
   fout: { label: "Fout", color: "bg-red-100 text-red-700", icon: AlertTriangle },
