@@ -5,8 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Loader2, Upload, Download, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
 
-const API_BASE = "http://31.97.176.25:8000/api/parse";
-
 function formatEntries(entries) {
   if (!entries || entries.length === 0) return "—";
   return entries.map(e => `${e.in || "?"}-${e.out || "?"}`).join(" | ");
@@ -32,22 +30,33 @@ export default function PrestatieImport() {
       if (match) return match;
     }
     if (naam) {
-      const lower = naam.toLowerCase();
-      const parts = lower.split(/\s+/);
+      const parts = naam.toLowerCase().trim().split(/\s+/);
       return werknemers.find(w => {
         const full = `${w.voornaam || ""} ${w.achternaam || ""}`.toLowerCase();
-        const fullRev = `${w.achternaam || ""} ${w.voornaam || ""}`.toLowerCase();
-        return parts.every(p => full.includes(p) || fullRev.includes(p));
+        const rev = `${w.achternaam || ""} ${w.voornaam || ""}`.toLowerCase();
+        return parts.every(p => full.includes(p) || rev.includes(p));
       });
     }
     return null;
   };
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
-    setSelectedFiles(files);
+    setSelectedFiles(Array.from(e.target.files));
     setResult(null);
     setSaveResult(null);
+  };
+
+  const uploadAndParse = async (file, format = "json") => {
+    // Upload naar base44 opslag
+    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    // Stuur door via backend proxy
+    const response = await base44.functions.invoke("parsePrestatiePdf", {
+      file_url,
+      format,
+      active_only: "true",
+      filename: file.name,
+    });
+    return response.data;
   };
 
   const handleVerwerk = async () => {
@@ -61,13 +70,7 @@ export default function PrestatieImport() {
     const allEmployees = new Set();
 
     for (const file of selectedFiles) {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch(`${API_BASE}?format=json&active_only=true`, {
-        method: "POST",
-        body: formData,
-      });
-      const json = await response.json();
+      const json = await uploadAndParse(file, "json");
       if (json.data) {
         allData.push(...json.data);
         json.data.forEach(r => {
@@ -77,7 +80,6 @@ export default function PrestatieImport() {
       }
     }
 
-    // Build werknemer match map
     const map = {};
     allData.forEach(r => {
       const key = r.externe_id || r.employee_name;
@@ -130,7 +132,6 @@ export default function PrestatieImport() {
         in_6: record.entries?.[5]?.in || "", uit_6: record.entries?.[5]?.out || "",
       };
 
-      // Check of er al een record bestaat voor werknemer + datum
       const existing = await base44.entities.Prestatie.filter({
         werknemer_id: werknemer.id,
         datum: record.date,
@@ -152,13 +153,8 @@ export default function PrestatieImport() {
   const handleDownloadCsv = async () => {
     if (selectedFiles.length === 0) return;
     for (const file of selectedFiles) {
-      const formData = new FormData();
-      formData.append("file", file);
-      const response = await fetch(`${API_BASE}?format=csv&active_only=true`, {
-        method: "POST",
-        body: formData,
-      });
-      const blob = await response.blob();
+      const csvText = await uploadAndParse(file, "csv");
+      const blob = new Blob([csvText], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -180,7 +176,6 @@ export default function PrestatieImport() {
         </p>
       </div>
 
-      {/* Upload zone */}
       <Card className="p-6 space-y-4">
         <div
           className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-3 py-10 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
@@ -192,14 +187,7 @@ export default function PrestatieImport() {
             <p className="text-sm text-muted-foreground mt-1">Meerdere bestanden zijn toegestaan</p>
           </div>
         </div>
-        <input
-          type="file"
-          accept=".pdf"
-          multiple
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          className="hidden"
-        />
+        <input type="file" accept=".pdf" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" />
 
         {selectedFiles.length > 0 && (
           <div className="space-y-1">
@@ -214,11 +202,7 @@ export default function PrestatieImport() {
         )}
 
         <div className="flex gap-2 flex-wrap">
-          <Button
-            onClick={handleVerwerk}
-            disabled={selectedFiles.length === 0 || isProcessing}
-            className="gap-2"
-          >
+          <Button onClick={handleVerwerk} disabled={selectedFiles.length === 0 || isProcessing} className="gap-2">
             {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
             {isProcessing ? "Verwerken..." : "Verwerk PDF"}
           </Button>
@@ -230,10 +214,8 @@ export default function PrestatieImport() {
         </div>
       </Card>
 
-      {/* Resultaat */}
       {result && (
         <Card className="p-6 space-y-4">
-          {/* Samenvatting */}
           <div className="grid grid-cols-3 gap-4">
             <div className="p-4 rounded-lg bg-muted/50 text-center">
               <p className="text-2xl font-bold text-accent">{result.unique_employees}</p>
@@ -249,7 +231,6 @@ export default function PrestatieImport() {
             </div>
           </div>
 
-          {/* Tabel */}
           <div className="overflow-auto max-h-[500px] border rounded-lg">
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-muted/90">
@@ -268,10 +249,7 @@ export default function PrestatieImport() {
                   const key = r.externe_id || r.employee_name;
                   const gevonden = werknemerMap[key];
                   return (
-                    <tr
-                      key={i}
-                      className={`border-t ${!gevonden ? "bg-orange-50" : "hover:bg-muted/30"}`}
-                    >
+                    <tr key={i} className={`border-t ${!gevonden ? "bg-orange-50" : "hover:bg-muted/30"}`}>
                       <td className="p-2">
                         <div className="flex items-center gap-1">
                           {!gevonden && <AlertTriangle className="w-3 h-3 text-orange-500 shrink-0" />}
@@ -292,7 +270,6 @@ export default function PrestatieImport() {
             </table>
           </div>
 
-          {/* Opslaan */}
           {!saveResult && (
             <Button onClick={handleOpslaan} disabled={isSaving} className="gap-2">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
