@@ -2,8 +2,17 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { X, CheckCircle2, AlertTriangle, Loader2, Calendar } from "lucide-react";
+import { X, CheckCircle2, AlertTriangle, Loader2, Calendar, Clock } from "lucide-react";
 import { toast } from "sonner";
+
+const BRON_MAP = {
+  gps: "Hofkip",
+  uitsnext: "Meat and More",
+};
+
+function mapBron(bron) {
+  return BRON_MAP[bron?.toLowerCase()] || bron || "";
+}
 
 export default function ImportKalenderPanel({ batch, onClose, onImported }) {
   const [selected, setSelected] = useState(new Set());
@@ -142,13 +151,25 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
                   )}
                   <span className="ml-auto text-xs text-muted-foreground">{items.length} records</span>
                 </div>
-                <div className="grid grid-cols-4 gap-1 text-[10px] text-muted-foreground">
-                  {items.slice(0, 8).map((r, i) => (
-                    <span key={i} className="bg-muted/60 rounded px-1.5 py-0.5 truncate">
-                      {r.datum} {r.uren ? `(${r.uren}u)` : ""}
-                    </span>
-                  ))}
-                  {items.length > 8 && <span className="text-muted-foreground">+{items.length - 8} meer</span>}
+                <div className="space-y-1.5">
+                  {items.slice(0, 4).map((r, i) => {
+                    const tijden = [1,2,3,4,5,6].map(n => {
+                      const inn = r[`in_${n}`]; const uit = r[`uit_${n}`];
+                      return inn ? `${inn}–${uit || "?"}` : null;
+                    }).filter(Boolean).join(" | ");
+                    return (
+                      <div key={i} className="text-[10px] bg-muted/40 rounded px-2 py-1.5 space-y-0.5">
+                        <div className="flex justify-between gap-1">
+                          <span className="font-medium">{r.datum}</span>
+                          <span className="text-muted-foreground">{r.uren}u</span>
+                        </div>
+                        {tijden && <div className="text-muted-foreground flex items-center gap-1"><Clock className="w-2.5 h-2.5" />{tijden}</div>}
+                        {r.firma && <div className="text-muted-foreground"><strong>Klant:</strong> {r.firma}</div>}
+                        {r.bron && <div className="text-muted-foreground"><strong>Bron:</strong> {mapBron(r.bron)}</div>}
+                      </div>
+                    );
+                  })}
+                  {items.length > 4 && <div className="text-[10px] text-muted-foreground pl-1">+{items.length - 4} meer records</div>}
                 </div>
               </div>
             );
