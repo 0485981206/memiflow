@@ -43,13 +43,13 @@ export default function Kalenderoverzicht() {
     });
   }, [currentMonth]);
 
-  // Build a map: werknemer_id -> date -> [codes]
+  // Build a map: werknemer_id -> date -> [prestaties]
   const prestatieMap = useMemo(() => {
     const map = {};
     prestaties.forEach((p) => {
       if (!map[p.werknemer_id]) map[p.werknemer_id] = {};
       if (!map[p.werknemer_id][p.datum]) map[p.werknemer_id][p.datum] = [];
-      map[p.werknemer_id][p.datum].push(p.code);
+      map[p.werknemer_id][p.datum].push(p);
     });
     return map;
   }, [prestaties]);
@@ -63,43 +63,39 @@ export default function Kalenderoverzicht() {
 
   const getCellInfo = (werknemerId, day) => {
     const dateStr = format(day, "yyyy-MM-dd");
-    const codes = prestatieMap[werknemerId]?.[dateStr] || [];
-    return codes;
+    return prestatieMap[werknemerId]?.[dateStr] || [];
   };
 
   const renderCell = (werknemerId, day) => {
-    const codes = getCellInfo(werknemerId, day);
+    const pres = getCellInfo(werknemerId, day);
     const weekend = isWeekend(day);
 
-    if (weekend && codes.length === 0) {
+    if (weekend && pres.length === 0) {
       return <div className="w-full h-full rounded-sm" style={{ backgroundColor: WEEKEND_BG }} />;
     }
 
-    if (codes.length === 0) {
+    if (pres.length === 0) {
       return <div className="w-full h-full rounded-sm" style={{ backgroundColor: EMPTY_BG }} />;
     }
 
-    if (codes.length > 1) {
+    if (pres.length > 1) {
       return (
         <div
           className="w-full h-full rounded-sm flex items-center justify-center text-white text-[9px] font-bold"
           style={{ backgroundColor: MULTI_BG }}
-          title={codes.join(", ")}
+          title={pres.map((p) => `${p.uren}u`).join(", ")}
         >
           ≡
         </div>
       );
     }
 
-    const code = codes[0];
-    const color = CODE_COLORS[code] || { bg: "#3b82f6", text: "#fff" };
     return (
       <div
-        className="w-full h-full rounded-sm flex items-center justify-center text-[9px] font-bold"
-        style={{ backgroundColor: color.bg, color: color.text }}
-        title={code}
+        className="w-full h-full rounded-sm flex items-center justify-center text-[9px] font-bold bg-blue-500 text-white"
+        title={`${pres[0].uren}u - ${pres[0].eindklant_naam || pres[0].firma || ""}`}
       >
-        {code}
+        {pres[0].uren}u
       </div>
     );
   };
@@ -158,7 +154,7 @@ export default function Kalenderoverzicht() {
                 )}
               </div>
               {days.map((day) => (
-                <div key={day.toISOString()} className="w-7 h-6 flex-shrink-0 px-0.5 py-0.5">
+                <div key={day.toISOString()} className="w-7 h-6 flex-shrink-0 px-0.5 py-0.5 cursor-default">
                   {renderCell(w.id, day)}
                 </div>
               ))}
@@ -168,15 +164,10 @@ export default function Kalenderoverzicht() {
 
         {/* Legend */}
         <div className="flex flex-wrap gap-4 mt-4 pt-3 border-t text-xs">
-          {Object.entries(CODE_COLORS).map(([code, color]) => (
-            <div key={code} className="flex items-center gap-1.5">
-              <div className="w-5 h-5 rounded-sm flex items-center justify-center text-[9px] font-bold"
-                style={{ backgroundColor: color.bg, color: color.text }}>
-                {code}
-              </div>
-              <span className="text-muted-foreground">{color.label}</span>
-            </div>
-          ))}
+          <div className="flex items-center gap-1.5">
+            <div className="w-5 h-5 rounded-sm bg-blue-500" />
+            <span className="text-muted-foreground">Prestatie</span>
+          </div>
           <div className="flex items-center gap-1.5">
             <div className="w-5 h-5 rounded-sm flex items-center justify-center text-[9px] font-bold text-white"
               style={{ backgroundColor: MULTI_BG }}>
