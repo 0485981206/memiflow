@@ -1,6 +1,7 @@
 import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { FileText, Loader2, Upload, Download, Save, AlertTriangle, CheckCircle2, X, Clock, Ban } from "lucide-react";
@@ -124,6 +125,13 @@ export default function PrestatieImport() {
       });
     }
 
+    const klaar = allData.length > 0;
+    const fouten = queue.filter(q => q.status === STATUS.FOUT).length;
+    if (klaar) {
+      toast.success(`PDF verwerking voltooid! ${allData.length} records geladen.`, { duration: 6000 });
+    } else if (fouten > 0) {
+      toast.error(`Verwerking mislukt voor ${fouten} bestand(en).`, { duration: 6000 });
+    }
     setIsProcessing(false);
   };
 
@@ -164,6 +172,7 @@ export default function PrestatieImport() {
       }
     }
     setSaveResult({ opgeslagen, overgeslagen, updates });
+    toast.success(`✓ ${opgeslagen} records opgeslagen${updates > 0 ? `, ${updates} bijgewerkt` : ""}${overgeslagen > 0 ? ` (${overgeslagen} overgeslagen)` : ""}`, { duration: 7000 });
     setIsSaving(false);
   };
 
