@@ -154,10 +154,10 @@ export default function PrestatieImport() {
   };
 
   const handleDeleteBatch = async (batchId) => {
-    // Delete concept regels first
+    // Delete concept regels first (ignore not-found errors)
     const regels = await base44.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
     for (const r of regels) {
-      await base44.entities.PrestatieConceptRegel.delete(r.id);
+      try { await base44.entities.PrestatieConceptRegel.delete(r.id); } catch (_) {}
     }
     await base44.entities.PrestatieImportBatch.delete(batchId);
     queryClient.invalidateQueries({ queryKey: ["importbatches"] });
