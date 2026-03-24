@@ -53,6 +53,7 @@ export default function Sidebar() {
     location.pathname.startsWith("/acerta")
   );
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
   const [importBadge, setImportBadge] = useState(0);
 
   useEffect(() => {
@@ -79,17 +80,30 @@ export default function Sidebar() {
 
   const sidebarContent = (
     <div className="flex flex-col h-full" style={{ backgroundColor: "#152d4a" }}>
-      {/* Logo */}
-      <div className="px-5 py-6 border-b border-white/10">
-        <h1 className="text-xl font-bold text-white tracking-tight">
-          Memi's Uitzend
-        </h1>
+      {/* Logo & Collapse Toggle */}
+      <div className="px-5 py-6 border-b border-white/10 flex items-center justify-between">
+        {!isCollapsed && (
+          <h1 className="text-xl font-bold text-white tracking-tight">
+            Memi's Uitzend
+          </h1>
+        )}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden lg:block p-1.5 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white ml-auto"
+          title={isCollapsed ? "Uitvouwen" : "Samenvouwen"}
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+        </button>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
-        <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
-          Hoofdmenu
-        </p>
+      <nav className={`flex-1 px-3 py-4 space-y-1 overflow-y-auto transition-all ${isCollapsed ? "px-1" : "px-3"}`}>
+        {!isCollapsed && (
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+            Hoofdmenu
+          </p>
+        )}
 
         {mainMenu.map((item) => (
           <Link
@@ -97,9 +111,10 @@ export default function Sidebar() {
             to={item.path}
             className={linkClass(item.path)}
             onClick={() => setMobileOpen(false)}
+            title={isCollapsed ? item.label : ""}
           >
             <item.icon className="w-4 h-4 flex-shrink-0" />
-            <span>{item.label}</span>
+            {!isCollapsed && <span>{item.label}</span>}
           </Link>
         ))}
 
@@ -187,19 +202,22 @@ export default function Sidebar() {
         )}
 
         <div className="pt-4">
-          <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
-            Beheer
-          </p>
+          {!isCollapsed && (
+            <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+              Beheer
+            </p>
+          )}
           {beheerMenu.map((item) => (
             <Link
-              key={item.path}
-              to={item.path}
-              className={linkClass(item.path)}
-              onClick={() => setMobileOpen(false)}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              <span>{item.label}</span>
-            </Link>
+                key={item.path}
+                to={item.path}
+                className={linkClass(item.path)}
+                onClick={() => setMobileOpen(false)}
+                title={isCollapsed ? item.label : ""}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                {!isCollapsed && <span>{item.label}</span>}
+              </Link>
           ))}
         </div>
       </nav>
@@ -231,9 +249,9 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-60 z-40 transition-transform duration-300 lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
-        }`}
+        className={`fixed top-0 left-0 h-screen z-40 transition-all duration-300 lg:translate-x-0 ${
+          mobileOpen ? "translate-x-0 w-60" : "-translate-x-full w-60"
+        } ${!mobileOpen && isCollapsed ? "lg:w-20" : "lg:w-60"}`}
         style={{ backgroundColor: "#152d4a" }}
       >
         {sidebarContent}
