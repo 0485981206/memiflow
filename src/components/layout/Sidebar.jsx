@@ -54,7 +54,8 @@ export default function Sidebar() {
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(true);
-  const [hoveredDropdown, setHoveredDropdown] = useState(null);
+  const [openDropdown, setOpenDropdown] = useState(null);
+  const [dropdownPos, setDropdownPos] = useState({ x: 0, y: 0 });
   const [importBadge, setImportBadge] = useState(0);
 
   useEffect(() => {
@@ -99,36 +100,59 @@ export default function Sidebar() {
           </p>
         )}
 
-        {mainMenu.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group ${
-              isActive(item.path)
-                ? "bg-[#1e3a5f] text-white"
-                : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-            }`}
-            title={isCollapsed ? item.label : ""}
-            onClick={() => setMobileOpen(false)}
-          >
-            <item.icon className="w-4 h-4 flex-shrink-0" />
-            {!isCollapsed && <span>{item.label}</span>}
-            {isCollapsed && (
-              <div className="absolute left-full ml-2 px-3 py-1.5 bg-[#1e3a5f] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                {item.label}
-              </div>
-            )}
-          </Link>
-        ))}
+        {mainMenu.map((item) => {
+          if (isCollapsed) {
+            return (
+              <button
+                key={item.path}
+                onClick={() => {
+                  if (item.path.includes("/prestaties") || item.path.includes("/acerta")) {
+                    // These have submenus, don't navigate
+                    return;
+                  }
+                  // Direct navigation
+                  window.location.hash = item.path;
+                  setMobileOpen(false);
+                }}
+                className={`flex items-center justify-center w-full px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "bg-[#1e3a5f] text-white"
+                    : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+                }`}
+                title={item.label}
+              >
+                <item.icon className="w-4 h-4" />
+              </button>
+            );
+          }
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                isActive(item.path)
+                  ? "bg-[#1e3a5f] text-white"
+                  : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+              }`}
+              onClick={() => setMobileOpen(false)}
+            >
+              <item.icon className="w-4 h-4 flex-shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+          );
+        })}
 
         {/* Prestaties dropdown */}
-        <div
-          className="relative"
-          onMouseEnter={() => isCollapsed && setHoveredDropdown("prestaties")}
-          onMouseLeave={() => setHoveredDropdown(null)}
-        >
+        <div className="relative">
           <button
-            onClick={() => !isCollapsed && setPrestatiesOpen(!prestatiesOpen)}
+            onClick={(e) => {
+              if (isCollapsed) {
+                setOpenDropdown(openDropdown === "prestaties" ? null : "prestaties");
+                setDropdownPos({ x: e.currentTarget.getBoundingClientRect().right, y: e.currentTarget.getBoundingClientRect().top });
+              } else {
+                setPrestatiesOpen(!prestatiesOpen);
+              }
+            }}
             className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               location.pathname.startsWith("/prestaties")
                 ? "bg-[#1e3a5f] text-white"
@@ -144,14 +168,17 @@ export default function Sidebar() {
           </button>
 
           {/* Collapsed dropdown panel */}
-          {isCollapsed && hoveredDropdown === "prestaties" && (
+          {isCollapsed && openDropdown === "prestaties" && (
             <div className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10">
               {prestatieMenu.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   className="flex items-center justify-between px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-[#2a4a6f] transition-colors"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   <span>{item.label}</span>
                   {item.path === "/prestaties/import" && importBadge > 0 && (
@@ -191,13 +218,16 @@ export default function Sidebar() {
         </div>
 
         {/* Acerta dropdown */}
-        <div
-          className="relative"
-          onMouseEnter={() => isCollapsed && setHoveredDropdown("acerta")}
-          onMouseLeave={() => setHoveredDropdown(null)}
-        >
+        <div className="relative">
           <button
-            onClick={() => !isCollapsed && setAcertaOpen(!acertaOpen)}
+            onClick={(e) => {
+              if (isCollapsed) {
+                setOpenDropdown(openDropdown === "acerta" ? null : "acerta");
+                setDropdownPos({ x: e.currentTarget.getBoundingClientRect().right, y: e.currentTarget.getBoundingClientRect().top });
+              } else {
+                setAcertaOpen(!acertaOpen);
+              }
+            }}
             className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
               location.pathname.startsWith("/acerta")
                 ? "bg-[#1e3a5f] text-white"
@@ -213,14 +243,17 @@ export default function Sidebar() {
           </button>
 
           {/* Collapsed dropdown panel */}
-          {isCollapsed && hoveredDropdown === "acerta" && (
+          {isCollapsed && openDropdown === "acerta" && (
             <div className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10">
               {acertaMenu.map((item) => (
                 <Link
                   key={item.path}
                   to={item.path}
                   className="flex items-center px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-[#2a4a6f] transition-colors"
-                  onClick={() => setMobileOpen(false)}
+                  onClick={() => {
+                    setMobileOpen(false);
+                    setOpenDropdown(null);
+                  }}
                 >
                   <span>{item.label}</span>
                 </Link>
@@ -255,35 +288,61 @@ export default function Sidebar() {
               Beheer
             </p>
           )}
-          {beheerMenu.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 relative group ${
-                isActive(item.path)
-                  ? "bg-[#1e3a5f] text-white"
-                  : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-              }`}
-              onClick={() => setMobileOpen(false)}
-              title={isCollapsed ? item.label : ""}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              {!isCollapsed && <span>{item.label}</span>}
-              {isCollapsed && (
-                <div className="absolute left-full ml-2 px-3 py-1.5 bg-[#1e3a5f] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-50">
-                  {item.label}
-                </div>
-              )}
-            </Link>
-          ))}
+          {beheerMenu.map((item) => {
+            if (isCollapsed) {
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center justify-center w-full px-3 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    isActive(item.path)
+                      ? "bg-[#1e3a5f] text-white"
+                      : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                  title={item.label}
+                >
+                  <item.icon className="w-4 h-4" />
+                </Link>
+              );
+            }
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "bg-[#1e3a5f] text-white"
+                    : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+                }`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <item.icon className="w-4 h-4 flex-shrink-0" />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
         </div>
       </nav>
 
-      <div className="px-4 py-4 border-t border-white/10">
-        <p className="text-xs text-white/30">© 2026 Memi Group</p>
-      </div>
+      {!isCollapsed && (
+        <div className="px-4 py-4 border-t border-white/10">
+          <p className="text-xs text-white/30">© 2026 Memi Group</p>
+        </div>
+      )}
     </div>
   );
+
+  // Close dropdown when clicking outside
+  React.useEffect(() => {
+    const handleClickOutside = () => {
+      setOpenDropdown(null);
+    };
+    if (isCollapsed && openDropdown) {
+      document.addEventListener("click", handleClickOutside);
+      return () => document.removeEventListener("click", handleClickOutside);
+    }
+  }, [isCollapsed, openDropdown]);
 
   return (
     <>
