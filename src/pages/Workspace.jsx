@@ -1,44 +1,18 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { base44 } from '@/api/base44Client';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button } from '@/components/ui/button';
+import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, Edit2, Grid, Palette } from 'lucide-react';
-import { toast } from 'sonner';
-import WorkspaceDialog from '@/components/workspace/WorkspaceDialog';
+import { Grid } from 'lucide-react';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
 
 export default function Workspace() {
-  const [showDialog, setShowDialog] = useState(false);
-  const queryClient = useQueryClient();
-
   const { data: workspaces = [], isLoading } = useQuery({
     queryKey: ['workspaces'],
     queryFn: async () => {
       const user = await base44.auth.me();
-      const data = await base44.auth.updateMe({});
       return JSON.parse(user.workspaces || '[]');
     },
   });
-
-  const handleSave = async (workspace) => {
-    const user = await base44.auth.me();
-    const current = JSON.parse(user.workspaces || '[]');
-    const updated = [...current, { id: Date.now(), ...workspace }];
-    await base44.auth.updateMe({ workspaces: JSON.stringify(updated) });
-    queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-    setShowDialog(false);
-    toast.success('Workspace aangemaakt');
-  };
-
-  const handleDelete = async (id) => {
-    const user = await base44.auth.me();
-    const current = JSON.parse(user.workspaces || '[]');
-    const updated = current.filter(w => w.id !== id);
-    await base44.auth.updateMe({ workspaces: JSON.stringify(updated) });
-    queryClient.invalidateQueries({ queryKey: ['workspaces'] });
-    toast.success('Workspace verwijderd');
-  };
 
   return (
     <div className="space-y-6">
@@ -50,13 +24,6 @@ export default function Workspace() {
         <p className="text-sm text-muted-foreground mt-1">
           Maak snelle koppelingen naar menu items
         </p>
-      </div>
-
-      <div className="flex justify-end">
-        <Button onClick={() => setShowDialog(true)} className="gap-2">
-          <Plus className="w-4 h-4" />
-          Workspace toevoegen
-        </Button>
       </div>
 
       {isLoading ? (
@@ -73,34 +40,17 @@ export default function Workspace() {
             const iconDef = AVAILABLE_ICONS.find(i => i.id === ws.icon);
             const IconComponent = iconDef?.component;
             return (
-              <Card key={ws.id} className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all cursor-pointer group">
-                <div className="p-3 bg-muted rounded-lg group-hover:bg-accent/10">
+              <Card key={ws.id} className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all cursor-pointer">
+                <div className="p-3 bg-muted rounded-lg">
                   {IconComponent && <IconComponent className="w-8 h-8 text-accent" />}
                 </div>
                 <div className="text-center flex-1">
                   <p className="font-medium text-sm line-clamp-2">{ws.name}</p>
                 </div>
-                <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="icon" variant="ghost" className="h-7 w-7">
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-destructive"
-                    onClick={() => handleDelete(ws.id)}
-                  >
-                    <Trash2 className="w-3 h-3" />
-                  </Button>
-                </div>
               </Card>
             );
           })}
         </div>
-      )}
-
-      {showDialog && (
-        <WorkspaceDialog onClose={() => setShowDialog(false)} onSave={handleSave} />
       )}
     </div>
   );
