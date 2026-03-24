@@ -3,21 +3,25 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { FileText, Loader2, Upload, Download, Save, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { FileText, Loader2, Upload, Download, Save, AlertTriangle, CheckCircle2, X, Clock, Ban } from "lucide-react";
 
 function formatEntries(entries) {
   if (!entries || entries.length === 0) return "—";
   return entries.map(e => `${e.in || "?"}-${e.out || "?"}`).join(" | ");
 }
 
+const STATUS = { WACHTEN: "wachten", BEZIG: "bezig", KLAAR: "klaar", FOUT: "fout", GEANNULEERD: "geannuleerd" };
+
 export default function PrestatieImport() {
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [queue, setQueue] = useState([]); // [{file, status, error}]
   const [isProcessing, setIsProcessing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [result, setResult] = useState(null);
   const [saveResult, setSaveResult] = useState(null);
   const [werknemerMap, setWerknemerMap] = useState({});
   const fileInputRef = useRef(null);
+  const cancelledRef = useRef(false);
 
   const { data: werknemers = [] } = useQuery({
     queryKey: ["werknemers"],
@@ -41,22 +45,22 @@ export default function PrestatieImport() {
   };
 
   const handleFileChange = (e) => {
-    setSelectedFiles(Array.from(e.target.files));
+    const files = Array.from(e.target.files);
+    setSelectedFiles(files);
+    setQueue(files.map(f => ({ file: f, status: STATUS.WACHTEN, error: null })));
     setResult(null);
     setSaveResult(null);
   };
 
-  const uploadAndParse = async (file, format = "json") => {
-    // Upload naar base44 opslag
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    // Stuur door via backend proxy
-    const response = await base44.functions.invoke("parsePrestatiePdf", {
-      file_url,
-      format,
-      active_only: "true",
-      filename: file.name,
-    });
-    return response.data;
+  const updateQueue = (index, update) => {
+    setQueue(prev => prev.map((item, i) => i === index ? { ...item, ...update } : item));
+  };
+
+  const handleAnnuleer = () => {
+    cancelledRef.current = true;
+    setQueue(prev => prev.map(item =>
+      item.status === STATUS.WACHTEN ? { ...item, status: STATUS.GEANNULEERD } : item
+    ));
   };
 
   const handleVerwerk = async () => {
@@ -64,37 +68,62 @@ export default function PrestatieImport() {
     setIsProcessing(true);
     setResult(null);
     setSaveResult(null);
+    cancelledRef.current = false;
+
+    // Reset queue to wachten
+    setQueue(selectedFiles.map(f => ({ file: f, status: STATUS.WACHTEN, error: null })));
 
     const allData = [];
     let totalHours = 0;
     const allEmployees = new Set();
 
-    for (const file of selectedFiles) {
-      const json = await uploadAndParse(file, "json");
-      if (json.data) {
-        allData.push(...json.data);
-        json.data.forEach(r => {
-          allEmployees.add(r.employee_name);
-          totalHours += r.total_hours || 0;
+    for (let i = 0; i < selectedFiles.length; i++) {
+      if (cancelledRef.current) {
+        updateQueue(i, { status: STATUS.GEANNULEERD });
+        continue;
+      }
+
+      const file = selectedFiles[i];
+      updateQueue(i, { status: STATUS.BEZIG });
+
+      try {
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        const response = await base44.functions.invoke("parsePrestatiePdf", {
+          file_url,
+          format: "json",
+          active_only: "true",
+          filename: file.name,
         });
+        const json = response.data;
+
+        if (json.data) {
+          allData.push(...json.data);
+          json.data.forEach(r => {
+            allEmployees.add(r.employee_name);
+            totalHours += r.total_hours || 0;
+          });
+        }
+        updateQueue(i, { status: STATUS.KLAAR });
+      } catch (err) {
+        updateQueue(i, { status: STATUS.FOUT, error: err.message });
       }
     }
 
-    const map = {};
-    allData.forEach(r => {
-      const key = r.externe_id || r.employee_name;
-      if (!(key in map)) {
-        map[key] = findWerknemer(r.externe_id, r.employee_name);
-      }
-    });
-    setWerknemerMap(map);
+    if (allData.length > 0) {
+      const map = {};
+      allData.forEach(r => {
+        const key = r.externe_id || r.employee_name;
+        if (!(key in map)) map[key] = findWerknemer(r.externe_id, r.employee_name);
+      });
+      setWerknemerMap(map);
+      setResult({
+        data: allData,
+        unique_employees: allEmployees.size,
+        total_records: allData.length,
+        total_hours: Math.round(totalHours * 100) / 100,
+      });
+    }
 
-    setResult({
-      data: allData,
-      unique_employees: allEmployees.size,
-      total_records: allData.length,
-      total_hours: Math.round(totalHours * 100) / 100,
-    });
     setIsProcessing(false);
   };
 
@@ -102,10 +131,7 @@ export default function PrestatieImport() {
     if (!result) return;
     setIsSaving(true);
     setSaveResult(null);
-
-    let opgeslagen = 0;
-    let overgeslagen = 0;
-    let updates = 0;
+    let opgeslagen = 0, overgeslagen = 0, updates = 0;
 
     for (const record of result.data) {
       const key = record.externe_id || record.employee_name;
@@ -116,14 +142,10 @@ export default function PrestatieImport() {
       const payload = {
         werknemer_id: werknemer.id,
         werknemer_naam: `${werknemer.voornaam || ""} ${werknemer.achternaam || ""}`.trim(),
-        datum: record.date,
-        dag: record.day_name || "",
-        bron: record.source || "",
-        externe_id: record.externe_id || "",
-        firma: record.firma || "",
-        dagschema: record.dagschema || "",
-        totaal_uren: record.total_hours || 0,
-        maand,
+        datum: record.date, dag: record.day_name || "",
+        bron: record.source || "", externe_id: record.externe_id || "",
+        firma: record.firma || "", dagschema: record.dagschema || "",
+        totaal_uren: record.total_hours || 0, maand,
         in_1: record.entries?.[0]?.in || "", uit_1: record.entries?.[0]?.out || "",
         in_2: record.entries?.[1]?.in || "", uit_2: record.entries?.[1]?.out || "",
         in_3: record.entries?.[2]?.in || "", uit_3: record.entries?.[2]?.out || "",
@@ -132,11 +154,7 @@ export default function PrestatieImport() {
         in_6: record.entries?.[5]?.in || "", uit_6: record.entries?.[5]?.out || "",
       };
 
-      const existing = await base44.entities.Prestatie.filter({
-        werknemer_id: werknemer.id,
-        datum: record.date,
-      });
-
+      const existing = await base44.entities.Prestatie.filter({ werknemer_id: werknemer.id, datum: record.date });
       if (existing && existing.length > 0) {
         await base44.entities.Prestatie.update(existing[0].id, payload);
         updates++;
@@ -145,7 +163,6 @@ export default function PrestatieImport() {
         opgeslagen++;
       }
     }
-
     setSaveResult({ opgeslagen, overgeslagen, updates });
     setIsSaving(false);
   };
@@ -153,15 +170,32 @@ export default function PrestatieImport() {
   const handleDownloadCsv = async () => {
     if (selectedFiles.length === 0) return;
     for (const file of selectedFiles) {
-      const csvText = await uploadAndParse(file, "csv");
-      const blob = new Blob([csvText], { type: "text/csv" });
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const response = await base44.functions.invoke("parsePrestatiePdf", {
+        file_url, format: "csv", active_only: "true", filename: file.name,
+      });
+      const blob = new Blob([response.data], { type: "text/csv" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
-      a.download = file.name.replace(".pdf", ".csv");
-      a.click();
+      a.href = url; a.download = file.name.replace(".pdf", ".csv"); a.click();
       URL.revokeObjectURL(url);
     }
+  };
+
+  const queueStatusIcon = (status) => {
+    if (status === STATUS.BEZIG) return <Loader2 className="w-4 h-4 animate-spin text-accent" />;
+    if (status === STATUS.KLAAR) return <CheckCircle2 className="w-4 h-4 text-green-500" />;
+    if (status === STATUS.FOUT) return <AlertTriangle className="w-4 h-4 text-red-500" />;
+    if (status === STATUS.GEANNULEERD) return <Ban className="w-4 h-4 text-muted-foreground" />;
+    return <Clock className="w-4 h-4 text-muted-foreground" />;
+  };
+
+  const queueStatusLabel = (status) => {
+    if (status === STATUS.BEZIG) return <span className="text-accent">Verwerken...</span>;
+    if (status === STATUS.KLAAR) return <span className="text-green-600">Klaar</span>;
+    if (status === STATUS.FOUT) return <span className="text-red-500">Fout</span>;
+    if (status === STATUS.GEANNULEERD) return <span className="text-muted-foreground">Geannuleerd</span>;
+    return <span className="text-muted-foreground">Wachtrij</span>;
   };
 
   return (
@@ -179,7 +213,7 @@ export default function PrestatieImport() {
       <Card className="p-6 space-y-4">
         <div
           className="border-2 border-dashed border-border rounded-xl flex flex-col items-center justify-center gap-3 py-10 cursor-pointer hover:border-accent hover:bg-accent/5 transition-colors"
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => !isProcessing && fileInputRef.current?.click()}
         >
           <Upload className="w-10 h-10 text-muted-foreground" />
           <div className="text-center">
@@ -189,13 +223,26 @@ export default function PrestatieImport() {
         </div>
         <input type="file" accept=".pdf" multiple ref={fileInputRef} onChange={handleFileChange} className="hidden" />
 
-        {selectedFiles.length > 0 && (
-          <div className="space-y-1">
-            {selectedFiles.map((f, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm p-2 bg-muted/50 rounded-md">
-                <FileText className="w-4 h-4 text-accent shrink-0" />
-                <span className="font-medium">{f.name}</span>
-                <span className="text-muted-foreground ml-auto">{(f.size / 1024).toFixed(1)} KB</span>
+        {/* Wachtrij */}
+        {queue.length > 0 && (
+          <div className="space-y-1.5">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Wachtrij</p>
+            {queue.map((item, i) => (
+              <div
+                key={i}
+                className={`flex items-center gap-2 text-sm p-2.5 rounded-md border ${
+                  item.status === STATUS.BEZIG ? "bg-accent/5 border-accent/30" :
+                  item.status === STATUS.KLAAR ? "bg-green-50 border-green-200" :
+                  item.status === STATUS.FOUT ? "bg-red-50 border-red-200" :
+                  item.status === STATUS.GEANNULEERD ? "bg-muted/30 border-border opacity-60" :
+                  "bg-muted/30 border-border"
+                }`}
+              >
+                {queueStatusIcon(item.status)}
+                <span className="flex-1 font-medium truncate">{item.file.name}</span>
+                <span className="text-muted-foreground text-xs">{(item.file.size / 1024).toFixed(1)} KB</span>
+                <span className="text-xs ml-2">{queueStatusLabel(item.status)}</span>
+                {item.error && <span className="text-red-500 text-xs ml-1" title={item.error}>(!)</span>}
               </div>
             ))}
           </div>
@@ -206,8 +253,13 @@ export default function PrestatieImport() {
             {isProcessing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileText className="w-4 h-4" />}
             {isProcessing ? "Verwerken..." : "Verwerk PDF"}
           </Button>
-          {selectedFiles.length > 0 && (
-            <Button variant="outline" onClick={handleDownloadCsv} className="gap-2" disabled={isProcessing}>
+          {isProcessing && (
+            <Button variant="destructive" onClick={handleAnnuleer} className="gap-2">
+              <X className="w-4 h-4" /> Annuleren
+            </Button>
+          )}
+          {selectedFiles.length > 0 && !isProcessing && (
+            <Button variant="outline" onClick={handleDownloadCsv} className="gap-2">
               <Download className="w-4 h-4" /> Download CSV
             </Button>
           )}
@@ -284,9 +336,7 @@ export default function PrestatieImport() {
                 <p className="font-semibold">Opgeslagen!</p>
                 <p>✓ {saveResult.opgeslagen} nieuwe records aangemaakt</p>
                 {saveResult.updates > 0 && <p>↻ {saveResult.updates} bestaande records bijgewerkt</p>}
-                {saveResult.overgeslagen > 0 && (
-                  <p className="text-orange-600">⚠ {saveResult.overgeslagen} overgeslagen (onbekende werknemers)</p>
-                )}
+                {saveResult.overgeslagen > 0 && <p className="text-orange-600">⚠ {saveResult.overgeslagen} overgeslagen (onbekende werknemers)</p>}
               </div>
             </div>
           )}
