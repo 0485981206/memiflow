@@ -87,7 +87,9 @@ export default function WerknemerWizard({ open, onClose }) {
     if (step === 0 && !form.voornaam.trim()) return;
     setSaving(true);
     const data = getStepData(step);
-    if (form.uurloon) data.uurloon = Number(form.uurloon);
+    if ("uurloon" in data) {
+      data.uurloon = form.uurloon !== "" ? Number(form.uurloon) : undefined;
+    }
     try {
       if (step === 0 && !werknemerId) {
         const w = await base44.entities.Werknemer.create(data);
