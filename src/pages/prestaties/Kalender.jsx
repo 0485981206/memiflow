@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format, addMonths, subMonths, addDays, subDays, addWeeks, subWeeks, startOfWeek } from "date-fns";
+import { format, addMonths, subMonths, addDays, subDays, addWeeks, subWeeks, startOfWeek, parseISO } from "date-fns";
+import { useSearchParams } from "react-router-dom";
 import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,11 +16,15 @@ import PrestatieDialog from "../../components/prestaties/PrestatieDialog";
 import WerknemerCombobox from "../../components/prestaties/WerknemerCombobox.jsx";
 
 export default function Kalender() {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [searchParams] = useSearchParams();
+  const paramWerknemerId = searchParams.get("werknemer_id");
+  const paramDate = searchParams.get("date");
+
+  const [currentDate, setCurrentDate] = useState(paramDate ? parseISO(paramDate) : new Date());
   const [view, setView] = useState("maand"); // maand | week | dag
-  const [selectedDay, setSelectedDay] = useState(null);
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [selectedWerknemer, setSelectedWerknemer] = useState("");
+  const [selectedDay, setSelectedDay] = useState(paramDate ? parseISO(paramDate) : null);
+  const [dialogOpen, setDialogOpen] = useState(paramDate ? true : false);
+  const [selectedWerknemer, setSelectedWerknemer] = useState(paramWerknemerId || "");
 
   // For month query always use month of currentDate
   const currentMonth = currentDate;

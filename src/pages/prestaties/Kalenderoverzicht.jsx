@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
   addMonths, subMonths, isWeekend, isSameDay
@@ -66,9 +67,18 @@ export default function Kalenderoverzicht() {
     return prestatieMap[werknemerId]?.[dateStr] || [];
   };
 
+  const navigate = useNavigate();
+
   const renderCell = (werknemerId, day) => {
     const pres = getCellInfo(werknemerId, day);
     const weekend = isWeekend(day);
+    const dateStr = format(day, "yyyy-MM-dd");
+
+    const handleClick = () => {
+      if (pres.length > 0) {
+        navigate(`/prestaties/kalender?werknemer_id=${werknemerId}&date=${dateStr}`);
+      }
+    };
 
     if (weekend && pres.length === 0) {
       return <div className="w-full h-full rounded-sm" style={{ backgroundColor: WEEKEND_BG }} />;
@@ -81,9 +91,10 @@ export default function Kalenderoverzicht() {
     if (pres.length > 1) {
       return (
         <div
-          className="w-full h-full rounded-sm flex items-center justify-center text-white text-[9px] font-bold"
+          className="w-full h-full rounded-sm flex items-center justify-center text-white text-[9px] font-bold cursor-pointer hover:opacity-80 transition-opacity"
           style={{ backgroundColor: MULTI_BG }}
           title={pres.map((p) => `${p.uren}u`).join(", ")}
+          onClick={handleClick}
         >
           ≡
         </div>
@@ -92,8 +103,9 @@ export default function Kalenderoverzicht() {
 
     return (
       <div
-        className="w-full h-full rounded-sm flex items-center justify-center text-[9px] font-bold bg-blue-500 text-white"
+        className="w-full h-full rounded-sm flex items-center justify-center text-[9px] font-bold bg-blue-500 text-white cursor-pointer hover:opacity-80 transition-opacity"
         title={`${pres[0].uren}u - ${pres[0].eindklant_naam || pres[0].firma || ""}`}
+        onClick={handleClick}
       >
         {pres[0].uren}u
       </div>
@@ -154,7 +166,7 @@ export default function Kalenderoverzicht() {
                 )}
               </div>
               {days.map((day) => (
-                <div key={day.toISOString()} className="w-7 h-6 flex-shrink-0 px-0.5 py-0.5 cursor-default">
+                <div key={day.toISOString()} className="w-7 h-6 flex-shrink-0 px-0.5 py-0.5">
                   {renderCell(w.id, day)}
                 </div>
               ))}
