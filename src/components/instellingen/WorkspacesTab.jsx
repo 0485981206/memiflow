@@ -3,10 +3,28 @@ import { base44 } from '@/api/base44Client';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Plus, Trash2, Edit2 } from 'lucide-react';
+import { Plus, Trash2, Edit2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
+import { Link } from 'react-router-dom';
 import WorkspaceDialog from '@/components/workspace/WorkspaceDialog';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
+
+const PAGES = [
+  { label: "Dashboard", value: "/" },
+  { label: "Werknemers", value: "/werknemers" },
+  { label: "Eindklanten", value: "/eindklanten" },
+  { label: "Plaatsingen", value: "/plaatsingen" },
+  { label: "Kalender", value: "/prestaties/kalender" },
+  { label: "Kalenderoverzicht", value: "/prestaties/kalenderoverzicht" },
+  { label: "Overzicht", value: "/prestaties/overzicht" },
+  { label: "Codes", value: "/prestaties/codes" },
+  { label: "PDF Import", value: "/prestaties/import" },
+  { label: "Records", value: "/prestaties/records" },
+  { label: "Loonfiches", value: "/loonfiches" },
+  { label: "Rapporten", value: "/rapporten" },
+  { label: "Instellingen", value: "/instellingen" },
+  { label: "Acerta Kalender", value: "/acerta/kalender" },
+];
 
 export default function WorkspacesTab() {
   const [showDialog, setShowDialog] = useState(false);
@@ -66,6 +84,7 @@ export default function WorkspacesTab() {
           {workspaces.map(ws => {
             const iconDef = AVAILABLE_ICONS.find(i => i.id === ws.icon);
             const IconComponent = iconDef?.component;
+            const pageLabel = PAGES.find(p => p.value === ws.page)?.label || "Onbekend";
             return (
               <Card key={ws.id} className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all group">
                 <div className="p-3 bg-muted rounded-lg group-hover:bg-accent/10">
@@ -73,11 +92,14 @@ export default function WorkspacesTab() {
                 </div>
                 <div className="text-center flex-1">
                   <p className="font-medium text-sm line-clamp-2">{ws.name}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{pageLabel}</p>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="icon" variant="ghost" className="h-7 w-7">
-                    <Edit2 className="w-3 h-3" />
-                  </Button>
+                  <Link to={ws.page}>
+                    <Button size="icon" variant="ghost" className="h-7 w-7" title="Ga naar pagina">
+                      <ExternalLink className="w-3 h-3" />
+                    </Button>
+                  </Link>
                   <Button
                     size="icon"
                     variant="ghost"

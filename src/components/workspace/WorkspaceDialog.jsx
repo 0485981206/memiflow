@@ -3,10 +3,28 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
 
+const PAGES = [
+  { label: "Dashboard", value: "/" },
+  { label: "Werknemers", value: "/werknemers" },
+  { label: "Eindklanten", value: "/eindklanten" },
+  { label: "Plaatsingen", value: "/plaatsingen" },
+  { label: "Kalender", value: "/prestaties/kalender" },
+  { label: "Kalenderoverzicht", value: "/prestaties/kalenderoverzicht" },
+  { label: "Overzicht", value: "/prestaties/overzicht" },
+  { label: "Codes", value: "/prestaties/codes" },
+  { label: "PDF Import", value: "/prestaties/import" },
+  { label: "Records", value: "/prestaties/records" },
+  { label: "Loonfiches", value: "/loonfiches" },
+  { label: "Rapporten", value: "/rapporten" },
+  { label: "Instellingen", value: "/instellingen" },
+  { label: "Acerta Kalender", value: "/acerta/kalender" },
+];
+
 export default function WorkspaceDialog({ onClose, onSave }) {
-  const [form, setForm] = useState({ name: '', icon: 'grid' });
+  const [form, setForm] = useState({ name: '', icon: 'grid', page: '/' });
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -30,6 +48,22 @@ export default function WorkspaceDialog({ onClose, onSave }) {
               placeholder="Bijv. Sales Team"
               autoFocus
             />
+          </div>
+
+          <div>
+            <Label>Pagina</Label>
+            <Select value={form.page} onValueChange={(page) => setForm({ ...form, page })}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-64">
+                {PAGES.map(page => (
+                  <SelectItem key={page.value} value={page.value}>
+                    {page.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div>
