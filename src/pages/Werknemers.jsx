@@ -77,13 +77,15 @@ export default function Werknemers() {
   const uniqueVals = (key) => [...new Set(werknemers.map((w) => w[key]).filter(Boolean))].sort();
 
   const filtered = werknemers.filter((w) => {
-    const q = search.toLowerCase();
-    const matchSearch = (
-      (w.voornaam || "").toLowerCase().includes(q) ||
-      (w.achternaam || "").toLowerCase().includes(q) ||
-      (w.email || "").toLowerCase().includes(q) ||
-      (w.functie || "").toLowerCase().includes(q) ||
-      (w.overeenkomstnummer || "").toLowerCase().includes(q)
+    const volledigeNaam = `${w.voornaam || ""} ${w.achternaam || ""}`.toLowerCase();
+    const volledigeNaamOmgekeerd = `${w.achternaam || ""} ${w.voornaam || ""}`.toLowerCase();
+    const woorden = search.toLowerCase().trim().split(/\s+/).filter(Boolean);
+    const matchSearch = woorden.length === 0 || woorden.every((woord) =>
+      volledigeNaam.includes(woord) ||
+      volledigeNaamOmgekeerd.includes(woord) ||
+      (w.email || "").toLowerCase().includes(woord) ||
+      (w.functie || "").toLowerCase().includes(woord) ||
+      (w.overeenkomstnummer || "").toLowerCase().includes(woord)
     );
     const matchFilters = Object.entries(filters).every(([k, v]) => !v || w[k] === v);
     return matchSearch && matchFilters;
