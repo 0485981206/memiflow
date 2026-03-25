@@ -1,7 +1,9 @@
 import React from "react";
-import { format, isToday } from "date-fns";
+import { format, isToday, getDay } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Clock } from "lucide-react";
+import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import PrestatieCodeLines from "./PrestatieCodeLines";
 
 export default function DayView({ currentDate, prestaties, codes, onDayClick }) {
   const dateStr = format(currentDate, "yyyy-MM-dd");
@@ -60,6 +62,20 @@ export default function DayView({ currentDate, prestaties, codes, onDayClick }) 
           })}
         </div>
       )}
+
+      {/* Prestatie codes */}
+      {(() => {
+        const totalUren = dayPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
+        const hasData = dayPrestaties.length > 0;
+        const lines = berekenPrestatieCodes(dateStr, getDay(currentDate), hasData ? totalUren : null);
+        if (lines.length === 0) return null;
+        return (
+          <div className="px-4 py-3 border-t bg-muted/20">
+            <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-1">Acerta Codes</p>
+            <PrestatieCodeLines lines={lines} />
+          </div>
+        );
+      })()}
     </div>
   );
 }

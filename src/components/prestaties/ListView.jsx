@@ -1,8 +1,10 @@
 import React from "react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, getDay } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
+import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const BRON_LABELS = { gps: "GPS", uitsnext: "UitsNext", manueel: "Manueel" };
 
@@ -96,6 +98,19 @@ export default function ListView({ prestaties, codes, onDayClick }) {
                 );
               })}
             </div>
+            {/* Acerta codes per dag */}
+            {(() => {
+              const d = parseISO(datum);
+              const totalUren = items.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
+              const lines = berekenPrestatieCodes(datum, getDay(d), totalUren);
+              if (lines.length === 0) return null;
+              return (
+                <div className="px-4 py-2 border-t bg-muted/20">
+                  <p className="text-[10px] font-semibold text-muted-foreground uppercase mb-0.5">Acerta Codes</p>
+                  <PrestatieCodeLines lines={lines} />
+                </div>
+              );
+            })()}
           </div>
         );
       })}

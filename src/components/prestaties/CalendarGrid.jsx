@@ -1,6 +1,8 @@
 import React from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, isSameDay } from "date-fns";
 import { nl } from "date-fns/locale";
+import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const DAY_NAMES = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
@@ -76,6 +78,16 @@ export default function CalendarGrid({ currentMonth, prestaties, codes, onDayCli
                   </div>
                 )}
               </div>
+              {selectedWerknemer && (() => {
+                const totalUren = dayPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
+                const hasData = dayPrestaties.length > 0;
+                const lines = berekenPrestatieCodes(
+                  format(day, "yyyy-MM-dd"),
+                  getDay(day),
+                  hasData ? totalUren : null
+                );
+                return <PrestatieCodeLines lines={lines} />;
+              })()}
             </div>
           );
         })}

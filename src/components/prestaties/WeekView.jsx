@@ -1,6 +1,8 @@
 import React from "react";
 import { format, startOfWeek, addDays, getDay, isToday, isSameDay } from "date-fns";
 import { nl } from "date-fns/locale";
+import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const DAY_NAMES = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
@@ -50,6 +52,12 @@ export default function WeekView({ currentDate, prestaties, codes, onDayClick, s
                   <div className="text-[10px] text-muted-foreground pl-1">+{dayPrestaties.length - 6} meer</div>
                 )}
               </div>
+              {selectedWerknemer && (() => {
+                const totalUren = dayPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
+                const hasData = dayPrestaties.length > 0;
+                const lines = berekenPrestatieCodes(dateStr, getDay(day), hasData ? totalUren : null);
+                return <PrestatieCodeLines lines={lines} />;
+              })()}
             </div>
           );
         })}
