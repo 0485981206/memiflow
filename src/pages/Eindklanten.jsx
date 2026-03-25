@@ -1,13 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users } from "lucide-react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO, startOfWeek, addWeeks, subWeeks, addDays } from "date-fns";
-import { nl } from "date-fns/locale";
+import { Input } from "@/components/ui/input";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
+import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users, Search, CalendarDays, BarChart3 } from "lucide-react";
 import KlantCombobox from "@/components/klanten/KlantCombobox";
+import DagDetailSheet from "@/components/klanten/DagDetailSheet";
+import KlantStatistieken from "@/components/klanten/KlantStatistieken";
 
 const PRESTATIE_COLORS = [
   "bg-blue-100 text-blue-800",
@@ -27,7 +30,11 @@ const DAGEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 export default function Eindklanten() {
   const [selectedKlant, setSelectedKlant] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState("kalender"); // kalender | week | lijst
+  const [view, setView] = useState("kalender"); // kalender | week | lijst | statistieken
+  const [searchQuery, setSearchQuery] = useState("");
+  const [dateFrom, setDateFrom] = useState(null);
+  const [dateTo, setDateTo] = useState(null);
+  const [selectedDag, setSelectedDag] = useState(null);
 
   const maandStr = format(currentDate, "yyyy-MM");
 
@@ -46,11 +53,26 @@ export default function Eindklanten() {
     enabled: !!selectedKlant,
   });
 
-  const prestaties = allePrestaties.filter(
-    (p) =>
-      p.eindklant_id === selectedKlant?.id ||
-      (p.eindklant_naam || "").toLowerCase() === (selectedKlant?.naam || "").toLowerCase()
-  );
+  const prestaties = useMemo(() => {
+    return allePrestaties.filter((p) => {
+      // Klant filter
+      const klantMatch = p.eindklant_id === selectedKlant?.id ||
+        (p.eindklant_naam || "").toLowerCase() === (selectedKlant?.naam || "").toLowerCase();
+      if (!klantMatch) return false;
+
+      // Search filter (werknemer naam)
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        if (!(p.werknemer_naam || "").toLowerCase().includes(q)) return false;
+      }
+
+      // Date range filter
+      if (dateFrom && p.datum < format(dateFrom, "yyyy-MM-dd")) return false;
+      if (dateTo && p.datum > format(dateTo, "yyyy-MM-dd")) return false;
+
+      return true;
+    });
+  }, [allePrestaties, selectedKlant, searchQuery, dateFrom, dateTo]);
 
   // Group by werknemer
   const werknemerGroepen = prestaties.reduce((acc, p) => {
@@ -80,14 +102,57 @@ export default function Eindklanten() {
         <h1 className="text-2xl font-bold">Klanten</h1>
       </div>
 
-      {/* Klant selector */}
-      <div className="max-w-sm">
-        <KlantCombobox
-          klanten={klanten}
-          value={selectedKlant?.id || ""}
-          onChange={(id) => setSelectedKlant(klanten.find((k) => k.id === id) || null)}
-          placeholder="Selecteer een klant..."
-        />
+      {/* Klant selector + search + date filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="max-w-xs w-full">
+          <KlantCombobox
+            klanten={klanten}
+            value={selectedKlant?.id || ""}
+            onChange={(id) => setSelectedKlant(klanten.find((k) => k.id === id) || null)}
+            placeholder="Selecteer een klant..."
+          />
+        </div>
+        {selectedKlant && (
+          <>
+            <div className="relative max-w-[200px]">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Zoek werknemer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8 h-9"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    {dateFrom ? format(dateFrom, "d MMM", { locale: nl }) : "Van"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={dateFrom} onSelect={setDateFrom} locale={nl} />
+                </PopoverContent>
+              </Popover>
+              <span className="text-muted-foreground text-xs">—</span>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5">
+                    <CalendarDays className="w-3.5 h-3.5" />
+                    {dateTo ? format(dateTo, "d MMM", { locale: nl }) : "Tot"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <CalendarPicker mode="single" selected={dateTo} onSelect={setDateTo} locale={nl} />
+                </PopoverContent>
+              </Popover>
+              {(dateFrom || dateTo || searchQuery) && (
+                <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setDateFrom(null); setDateTo(null); setSearchQuery(""); }}>Reset</Button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {!selectedKlant ? (
@@ -125,24 +190,20 @@ export default function Eindklanten() {
               </div>
               {/* View toggle */}
               <div className="flex rounded-md border overflow-hidden">
-                <button
-                  onClick={() => setView("kalender")}
-                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "kalender" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                >
-                  <Calendar className="w-3.5 h-3.5" /> Kalender
-                </button>
-                <button
-                  onClick={() => setView("week")}
-                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "week" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                >
-                  <Calendar className="w-3.5 h-3.5" /> Week
-                </button>
-                <button
-                  onClick={() => setView("lijst")}
-                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "lijst" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
-                >
-                  <List className="w-3.5 h-3.5" /> Lijst
-                </button>
+                {["kalender", "week", "lijst", "statistieken"].map(v => {
+                  const icons = { kalender: Calendar, week: Calendar, lijst: List, statistieken: BarChart3 };
+                  const labels = { kalender: "Kalender", week: "Week", lijst: "Lijst", statistieken: "Stats" };
+                  const Ic = icons[v];
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => setView(v)}
+                      className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === v ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                    >
+                      <Ic className="w-3.5 h-3.5" /> {labels[v]}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
@@ -152,19 +213,28 @@ export default function Eindklanten() {
           ) : prestaties.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground text-sm">Geen records gevonden voor deze maand.</div>
           ) : view === "kalender" ? (
-            <KalenderView days={days} startPad={startPad} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} />
+            <KalenderView days={days} startPad={startPad} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} onDayClick={(dagStr) => setSelectedDag(dagStr)} />
           ) : view === "week" ? (
-            <WeekView weekDays={weekDays} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} />
+            <WeekView weekDays={weekDays} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} onDayClick={(dagStr) => setSelectedDag(dagStr)} />
+          ) : view === "statistieken" ? (
+            <KlantStatistieken prestaties={prestaties} werknemers={werknemers} />
           ) : (
             <LijstView werknemers={werknemers} />
           )}
+
+          <DagDetailSheet
+            open={!!selectedDag}
+            onClose={() => setSelectedDag(null)}
+            datum={selectedDag}
+            prestaties={selectedDag ? prestatiesOpDag(selectedDag) : []}
+          />
         </Card>
       )}
     </div>
   );
 }
 
-function KalenderView({ days, startPad, prestatiesOpDag, werknemers }) {
+function KalenderView({ days, startPad, prestatiesOpDag, werknemers, onDayClick }) {
   return (
     <div>
       {/* Weekday headers */}
@@ -183,7 +253,8 @@ function KalenderView({ days, startPad, prestatiesOpDag, werknemers }) {
           return (
             <div
               key={dagStr}
-              className={`bg-card min-h-[70px] p-1.5 ${isToday(day) ? "ring-2 ring-inset ring-accent" : ""}`}
+              onClick={() => onDayClick(dagStr)}
+              className={`bg-card min-h-[70px] p-1.5 cursor-pointer hover:bg-muted/30 transition-colors ${isToday(day) ? "ring-2 ring-inset ring-accent" : ""}`}
             >
               <p className={`text-xs font-medium mb-1 ${isToday(day) ? "text-accent font-bold" : "text-muted-foreground"}`}>
                 {format(day, "d")}
@@ -221,7 +292,7 @@ function KalenderView({ days, startPad, prestatiesOpDag, werknemers }) {
   );
 }
 
-function WeekView({ weekDays, prestatiesOpDag, werknemers }) {
+function WeekView({ weekDays, prestatiesOpDag, werknemers, onDayClick }) {
   return (
     <div>
       <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
@@ -232,7 +303,8 @@ function WeekView({ weekDays, prestatiesOpDag, werknemers }) {
           return (
             <div
               key={dagStr}
-              className={`min-h-[120px] p-2 ${isWeekend ? "bg-muted/40" : "bg-card"} ${isToday(day) ? "ring-2 ring-inset ring-accent" : ""}`}
+              onClick={() => onDayClick(dagStr)}
+              className={`min-h-[120px] p-2 cursor-pointer hover:bg-muted/30 transition-colors ${isWeekend ? "bg-muted/40" : "bg-card"} ${isToday(day) ? "ring-2 ring-inset ring-accent" : ""}`}
             >
               <div className={`text-xs font-semibold mb-1.5 ${isToday(day) ? "text-accent" : "text-muted-foreground"}`}>
                 <div className="capitalize">{format(day, "EEE", { locale: nl })}</div>
