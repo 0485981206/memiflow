@@ -68,14 +68,10 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
     // Filter selected concept rules
     const teImporteren = regels.filter(r => selected.has(r.werknemer_naam || "Onbekend"));
     
-    // Mark concept rules as approved in chunks to avoid rate limiting
-    const CHUNK_SIZE = 5;
-    for (let i = 0; i < teImporteren.length; i += CHUNK_SIZE) {
-      const chunk = teImporteren.slice(i, i + CHUNK_SIZE);
-      await Promise.all(chunk.map(r => base44.entities.PrestatieConceptRegel.update(r.id, { status: "goedgekeurd" })));
-      if (i + CHUNK_SIZE < teImporteren.length) {
-        await new Promise(res => setTimeout(res, 300));
-      }
+    // Mark concept rules as approved one by one to avoid rate limiting
+    for (const r of teImporteren) {
+      await base44.entities.PrestatieConceptRegel.update(r.id, { status: "goedgekeurd" });
+      await new Promise(res => setTimeout(res, 200));
     }
 
     // Start background import
