@@ -5,7 +5,7 @@ import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const DAY_NAMES = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
-export default function WeekView({ currentDate, prestaties, codes, onDayClick, selectedWerknemer }) {
+export default function WeekView({ currentDate, prestaties, codes, onDayClick, selectedWerknemer, werknemerData }) {
   const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -55,7 +55,7 @@ export default function WeekView({ currentDate, prestaties, codes, onDayClick, s
               {selectedWerknemer && (() => {
                 const totalUren = dayPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
                 const hasData = dayPrestaties.length > 0;
-                const lines = berekenPrestatieCodes(dateStr, getDay(day), hasData ? totalUren : null, codeMap);
+                const lines = berekenPrestatieCodes(dateStr, getDay(day), hasData ? totalUren : null, codeMap, werknemerData);
                 return <PrestatieCodeLines lines={lines} />;
               })()}
             </div>

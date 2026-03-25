@@ -5,7 +5,7 @@ import { Clock } from "lucide-react";
 import { berekenPrestatieCodes, buildCodeMap } from "@/lib/prestatie-codes";
 import PrestatieCodeLines from "./PrestatieCodeLines";
 
-export default function DayView({ currentDate, prestaties, codes, onDayClick }) {
+export default function DayView({ currentDate, prestaties, codes, onDayClick, werknemerData }) {
   const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const dateStr = format(currentDate, "yyyy-MM-dd");
   const dayPrestaties = prestaties.filter(p => p.datum === dateStr);
@@ -68,7 +68,7 @@ export default function DayView({ currentDate, prestaties, codes, onDayClick }) 
       {(() => {
         const totalUren = dayPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
         const hasData = dayPrestaties.length > 0;
-        const lines = berekenPrestatieCodes(dateStr, getDay(currentDate), hasData ? totalUren : null, codeMap);
+        const lines = berekenPrestatieCodes(dateStr, getDay(currentDate), hasData ? totalUren : null, codeMap, werknemerData);
         if (lines.length === 0) return null;
         return (
           <div className="px-4 py-3 border-t bg-muted/20">

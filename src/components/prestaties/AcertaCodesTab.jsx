@@ -29,15 +29,6 @@ export default function AcertaCodesTab({ lines, onChange, dbCodes, onReset }) {
     onChange(lines.filter((_, i) => i !== index));
   };
 
-  const updateLine = (index, field, value) => {
-    const updated = lines.map((l, i) => (i === index ? { ...l, [field]: value } : l));
-    onChange(updated);
-  };
-
-  const removeLine = (index) => {
-    onChange(lines.filter((_, i) => i !== index));
-  };
-
   const addLine = () => {
     if (!newCode || !newUren) return;
     const info = codeMap[newCode] || PRESTATIE_CODES[newCode];

@@ -5,7 +5,7 @@ import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const DAY_NAMES = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
-export default function CalendarGrid({ currentMonth, prestaties, codes, onDayClick, selectedWerknemer }) {
+export default function CalendarGrid({ currentMonth, prestaties, codes, onDayClick, selectedWerknemer, werknemerData }) {
   const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
@@ -85,7 +85,8 @@ export default function CalendarGrid({ currentMonth, prestaties, codes, onDayCli
                   format(day, "yyyy-MM-dd"),
                   getDay(day),
                   hasData ? totalUren : null,
-                  codeMap
+                  codeMap,
+                  werknemerData
                 );
                 return <PrestatieCodeLines lines={lines} />;
               })()}

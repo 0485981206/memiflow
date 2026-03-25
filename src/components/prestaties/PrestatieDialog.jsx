@@ -14,7 +14,7 @@ import { berekenPrestatieCodes, buildCodeMap } from "@/lib/prestatie-codes";
 
 export default function PrestatieDialog({
   open, onClose, date, werknemers, codes, plaatsingen,
-  existingPrestaties, onSave, onDelete, onUpdate, selectedWerknemer
+  existingPrestaties, onSave, onDelete, onUpdate, selectedWerknemer, werknemerData
 }) {
   const [form, setForm] = useState({
     werknemer_id: selectedWerknemer || "",
@@ -44,7 +44,8 @@ export default function PrestatieDialog({
       format(date, "yyyy-MM-dd"),
       getDay(date),
       hasData ? totalUren : null,
-      codeMap
+      codeMap,
+      werknemerData
     );
   };
 

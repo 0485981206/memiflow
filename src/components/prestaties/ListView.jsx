@@ -8,7 +8,7 @@ import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const BRON_LABELS = { gps: "GPS", uitsnext: "UitsNext", manueel: "Manueel" };
 
-export default function ListView({ prestaties, codes, onDayClick }) {
+export default function ListView({ prestaties, codes, onDayClick, werknemerData }) {
   const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const sorted = [...prestaties].sort((a, b) => a.datum.localeCompare(b.datum));
 
@@ -100,7 +100,7 @@ export default function ListView({ prestaties, codes, onDayClick }) {
             {(() => {
               const d = parseISO(datum);
               const totalUren = items.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
-              const lines = berekenPrestatieCodes(datum, getDay(d), totalUren, codeMap);
+              const lines = berekenPrestatieCodes(datum, getDay(d), totalUren, codeMap, werknemerData);
               if (lines.length === 0) return null;
               return (
                 <div className="px-4 py-2 border-t bg-muted/20">

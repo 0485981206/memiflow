@@ -88,6 +88,8 @@ export default function Kalender() {
     setWerknemerDetailOpen(false);
   };
 
+  const selectedWerknemerData = werknemers.find(w => w.id === selectedWerknemer) || null;
+
   const filteredPrestaties = selectedWerknemer
     ? prestaties.filter((p) => p.werknemer_id === selectedWerknemer)
     : [];
@@ -246,6 +248,7 @@ export default function Kalender() {
             codes={codes}
             onDayClick={handleDayClick}
             selectedWerknemer={selectedWerknemer}
+            werknemerData={selectedWerknemerData}
           />
         )}
         {view === "week" && (
@@ -255,6 +258,7 @@ export default function Kalender() {
             codes={codes}
             onDayClick={handleDayClick}
             selectedWerknemer={selectedWerknemer}
+            werknemerData={selectedWerknemerData}
           />
         )}
         {view === "dag" && (
@@ -263,6 +267,7 @@ export default function Kalender() {
             prestaties={filteredPrestaties}
             codes={codes}
             onDayClick={handleDayClick}
+            werknemerData={selectedWerknemerData}
           />
         )}
         {view === "lijst" && (
@@ -270,6 +275,7 @@ export default function Kalender() {
             prestaties={filteredPrestaties}
             codes={codes}
             onDayClick={handleDayClick}
+            werknemerData={selectedWerknemerData}
           />
         )}
 
@@ -303,6 +309,7 @@ export default function Kalender() {
         onDelete={(id) => deleteMut.mutate(id)}
         onUpdate={(id, data) => updateMut.mutate({ id, data })}
         selectedWerknemer={selectedWerknemer}
+        werknemerData={selectedWerknemerData}
       />
 
       {werknemerDetailOpen && selectedWerknemer && (() => {

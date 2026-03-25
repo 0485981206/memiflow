@@ -249,6 +249,29 @@ export default function WerknemerDetail({ werknemer, onClose, onSave, onDelete }
             <EditableField label="Sturingsgroep" value={f("sturingsgroep")} fieldKey="sturingsgroep" onSave={handleSave} hidden={!matchesSearch("Sturingsgroep", f("sturingsgroep"))} options={uniq("sturingsgroep")} />
             <EditableField label="Kostenplaats" value={f("kostenplaats")} fieldKey="kostenplaats" onSave={handleSave} hidden={!matchesSearch("Kostenplaats", f("kostenplaats"))} options={uniq("kostenplaats")} />
           </Section>
+
+          {matchesSearch("Ploegverdeling", f("ploeg_type")) && (
+          <Section title="Ploegverdeling">
+            <div className="py-2 border-b border-border/50 last:border-0 px-2 -mx-2">
+              <p className="text-xs text-muted-foreground mb-1">Type</p>
+              <Select value={f("ploeg_type") || "dagploeg"} onValueChange={(v) => handleSave("ploeg_type", v)}>
+                <SelectTrigger className="h-7 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dagploeg">Alleen dagploeg</SelectItem>
+                  <SelectItem value="dag_nacht">Dagploeg + Nachtploeg</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(f("ploeg_type") === "dag_nacht") && (
+              <>
+                <EditableField label="Dagploeg uren ma-do" value={f("dagploeg_uren_mado") || "5"} fieldKey="dagploeg_uren_mado" onSave={handleSave} type="number" />
+                <EditableField label="Nachtploeg uren ma-do" value={f("nachtploeg_uren_mado") || "3"} fieldKey="nachtploeg_uren_mado" onSave={handleSave} type="number" />
+                <EditableField label="Dagploeg uren vrijdag" value={f("dagploeg_uren_vr") || "3"} fieldKey="dagploeg_uren_vr" onSave={handleSave} type="number" />
+                <EditableField label="Nachtploeg uren vrijdag" value={f("nachtploeg_uren_vr") || "3"} fieldKey="nachtploeg_uren_vr" onSave={handleSave} type="number" />
+              </>
+            )}
+          </Section>
+          )}
           {werknemer.status === "inactief" && (
             <div className="mt-4">
               <Button variant="outline" className="w-full text-chart-5 border-chart-5 hover:bg-chart-5/10" onClick={() => onSave(werknemer.id, { status: "actief" })}>
