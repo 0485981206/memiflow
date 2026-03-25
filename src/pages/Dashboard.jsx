@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { subDays, parseISO, isWithinInterval, startOfDay, endOfDay } from "date-fns";
 
 import DashboardFilters from "../components/dashboard/DashboardFilters";
-import QuickBar from "../components/dashboard/QuickBar";
 import KPICards from "../components/dashboard/KPICards";
 import MaandTrendCard from "../components/dashboard/MaandTrendCard";
 import DagVerdeling from "../components/dashboard/DagVerdeling";
@@ -66,10 +65,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <QuickBar />
-      </div>
+      <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
 
       {/* Filters */}
       <DashboardFilters
