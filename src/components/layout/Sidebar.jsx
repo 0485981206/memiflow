@@ -17,11 +17,9 @@ import {
   Grid3x3
 } from "lucide-react";
 
-const mainMenu = [
+const overzichtMenu = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
   { label: "Workspaces", path: "/workspace", icon: Grid3x3 },
-  { label: "Werknemers", path: "/werknemers", icon: Users },
-  { label: "Klanten", path: "/eindklanten", icon: Building2 },
 ];
 
 const prestatieMenu = [
@@ -31,16 +29,19 @@ const prestatieMenu = [
   { label: "Records", path: "/prestaties/records" },
 ];
 
+const acertaMenu = [
+  { label: "Kalender", path: "/acerta/kalender" },
+];
+
 const instellingenMenu = [
   { label: "Algemeen", path: "/instellingen" },
+  { label: "Werknemers", path: "/werknemers" },
   { label: "Plaatsingen", path: "/plaatsingen" },
   { label: "Codes", path: "/prestaties/codes" },
   { label: "PDF Import", path: "/prestaties/import" },
 ];
 
-const acertaMenu = [
-  { label: "Kalender", path: "/acerta/kalender" },
-];
+const instellingenPaths = ["/instellingen", "/werknemers", "/plaatsingen", "/prestaties/codes", "/prestaties/import"];
 
 const beheerMenu = [
   { label: "Loonfiches", path: "/loonfiches", icon: FileText },
@@ -56,7 +57,7 @@ export default function Sidebar() {
     location.pathname.startsWith("/acerta")
   );
   const [instellingenOpen, setInstellingenOpen] = useState(
-    location.pathname.startsWith("/instellingen") || location.pathname === "/plaatsingen" || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
+    instellingenPaths.includes(location.pathname)
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [importBadge, setImportBadge] = useState(0);
@@ -93,11 +94,11 @@ export default function Sidebar() {
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        {/* Overzicht */}
         <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
-          Hoofdmenu
+          Overzicht
         </p>
-
-        {mainMenu.map((item) => (
+        {overzichtMenu.map((item) => (
           <Link
             key={item.path}
             to={item.path}
@@ -109,34 +110,97 @@ export default function Sidebar() {
           </Link>
         ))}
 
-        {/* Prestaties dropdown */}
+        {/* Klanten */}
+        <p className="px-3 pt-4 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+          Klanten
+        </p>
+        <Link
+          to="/eindklanten"
+          className={linkClass("/eindklanten")}
+          onClick={() => setMobileOpen(false)}
+        >
+          <Building2 className="w-4 h-4 flex-shrink-0" />
+          <span>Klanten</span>
+        </Link>
+
+        {/* Prestaties */}
+        <p className="px-3 pt-4 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+          Prestaties
+        </p>
+        {prestatieMenu.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
+              location.pathname === item.path ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+            }`}
+            onClick={() => setMobileOpen(false)}
+          >
+            <span>{item.label}</span>
+          </Link>
+        ))}
+
+        {/* Acerta */}
+        <p className="px-3 pt-4 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+          Acerta
+        </p>
+        {acertaMenu.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
+              location.pathname === item.path ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+            }`}
+            onClick={() => setMobileOpen(false)}
+          >
+            <span>{item.label}</span>
+          </Link>
+        ))}
+
+        {/* Beheer */}
+        <p className="px-3 pt-4 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+          Beheer
+        </p>
+        {beheerMenu.map((item) => (
+          <Link
+            key={item.path}
+            to={item.path}
+            className={linkClass(item.path)}
+            onClick={() => setMobileOpen(false)}
+          >
+            <item.icon className="w-4 h-4 flex-shrink-0" />
+            <span>{item.label}</span>
+          </Link>
+        ))}
+
+        {/* Instellingen dropdown */}
         <button
-          onClick={() => setPrestatiesOpen(!prestatiesOpen)}
+          onClick={() => setInstellingenOpen(!instellingenOpen)}
           className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-            location.pathname.startsWith("/prestaties")
+            instellingenPaths.includes(location.pathname)
               ? "bg-[#1e3a5f] text-white"
               : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
           }`}
         >
           <div className="flex items-center gap-3">
-            <Clock className="w-4 h-4 flex-shrink-0" />
-            <span>Prestaties</span>
+            <Settings className="w-4 h-4 flex-shrink-0" />
+            <span>Instellingen</span>
           </div>
-          {prestatiesOpen ? (
+          {instellingenOpen ? (
             <ChevronDown className="w-4 h-4" />
           ) : (
             <ChevronRight className="w-4 h-4" />
           )}
         </button>
 
-        {prestatiesOpen && (
+        {instellingenOpen && (
           <div className="ml-7 space-y-0.5">
-            {prestatieMenu.map((item) => (
+            {instellingenMenu.map((item) => (
               <Link
                 key={item.path}
                 to={item.path}
                 className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                  isActive(item.path)
+                  location.pathname === item.path
                     ? "text-[#38bdf8] font-semibold"
                     : "text-white/60 hover:text-white"
                 }`}
@@ -152,106 +216,6 @@ export default function Sidebar() {
             ))}
           </div>
         )}
-
-        {/* Acerta dropdown */}
-        <button
-          onClick={() => setAcertaOpen(!acertaOpen)}
-          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-            location.pathname.startsWith("/acerta")
-              ? "bg-[#1e3a5f] text-white"
-              : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-          }`}
-        >
-          <div className="flex items-center gap-3">
-            <FileText className="w-4 h-4 flex-shrink-0" />
-            <span>Acerta</span>
-          </div>
-          {acertaOpen ? (
-            <ChevronDown className="w-4 h-4" />
-          ) : (
-            <ChevronRight className="w-4 h-4" />
-          )}
-        </button>
-
-        {acertaOpen && (
-          <div className="ml-7 space-y-0.5">
-            {acertaMenu.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                  isActive(item.path)
-                    ? "text-[#38bdf8] font-semibold"
-                    : "text-white/60 hover:text-white"
-                }`}
-                onClick={() => setMobileOpen(false)}
-              >
-                <span>{item.label}</span>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        <div className="pt-4">
-          <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
-            Beheer
-          </p>
-          {beheerMenu.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={linkClass(item.path)}
-              onClick={() => setMobileOpen(false)}
-            >
-              <item.icon className="w-4 h-4 flex-shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-
-          {/* Instellingen dropdown */}
-          <button
-            onClick={() => setInstellingenOpen(!instellingenOpen)}
-            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              location.pathname.startsWith("/instellingen") || location.pathname === "/plaatsingen" || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
-                ? "bg-[#1e3a5f] text-white"
-                : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <Settings className="w-4 h-4 flex-shrink-0" />
-              <span>Instellingen</span>
-            </div>
-            {instellingenOpen ? (
-              <ChevronDown className="w-4 h-4" />
-            ) : (
-              <ChevronRight className="w-4 h-4" />
-            )}
-          </button>
-
-          {instellingenOpen && (
-            <div className="ml-7 space-y-0.5">
-              {instellingenMenu.map((item) => (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                    isActive(item.path) && location.pathname === item.path
-                      ? "text-[#38bdf8] font-semibold"
-                      : "text-white/60 hover:text-white"
-                  }`}
-                  onClick={() => setMobileOpen(false)}
-                >
-                  <span>{item.label}</span>
-                  {item.path === "/prestaties/import" && importBadge > 0 && (
-                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
-                      {importBadge}
-                    </span>
-                  )}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
       </nav>
 
       <div className="px-4 py-4 border-t border-white/10">
