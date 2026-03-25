@@ -232,7 +232,13 @@ function LijstView({ werknemers }) {
                         {format(parseISO(p.datum), "EEE d MMM", { locale: nl })}
                       </span>
                       {tijden.length > 0 && (
-                        <span className="text-xs text-muted-foreground hidden sm:block">{tijden.join(" | ")}</span>
+                        <span className="text-xs hidden sm:block">
+                          {tijden.map((t, i) => (
+                            <span key={i} className={t.includes("?") ? "text-red-600 font-medium" : "text-muted-foreground"}>
+                              {i > 0 && " | "}{t.includes("?") ? "⚠ " : ""}{t}
+                            </span>
+                          ))}
+                        </span>
                       )}
                       {p.code && <Badge variant="secondary" className="text-xs">{p.code}</Badge>}
                     </div>
