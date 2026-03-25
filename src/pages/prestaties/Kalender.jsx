@@ -6,7 +6,8 @@ import { useSearchParams } from "react-router-dom";
 import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon, Clock, FileText } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Info } from "lucide-react";
+import WerknemerDetail from "../../components/werknemers/WerknemerDetail";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
@@ -25,6 +26,7 @@ export default function Kalender() {
   const [selectedDay, setSelectedDay] = useState(paramDate ? parseISO(paramDate) : null);
   const [dialogOpen, setDialogOpen] = useState(paramDate ? true : false);
   const [selectedWerknemer, setSelectedWerknemer] = useState(paramWerknemerId || "");
+  const [werknemerDetailOpen, setWerknemerDetailOpen] = useState(false);
 
   // For month query always use month of currentDate
   const currentMonth = currentDate;
@@ -50,6 +52,8 @@ export default function Kalender() {
     queryFn: () => base44.entities.Plaatsing.list(),
   });
 
+  const queryClient = useQueryClient();
+
   const createMut = useMutation({
     mutationFn: (data) => base44.entities.Prestatie.create(data),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] }),
@@ -59,6 +63,18 @@ export default function Kalender() {
     mutationFn: (id) => base44.entities.Prestatie.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] }),
   });
+
+  const handleWerknemerSave = async (id, data) => {
+    await base44.entities.Werknemer.update(id, data);
+    queryClient.invalidateQueries({ queryKey: ["werknemers"] });
+  };
+
+  const handleWerknemerDelete = async (id) => {
+    await base44.entities.Werknemer.delete(id);
+    queryClient.invalidateQueries({ queryKey: ["werknemers"] });
+    setSelectedWerknemer("");
+    setWerknemerDetailOpen(false);
+  };
 
   const filteredPrestaties = selectedWerknemer
     ? prestaties.filter((p) => p.werknemer_id === selectedWerknemer)
@@ -79,10 +95,23 @@ export default function Kalender() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <CalIcon className="w-6 h-6 text-accent" />
-          Prestatie Kalender
-        </h1>
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold flex items-center gap-2">
+            <CalIcon className="w-6 h-6 text-accent" />
+            Prestatie Kalender
+          </h1>
+          {selectedWerknemer && (() => {
+            const w = werknemers.find(wn => wn.id === selectedWerknemer);
+            return w ? (
+              <div className="flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-lg px-3 py-1.5">
+                <span className="text-sm font-medium">{w.voornaam} {w.achternaam}</span>
+                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setWerknemerDetailOpen(true)}>
+                  <Info className="w-4 h-4 text-accent" />
+                </Button>
+              </div>
+            ) : null;
+          })()}
+        </div>
       </div>
 
       <Card className="p-4">
@@ -227,6 +256,18 @@ export default function Kalender() {
         onDelete={(id) => deleteMut.mutate(id)}
         selectedWerknemer={selectedWerknemer}
       />
+
+      {werknemerDetailOpen && selectedWerknemer && (() => {
+        const w = werknemers.find(wn => wn.id === selectedWerknemer);
+        return w ? (
+          <WerknemerDetail
+            werknemer={w}
+            onClose={() => setWerknemerDetailOpen(false)}
+            onSave={handleWerknemerSave}
+            onDelete={handleWerknemerDelete}
+          />
+        ) : null;
+      })()}
 
     </div>
   );
