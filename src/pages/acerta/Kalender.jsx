@@ -5,7 +5,8 @@ import { format, addMonths, subMonths } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ChevronLeft, ChevronRight, Calendar as CalIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Calendar as CalIcon, Download, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
 import PrestatieDialog from "../../components/prestaties/PrestatieDialog";
 import WerknemerCombobox from "../../components/prestaties/WerknemerCombobox.jsx";
@@ -47,6 +48,16 @@ export default function AcertaKalender() {
   const deleteMut = useMutation({
     mutationFn: (id) => base44.entities.Prestatie.delete(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] }),
+  });
+
+  const berekenMut = useMutation({
+    mutationFn: () => base44.functions.invoke('berekenAcertaCodes', { maand: maandStr }),
+    onSuccess: (res) => {
+      toast.success(`${res.data.codes_aangemaakt} Acerta codes berekend en opgeslagen`);
+    },
+    onError: (err) => {
+      toast.error('Fout bij berekenen: ' + (err?.response?.data?.error || err.message));
+    },
   });
 
   const filteredPrestaties = selectedWerknemer
@@ -101,6 +112,17 @@ export default function AcertaKalender() {
               className="ml-2 text-sm"
             >
               Vandaag
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => berekenMut.mutate()}
+              disabled={berekenMut.isPending}
+              className="gap-2"
+            >
+              {berekenMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+              Codes Berekenen & Opslaan
             </Button>
           </div>
 
