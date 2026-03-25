@@ -36,12 +36,17 @@ export default function Eindklanten() {
     queryFn: () => base44.entities.Eindklant.list("-created_date"),
   });
 
-  const { data: prestaties = [], isLoading } = useQuery({
-    queryKey: ["prestaties-klant", selectedKlant?.id, maandStr],
-    queryFn: () =>
-      base44.entities.Prestatie.filter({ eindklant_id: selectedKlant.id, maand: maandStr }),
+  const { data: allePrestaties = [], isLoading } = useQuery({
+    queryKey: ["prestaties-maand", maandStr],
+    queryFn: () => base44.entities.Prestatie.filter({ maand: maandStr }),
     enabled: !!selectedKlant,
   });
+
+  const prestaties = allePrestaties.filter(
+    (p) =>
+      p.eindklant_id === selectedKlant?.id ||
+      (p.eindklant_naam || "").toLowerCase() === (selectedKlant?.naam || "").toLowerCase()
+  );
 
   // Group by werknemer
   const werknemerGroepen = prestaties.reduce((acc, p) => {
