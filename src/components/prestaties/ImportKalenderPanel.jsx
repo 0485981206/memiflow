@@ -68,10 +68,10 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
     // Filter selected concept rules
     const teImporteren = regels.filter(r => selected.has(r.werknemer_naam || "Onbekend"));
     
-    // Mark concept rules as approved one by one to avoid rate limiting
+    // Mark concept rules as approved one by one with longer delay to avoid rate limiting
     for (const r of teImporteren) {
       await base44.entities.PrestatieConceptRegel.update(r.id, { status: "goedgekeurd" });
-      await new Promise(res => setTimeout(res, 200));
+      await new Promise(res => setTimeout(res, 800));
     }
 
     // Start background import
