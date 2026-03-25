@@ -59,7 +59,7 @@ export default function Eindklanten() {
         <Input placeholder="Zoeken op naam..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      {isLoading && <p className="text-muted-foreground text-sm">Laden...</p>}
+      {loadingKlanten && <p className="text-muted-foreground text-sm">Laden...</p>}
 
       <div className="space-y-3">
         {filtered.map((k) => {
