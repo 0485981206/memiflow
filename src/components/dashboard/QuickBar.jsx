@@ -1,11 +1,13 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Globe, Settings, LayoutGrid, Bell } from "lucide-react";
+import { Globe, Settings, LayoutGrid, Bell, Bot } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
+import BaciChatPanel from "./BaciChatPanel";
 
 export default function QuickBar() {
+  const [baciOpen, setBaciOpen] = useState(false);
   const { data: user } = useQuery({
     queryKey: ["currentUser"],
     queryFn: () => base44.auth.me(),
@@ -54,10 +56,22 @@ export default function QuickBar() {
         </Link>
       </Button>
 
+      <Button
+        variant="ghost"
+        size="icon"
+        className="h-9 w-9 text-purple-500 hover:text-purple-700 hover:bg-purple-50"
+        onClick={() => setBaciOpen(!baciOpen)}
+        title="Chat met Baci"
+      >
+        <Bot className="w-[18px] h-[18px]" />
+      </Button>
+
       <div className="ml-1 w-9 h-9 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center text-xs font-semibold text-accent relative">
         {initials}
         <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
       </div>
+
+      <BaciChatPanel open={baciOpen} onClose={() => setBaciOpen(false)} />
     </div>
   );
 }
