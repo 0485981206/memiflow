@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Send, Loader2, Plus, Paperclip, FileIcon } from "lucide-react";
+import { X, Send, Loader2, Plus, Paperclip, FileIcon, MessageSquare, Trash2, StopCircle, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 
@@ -36,6 +36,7 @@ export default function BaciChatPanel({ open, onClose }) {
   const [loading, setLoading] = useState(true);
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const messagesEndRef = useRef(null);
   const unsubRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -73,6 +74,27 @@ export default function BaciChatPanel({ open, onClose }) {
     });
     setConversations((prev) => [conv, ...prev]);
     await selectConversation(conv.id);
+    setShowHistory(false);
+  };
+
+  const endConversation = () => {
+    if (unsubRef.current) unsubRef.current();
+    unsubRef.current = null;
+    setActiveConv(null);
+    setMessages([]);
+    setInput("");
+    setAttachments([]);
+  };
+
+  const deleteConversation = async (convId) => {
+    await base44.agents.updateConversation(convId, { metadata: { deleted: true } });
+    setConversations((prev) => prev.filter((c) => c.id !== convId));
+    if (activeConv?.id === convId) endConversation();
+  };
+
+  const openFromHistory = async (convId) => {
+    await selectConversation(convId);
+    setShowHistory(false);
   };
 
   const handleFileSelect = async (e) => {
@@ -129,14 +151,29 @@ export default function BaciChatPanel({ open, onClose }) {
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b bg-gradient-to-r from-purple-600 to-indigo-600 text-white">
         <div className="flex items-center gap-2">
+          {showHistory && (
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/20" onClick={() => setShowHistory(false)}>
+              <ArrowLeft className="w-4 h-4" />
+            </Button>
+          )}
           <div className="w-8 h-8 rounded-full bg-white/20 flex items-center justify-center text-sm font-bold">B</div>
           <div>
-            <p className="text-sm font-semibold">Baci</p>
-            <p className="text-[10px] text-white/70">HR.iQ Assistent</p>
+            <p className="text-sm font-semibold">{showHistory ? "Chatgeschiedenis" : "Baci"}</p>
+            <p className="text-[10px] text-white/70">{showHistory ? `${conversations.length} gesprekken` : "HR.iQ Assistent"}</p>
           </div>
         </div>
         <div className="flex items-center gap-1">
-          <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/20" onClick={startNewConversation}>
+          {!showHistory && activeConv && (
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/20" onClick={endConversation} title="Beëindig chat">
+              <StopCircle className="w-4 h-4" />
+            </Button>
+          )}
+          {!showHistory && (
+            <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/20" onClick={() => setShowHistory(true)} title="Geschiedenis">
+              <MessageSquare className="w-4 h-4" />
+            </Button>
+          )}
+          <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/20" onClick={startNewConversation} title="Nieuw gesprek">
             <Plus className="w-4 h-4" />
           </Button>
           <Button size="icon" variant="ghost" className="h-7 w-7 text-white hover:bg-white/20" onClick={onClose}>
@@ -145,9 +182,43 @@ export default function BaciChatPanel({ open, onClose }) {
         </div>
       </div>
 
-      {/* Messages */}
+      {/* Messages / History */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-        {loading ? (
+        {showHistory ? (
+          conversations.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center">
+              <MessageSquare className="w-10 h-10 text-muted-foreground/30 mb-2" />
+              <p className="text-sm text-muted-foreground">Geen eerdere gesprekken</p>
+            </div>
+          ) : (
+            <div className="space-y-1.5">
+              {conversations.map((c) => (
+                <div
+                  key={c.id}
+                  className={`flex items-center justify-between rounded-lg px-3 py-2.5 cursor-pointer transition-colors hover:bg-muted group ${
+                    activeConv?.id === c.id ? "bg-muted ring-1 ring-primary/30" : ""
+                  }`}
+                  onClick={() => openFromHistory(c.id)}
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium truncate">{c.metadata?.name || "Gesprek"}</p>
+                    <p className="text-[10px] text-muted-foreground">
+                      {new Date(c.created_date).toLocaleDateString("nl-BE", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })}
+                    </p>
+                  </div>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-7 w-7 opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-destructive shrink-0"
+                    onClick={(e) => { e.stopPropagation(); deleteConversation(c.id); }}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )
+        ) : loading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
           </div>
@@ -166,6 +237,7 @@ export default function BaciChatPanel({ open, onClose }) {
       </div>
 
       {/* Input */}
+      {!showHistory && (
       <div className="border-t px-3 py-2.5 space-y-2">
         {attachments.length > 0 && (
           <div className="flex flex-wrap gap-1.5">
@@ -223,6 +295,7 @@ export default function BaciChatPanel({ open, onClose }) {
           </Button>
         </div>
       </div>
+      )}
     </div>
   );
 }
