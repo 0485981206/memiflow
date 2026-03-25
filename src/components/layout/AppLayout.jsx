@@ -1,13 +1,17 @@
-import React from "react";
+import React, { useState } from "react";
 import { Outlet } from "react-router-dom";
 import Sidebar from "./Sidebar";
 import QuickBar from "../dashboard/QuickBar";
 
 export default function AppLayout() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="lg:ml-60 min-h-screen">
+      <Sidebar collapsed={collapsed} onToggleCollapse={() => setCollapsed(!collapsed)} />
+      <main className={`min-h-screen transition-all duration-300 ${
+        collapsed ? "lg:ml-16" : "lg:ml-60"
+      }`}>
         <div className="flex justify-end px-6 lg:px-8 pt-4">
           <QuickBar />
         </div>

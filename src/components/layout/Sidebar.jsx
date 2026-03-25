@@ -12,10 +12,14 @@ import {
   Settings,
   ChevronDown,
   ChevronRight,
+  ChevronLeft,
   Menu,
   X,
-  Grid3x3
+  Grid3x3,
+  PanelLeftClose,
+  PanelLeftOpen
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 const overzichtMenu = [
   { label: "Dashboard", path: "/", icon: LayoutDashboard },
@@ -48,7 +52,7 @@ const beheerMenu = [
   { label: "Rapporten", path: "/rapporten", icon: BarChart3 },
 ];
 
-export default function Sidebar() {
+export default function Sidebar({ collapsed, onToggleCollapse }) {
   const location = useLocation();
   const [prestatiesOpen, setPrestatiesOpen] = useState(
     location.pathname.startsWith("/prestaties")
@@ -84,13 +88,74 @@ export default function Sidebar() {
         : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
     }`;
 
+  const CollapsedLink = ({ to, icon: Icon, label, badge }) => (
+    <Tooltip delayDuration={0}>
+      <TooltipTrigger asChild>
+        <Link
+          to={to}
+          className={`flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200 ${
+            isActive(to) ? "bg-[#1e3a5f] text-white" : "text-white/60 hover:text-white hover:bg-[#1e3a5f]/60"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <div className="relative">
+            <Icon className="w-5 h-5" />
+            {badge > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-blue-500 text-white text-[8px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                {badge}
+              </span>
+            )}
+          </div>
+        </Link>
+      </TooltipTrigger>
+      <TooltipContent side="right" className="text-xs">{label}</TooltipContent>
+    </Tooltip>
+  );
+
+  const collapsedContent = (
+    <div className="flex flex-col h-full items-center" style={{ backgroundColor: "#152d4a" }}>
+      <div className="py-5 border-b border-white/10 w-full flex justify-center">
+        <span className="text-lg font-bold text-white">M</span>
+      </div>
+      <nav className="flex-1 py-4 space-y-1 overflow-y-auto flex flex-col items-center w-full">
+        <CollapsedLink to="/" icon={LayoutDashboard} label="Dashboard" />
+        <CollapsedLink to="/workspace" icon={Grid3x3} label="Workspaces" />
+        <div className="w-8 border-t border-white/10 my-2" />
+        <CollapsedLink to="/eindklanten" icon={Building2} label="Klanten" />
+        <div className="w-8 border-t border-white/10 my-2" />
+        <CollapsedLink to="/prestaties/kalender" icon={Clock} label="Prestaties" />
+        <div className="w-8 border-t border-white/10 my-2" />
+        <CollapsedLink to="/acerta/kalender" icon={FileText} label="Acerta" />
+        <div className="w-8 border-t border-white/10 my-2" />
+        <CollapsedLink to="/loonfiches" icon={FileText} label="Loonfiches" />
+        <CollapsedLink to="/rapporten" icon={BarChart3} label="Rapporten" />
+        <div className="w-8 border-t border-white/10 my-2" />
+        <CollapsedLink to="/instellingen" icon={Settings} label="Instellingen" badge={importBadge} />
+      </nav>
+      <div className="py-4 border-t border-white/10 w-full flex justify-center">
+        <button
+          onClick={onToggleCollapse}
+          className="text-white/40 hover:text-white transition-colors p-2 rounded-lg hover:bg-white/10"
+        >
+          <PanelLeftOpen className="w-5 h-5" />
+        </button>
+      </div>
+    </div>
+  );
+
   const sidebarContent = (
     <div className="flex flex-col h-full" style={{ backgroundColor: "#152d4a" }}>
-      {/* Logo */}
-      <div className="px-5 py-6 border-b border-white/10">
+      {/* Logo + collapse toggle */}
+      <div className="px-5 py-6 border-b border-white/10 flex items-center justify-between">
         <h1 className="text-xl font-bold text-white tracking-tight">
           Memi's Uitzend
         </h1>
+        <button
+          onClick={onToggleCollapse}
+          className="text-white/40 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10 hidden lg:block"
+        >
+          <PanelLeftClose className="w-5 h-5" />
+        </button>
       </div>
 
       <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
@@ -221,7 +286,7 @@ export default function Sidebar() {
   );
 
   return (
-    <>
+    <TooltipProvider>
       {/* Mobile toggle */}
       <button
         className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg text-white"
@@ -241,13 +306,15 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-60 z-40 transition-transform duration-300 lg:translate-x-0 ${
-          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        className={`fixed top-0 left-0 h-screen z-40 transition-all duration-300 lg:translate-x-0 ${
+          collapsed ? "w-16" : "w-60"
+        } ${
+          mobileOpen ? "translate-x-0 w-60" : "-translate-x-full lg:translate-x-0"
         }`}
         style={{ backgroundColor: "#152d4a" }}
       >
-        {sidebarContent}
+        {collapsed && !mobileOpen ? collapsedContent : sidebarContent}
       </aside>
-    </>
+    </TooltipProvider>
   );
 }
