@@ -76,6 +76,34 @@ function App() {
         <Router>
           <AuthenticatedApp />
         </Router>
+
+        {/* Baci Chat Button */}
+        <a
+          href="https://app.base44.com/superagent/69c34fe5b983c06caf295c3b"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            zIndex: 9999,
+            fontSize: '24px',
+            textDecoration: 'none',
+            cursor: 'pointer',
+          }}
+          title="Chat met Baci"
+        >
+          🤖
+        </a>
+
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
