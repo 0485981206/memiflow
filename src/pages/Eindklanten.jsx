@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users } from "lucide-react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO, startOfWeek, addWeeks, subWeeks, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import KlantCombobox from "@/components/klanten/KlantCombobox";
 
@@ -27,9 +27,13 @@ const DAGEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 export default function Eindklanten() {
   const [selectedKlant, setSelectedKlant] = useState(null);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [view, setView] = useState("kalender"); // kalender | lijst
+  const [view, setView] = useState("kalender"); // kalender | week | lijst
 
   const maandStr = format(currentDate, "yyyy-MM");
+
+  // Week helpers
+  const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
+  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
   const { data: klanten = [] } = useQuery({
     queryKey: ["eindklanten"],
@@ -96,16 +100,21 @@ export default function Eindklanten() {
           {/* Header + nav */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(view === "week" ? subWeeks(currentDate, 1) : subMonths(currentDate, 1))}>
                 <ChevronLeft className="w-4 h-4" />
               </Button>
               <h2 className="text-lg font-semibold capitalize min-w-[160px] text-center">
-                {format(currentDate, "MMMM yyyy", { locale: nl })}
+                {view === "week" ? format(weekStart, "MMMM yyyy", { locale: nl }) : format(currentDate, "MMMM yyyy", { locale: nl })}
               </h2>
-              <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(view === "week" ? addWeeks(currentDate, 1) : addMonths(currentDate, 1))}>
                 <ChevronRight className="w-4 h-4" />
               </Button>
               <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())}>Vandaag</Button>
+              {view === "week" && (
+                <span className="text-sm text-muted-foreground">
+                  {format(weekStart, "d MMM", { locale: nl })} – {format(addDays(weekStart, 6), "d MMM yyyy", { locale: nl })}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
@@ -123,6 +132,12 @@ export default function Eindklanten() {
                   <Calendar className="w-3.5 h-3.5" /> Kalender
                 </button>
                 <button
+                  onClick={() => setView("week")}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "week" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Week
+                </button>
+                <button
                   onClick={() => setView("lijst")}
                   className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "lijst" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
                 >
@@ -138,6 +153,8 @@ export default function Eindklanten() {
             <div className="py-12 text-center text-muted-foreground text-sm">Geen records gevonden voor deze maand.</div>
           ) : view === "kalender" ? (
             <KalenderView days={days} startPad={startPad} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} />
+          ) : view === "week" ? (
+            <WeekView weekDays={weekDays} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} />
           ) : (
             <LijstView werknemers={werknemers} />
           )}
@@ -190,6 +207,52 @@ function KalenderView({ days, startPad, prestatiesOpDag, werknemers }) {
       </div>
 
       {/* Legend */}
+      {werknemers.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+          {werknemers.map((w, i) => (
+            <div key={w.naam} className="flex items-center gap-1 text-xs">
+              <div className={`w-3 h-3 rounded-full ${getWerknemerColor(i).split(" ")[0]}`} />
+              <span className="text-muted-foreground">{w.naam}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeekView({ weekDays, prestatiesOpDag, werknemers }) {
+  return (
+    <div>
+      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
+        {weekDays.map((day) => {
+          const dagStr = format(day, "yyyy-MM-dd");
+          const dagPrestaties = prestatiesOpDag(dagStr);
+          const isWeekend = [6, 0].includes(day.getDay());
+          return (
+            <div
+              key={dagStr}
+              className={`min-h-[120px] p-2 ${isWeekend ? "bg-muted/40" : "bg-card"} ${isToday(day) ? "ring-2 ring-inset ring-accent" : ""}`}
+            >
+              <div className={`text-xs font-semibold mb-1.5 ${isToday(day) ? "text-accent" : "text-muted-foreground"}`}>
+                <div className="capitalize">{format(day, "EEE", { locale: nl })}</div>
+                <div className={`text-base leading-none ${isToday(day) ? "text-accent" : "text-foreground"}`}>{format(day, "d")}</div>
+              </div>
+              <div className="space-y-0.5">
+                {dagPrestaties.map((p) => {
+                  const wIdx = werknemers.findIndex((w) => w.naam === (p.werknemer_naam || p.werknemer_id || "Onbekend"));
+                  const uren = p.totaal_uren || p.uren || 0;
+                  return (
+                    <div key={p.id} className={`text-[10px] rounded px-1 py-0.5 truncate ${getWerknemerColor(wIdx)}`}>
+                      {p.werknemer_naam?.split(" ")[0] || "?"} {uren}u
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
       {werknemers.length > 0 && (
         <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
           {werknemers.map((w, i) => (
