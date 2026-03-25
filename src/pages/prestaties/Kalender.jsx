@@ -187,11 +187,16 @@ export default function Kalender() {
                 <p className="text-xs text-muted-foreground mt-1">Selecteer eerst een werknemer om prestaties in te geven.</p>
               )}
             </div>
-            {selectedWerknemer && (
-              <Button size="icon" variant="outline" className="shrink-0" onClick={() => setWerknemerDetailOpen(true)}>
-                <Info className="w-4 h-4 text-accent" />
-              </Button>
-            )}
+            <Button
+              size="icon"
+              variant="outline"
+              className="shrink-0"
+              disabled={!selectedWerknemer}
+              onClick={() => setWerknemerDetailOpen(true)}
+              title="Werknemer details"
+            >
+              <Info className="w-4 h-4 text-accent" />
+            </Button>
           </div>
         </div>
 
