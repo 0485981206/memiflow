@@ -115,6 +115,24 @@ export default function Kalender() {
       </div>
 
       <Card className="p-4">
+        {!selectedWerknemer ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <CalIcon className="w-12 h-12 text-muted-foreground/30" />
+            <div className="text-center space-y-1">
+              <p className="text-lg font-semibold">Selecteer een werknemer</p>
+              <p className="text-sm text-muted-foreground">Kies eerst een werknemer om prestaties te bekijken en in te geven.</p>
+            </div>
+            <div className="w-72">
+              <WerknemerCombobox
+                werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
+                value={selectedWerknemer}
+                onChange={(id) => setSelectedWerknemer(id || "")}
+                placeholder="Selecteer een werknemer..."
+              />
+            </div>
+          </div>
+        ) : (
+          <>
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
           <div className="flex items-center gap-2">
             <Button
@@ -196,9 +214,6 @@ export default function Kalender() {
                 onChange={(id) => setSelectedWerknemer(id || "")}
                 placeholder="Selecteer een werknemer..."
               />
-              {!selectedWerknemer && (
-                <p className="text-xs text-muted-foreground mt-1">Selecteer eerst een werknemer om prestaties in te geven.</p>
-              )}
             </div>
             <Button
               size="icon"
@@ -261,6 +276,8 @@ export default function Kalender() {
             </div>
           ))}
         </div>
+          </>
+        )}
       </Card>
 
       <PrestatieDialog
