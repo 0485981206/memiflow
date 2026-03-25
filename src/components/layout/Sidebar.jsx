@@ -193,7 +193,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
   const collapsedContent = (
     <div className="flex flex-col h-full items-center" style={{ backgroundColor: "#152d4a" }}>
       <div className="py-5 border-b border-white/10 w-full flex justify-center">
-        <span className="text-lg font-bold text-white">M</span>
+        <span className="text-lg font-bold text-white">H</span>
       </div>
       <nav className="flex-1 py-4 space-y-1 overflow-y-auto flex flex-col items-center w-full">
         <CollapsedLink to="/" icon={LayoutDashboard} label="Dashboard" />
@@ -251,7 +251,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
       {/* Logo + collapse toggle */}
       <div className="px-5 py-6 border-b border-white/10 flex items-center justify-between">
         <h1 className="text-xl font-bold text-white tracking-tight">
-          Memi's Uitzend
+          HR.iQ
         </h1>
         <button
           onClick={onToggleCollapse}
@@ -397,7 +397,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
       </nav>
 
       <div className="px-4 py-4 border-t border-white/10">
-        <p className="text-xs text-white/30">© 2026 Memi Group</p>
+        <p className="text-xs text-white/30">© 2026 HR.iQ</p>
       </div>
     </div>
   );
