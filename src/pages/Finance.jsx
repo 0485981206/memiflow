@@ -1,8 +1,10 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
-import { subDays, parseISO, startOfDay, endOfDay } from "date-fns";
-import { Euro } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { subDays, parseISO, startOfDay, endOfDay, format } from "date-fns";
+import { Euro, Download, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import DashboardFilters from "../components/dashboard/DashboardFilters";
 import FinanceKPICards from "../components/finance/FinanceKPICards";
@@ -33,6 +35,23 @@ export default function Finance() {
     queryFn: () => base44.entities.Prestatie.list(),
   });
 
+  const berekenMut = useMutation({
+    mutationFn: (maand) => base44.functions.invoke('berekenFinancieelRapport', { maand }),
+    onSuccess: (res) => {
+      const d = res.data;
+      toast.success(`Financieel rapport opgeslagen: €${d.totalen.omzet.toLocaleString('nl-BE')} omzet, ${d.rapporten_aangemaakt} regels`);
+    },
+    onError: (err) => {
+      toast.error('Fout: ' + (err?.response?.data?.error || err.message));
+    },
+  });
+
+  const handleBereken = () => {
+    // Bereken voor de geselecteerde maand (from date)
+    const maand = format(dateRange.from || new Date(), 'yyyy-MM');
+    berekenMut.mutate(maand);
+  };
+
   const prestaties = useMemo(() => {
     return allePrestaties.filter((p) => {
       if (!p.datum) return false;
@@ -50,9 +69,19 @@ export default function Finance() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-        <Euro className="w-6 h-6 text-accent" /> Finance
-      </h1>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
+          <Euro className="w-6 h-6 text-accent" /> Finance
+        </h1>
+        <Button
+          onClick={handleBereken}
+          disabled={berekenMut.isPending}
+          className="gap-2"
+        >
+          {berekenMut.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+          Financieel Rapport Berekenen & Opslaan
+        </Button>
+      </div>
 
       <DashboardFilters
         dateRange={dateRange}
