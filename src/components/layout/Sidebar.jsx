@@ -152,31 +152,36 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
         </Link>
         {hovering && subItems && subItems.length > 0 && ReactDOM.createPortal(
           <div
-            className="fixed py-2 px-1 rounded-lg shadow-xl min-w-[180px] z-[9999]"
-            style={{ backgroundColor: "#152d4a", top: pos.top, left: 68 }}
+            className="fixed z-[9999]"
+            style={{ top: pos.top, left: 0, paddingLeft: 64 }}
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => setHovering(false)}
           >
-            <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/40">{label}</p>
-            {subItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                  location.pathname === item.path
-                    ? "text-[#38bdf8] font-semibold bg-white/5"
-                    : "text-white/70 hover:text-white hover:bg-white/10"
-                }`}
-                onClick={() => { setMobileOpen(false); setHovering(false); }}
-              >
-                <span>{item.label}</span>
-                {item.path === "/prestaties/import" && importBadge > 0 && (
-                  <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0 ml-2">
-                    {importBadge}
-                  </span>
-                )}
-              </Link>
-            ))}
+            <div
+              className="py-2 px-1 rounded-lg shadow-xl min-w-[180px] ml-1"
+              style={{ backgroundColor: "#152d4a" }}
+            >
+              <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/40">{label}</p>
+              {subItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                    location.pathname === item.path
+                      ? "text-[#38bdf8] font-semibold bg-white/5"
+                      : "text-white/70 hover:text-white hover:bg-white/10"
+                  }`}
+                  onClick={() => { setMobileOpen(false); setHovering(false); }}
+                >
+                  <span>{item.label}</span>
+                  {item.path === "/prestaties/import" && importBadge > 0 && (
+                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0 ml-2">
+                      {importBadge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
           </div>,
           document.body
         )}
