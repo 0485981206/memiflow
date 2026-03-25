@@ -13,6 +13,7 @@ import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import CalendarGrid from "../../components/prestaties/CalendarGrid";
 import WeekView from "../../components/prestaties/WeekView";
 import DayView from "../../components/prestaties/DayView";
+import ListView from "../../components/prestaties/ListView";
 import PrestatieDialog from "../../components/prestaties/PrestatieDialog";
 import WerknemerCombobox from "../../components/prestaties/WerknemerCombobox.jsx";
 
@@ -22,7 +23,7 @@ export default function Kalender() {
   const paramDate = searchParams.get("date");
 
   const [currentDate, setCurrentDate] = useState(paramDate ? parseISO(paramDate) : new Date());
-  const [view, setView] = useState("maand"); // maand | week | dag
+  const [view, setView] = useState("maand"); // maand | week | dag | lijst
   const [selectedDay, setSelectedDay] = useState(paramDate ? parseISO(paramDate) : null);
   const [dialogOpen, setDialogOpen] = useState(paramDate ? true : false);
   const [selectedWerknemer, setSelectedWerknemer] = useState(paramWerknemerId || "");
@@ -173,7 +174,7 @@ export default function Kalender() {
             </Popover>
             {/* View toggle */}
             <div className="flex rounded-md border overflow-hidden ml-2">
-              {["maand", "week", "dag"].map(v => (
+              {["maand", "week", "dag", "lijst"].map(v => (
                 <button
                   key={v}
                   onClick={() => setView(v)}
@@ -233,6 +234,13 @@ export default function Kalender() {
         {view === "dag" && (
           <DayView
             currentDate={currentDate}
+            prestaties={filteredPrestaties}
+            codes={codes}
+            onDayClick={handleDayClick}
+          />
+        )}
+        {view === "lijst" && (
+          <ListView
             prestaties={filteredPrestaties}
             codes={codes}
             onDayClick={handleDayClick}
