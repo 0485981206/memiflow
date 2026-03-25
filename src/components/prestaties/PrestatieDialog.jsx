@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from "react";
 import { format, getDay } from "date-fns";
 import { nl } from "date-fns/locale";
-import { X } from "lucide-react";
+import { X, Pencil, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2 } from "lucide-react";
 import WerknemerCombobox from "./WerknemerCombobox.jsx";
 import AcertaCodesTab from "./AcertaCodesTab";
+import PrestatieCard from "./PrestatieCard";
 import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
 
 export default function PrestatieDialog({
   open, onClose, date, werknemers, codes, plaatsingen,
-  existingPrestaties, onSave, onDelete, selectedWerknemer
+  existingPrestaties, onSave, onDelete, onUpdate, selectedWerknemer
 }) {
   const [form, setForm] = useState({
     werknemer_id: selectedWerknemer || "",
@@ -106,48 +107,11 @@ export default function PrestatieDialog({
               {existingPrestaties.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">Bestaande prestaties</p>
-                  {existingPrestaties.map((p) => {
-                    const tijden = [1,2,3,4,5,6].map(n => {
-                      const inn = p[`in_${n}`]; const uit = p[`uit_${n}`];
-                      return inn ? `${inn}–${uit || "?"}` : null;
-                    }).filter(Boolean);
-                    
-                    return (
-                      <div
-                        key={p.id}
-                        className="border rounded-lg p-3 space-y-2 bg-muted/30"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <div className="text-sm font-medium">{p.werknemer_naam}</div>
-                            <div className="text-xs text-muted-foreground mt-0.5">{p.eindklant_naam || p.firma || "—"}</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <div className="text-right">
-                              <div className="text-xs font-semibold bg-blue-500 text-white px-2 py-1 rounded">{p.totaal_uren ?? p.uren ?? 0}u</div>
-                            </div>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-7 w-7 text-destructive"
-                              onClick={() => onDelete(p.id)}
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
-                          </div>
-                        </div>
-                        {tijden.length > 0 && (
-                          <div className="text-[11px] text-muted-foreground space-y-0.5 bg-muted/50 rounded px-2 py-1.5">
-                            {tijden.map((t, i) => (
-                              <div key={i}>{t}</div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+                  {existingPrestaties.map((p) => (
+                        <PrestatieCard key={p.id} p={p} onDelete={onDelete} onUpdate={onUpdate} />
+                  ))}
+                  </div>
+                  )}
             </>
           ) : (
             <AcertaCodesTab lines={acertaLines} onChange={setAcertaLines} />

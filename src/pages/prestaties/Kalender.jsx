@@ -62,7 +62,18 @@ export default function Kalender() {
 
   const deleteMut = useMutation({
     mutationFn: (id) => base44.entities.Prestatie.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] });
+      queryClient.invalidateQueries({ queryKey: ["prestaties-records"] });
+    },
+  });
+
+  const updateMut = useMutation({
+    mutationFn: ({ id, data }) => base44.entities.Prestatie.update(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["prestaties", maandStr] });
+      queryClient.invalidateQueries({ queryKey: ["prestaties-records"] });
+    },
   });
 
   const handleWerknemerSave = async (id, data) => {
@@ -290,6 +301,7 @@ export default function Kalender() {
         existingPrestaties={dayPrestaties}
         onSave={(data) => createMut.mutate(data)}
         onDelete={(id) => deleteMut.mutate(id)}
+        onUpdate={(id, data) => updateMut.mutate({ id, data })}
         selectedWerknemer={selectedWerknemer}
       />
 
