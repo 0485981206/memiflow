@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ReactDOM from "react-dom";
 import { Link, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import {
@@ -114,12 +115,24 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
 
   const CollapsedMenuLink = ({ to, icon: Icon, label, subItems, badge, isActiveCheck }) => {
     const [hovering, setHovering] = useState(false);
+    const [pos, setPos] = useState({ top: 0 });
+    const btnRef = React.useRef(null);
     const active = isActiveCheck ? isActiveCheck() : isActive(to);
+
+    const handleEnter = () => {
+      setHovering(true);
+      if (btnRef.current) {
+        const rect = btnRef.current.getBoundingClientRect();
+        setPos({ top: rect.top });
+      }
+    };
+
     return (
       <div
         className="relative"
-        onMouseEnter={() => setHovering(true)}
+        onMouseEnter={handleEnter}
         onMouseLeave={() => setHovering(false)}
+        ref={btnRef}
       >
         <Link
           to={to}
@@ -137,10 +150,12 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
             )}
           </div>
         </Link>
-        {hovering && subItems && subItems.length > 0 && (
+        {hovering && subItems && subItems.length > 0 && ReactDOM.createPortal(
           <div
-            className="absolute left-full top-0 ml-2 py-2 px-1 rounded-lg shadow-xl min-w-[160px] z-50"
-            style={{ backgroundColor: "#152d4a" }}
+            className="fixed py-2 px-1 rounded-lg shadow-xl min-w-[180px] z-[9999]"
+            style={{ backgroundColor: "#152d4a", top: pos.top, left: 68 }}
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
           >
             <p className="px-3 pb-1.5 text-[10px] font-semibold uppercase tracking-widest text-white/40">{label}</p>
             {subItems.map((item) => (
@@ -152,7 +167,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
                     ? "text-[#38bdf8] font-semibold bg-white/5"
                     : "text-white/70 hover:text-white hover:bg-white/10"
                 }`}
-                onClick={() => setMobileOpen(false)}
+                onClick={() => { setMobileOpen(false); setHovering(false); }}
               >
                 <span>{item.label}</span>
                 {item.path === "/prestaties/import" && importBadge > 0 && (
@@ -162,7 +177,8 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
                 )}
               </Link>
             ))}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
     );
