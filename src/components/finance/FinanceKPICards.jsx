@@ -21,8 +21,14 @@ function KPI({ title, value, sub, icon: Icon, color }) {
 
 export default function FinanceKPICards({ prestaties, klanten }) {
   const stats = useMemo(() => {
-    const klantMap = {};
-    klanten.forEach(k => { klantMap[k.id] = k; });
+    const klantById = {};
+    const klantByNaam = {};
+    klanten.forEach(k => {
+      klantById[k.id] = k;
+      if (k.naam) klantByNaam[k.naam.toLowerCase()] = k;
+    });
+
+    const findKlant = (p) => klantById[p.eindklant_id] || (p.eindklant_naam ? klantByNaam[p.eindklant_naam.toLowerCase()] : null);
 
     let totaalOmzet = 0;
     let totaalUren = 0;
@@ -32,7 +38,7 @@ export default function FinanceKPICards({ prestaties, klanten }) {
 
     prestaties.forEach(p => {
       const uren = p.totaal_uren || p.uren || 0;
-      const klant = klantMap[p.eindklant_id];
+      const klant = findKlant(p);
       const tarief = klant?.facturatie_tarief || 0;
       totaalOmzet += uren * tarief;
       totaalUren += uren;

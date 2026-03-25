@@ -5,14 +5,19 @@ import { TrendingUp } from "lucide-react";
 
 export default function OmzetTrendCard({ prestaties, klanten }) {
   const data = useMemo(() => {
-    const klantMap = {};
-    klanten.forEach(k => { klantMap[k.id] = k; });
+    const klantById = {};
+    const klantByNaam = {};
+    klanten.forEach(k => {
+      klantById[k.id] = k;
+      if (k.naam) klantByNaam[k.naam.toLowerCase()] = k;
+    });
+    const findKlant = (p) => klantById[p.eindklant_id] || (p.eindklant_naam ? klantByNaam[p.eindklant_naam.toLowerCase()] : null);
 
     const perMaand = {};
     prestaties.forEach(p => {
       if (!p.datum) return;
       const maand = p.datum.slice(0, 7);
-      const klant = klantMap[p.eindklant_id];
+      const klant = findKlant(p);
       const tarief = klant?.facturatie_tarief || 0;
       const uren = p.totaal_uren || p.uren || 0;
       perMaand[maand] = (perMaand[maand] || 0) + uren * tarief;
