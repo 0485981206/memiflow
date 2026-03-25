@@ -65,9 +65,14 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
   const handleImport = async () => {
     setIsSaving(true);
     
-    // Pass selected werknemer names to backend — it handles all DB updates
     const geselecteerdeNamen = [...selected];
     
+    // Update batch status to "verwerken" so the list shows "Bezig..."
+    await base44.entities.PrestatieImportBatch.update(batch.id, {
+      status: "verwerken",
+      aantal_prestaties: selectedCount,
+    });
+
     base44.functions.invoke('importPrestaties', { 
       batchId: batch.id,
       geselecteerdeNamen 
@@ -75,7 +80,7 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
       console.error('Background import failed:', err);
     });
     
-    toast.success(`✓ Import gestart op achtergrond — je kunt nu verder werken`, { duration: 5000 });
+    toast.success(`✓ Import gestart — ${selectedCount} records worden verwerkt`, { duration: 5000 });
     setIsSaving(false);
     onImported();
     onClose();
