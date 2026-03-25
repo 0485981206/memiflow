@@ -29,9 +29,13 @@ const prestatieMenu = [
   { label: "Kalender", path: "/prestaties/kalender" },
   { label: "Kalenderoverzicht", path: "/prestaties/kalenderoverzicht" },
   { label: "Overzicht", path: "/prestaties/overzicht" },
+  { label: "Records", path: "/prestaties/records" },
+];
+
+const instellingenMenu = [
+  { label: "Algemeen", path: "/instellingen" },
   { label: "Codes", path: "/prestaties/codes" },
   { label: "PDF Import", path: "/prestaties/import" },
-  { label: "Records", path: "/prestaties/records" },
 ];
 
 const acertaMenu = [
@@ -41,7 +45,6 @@ const acertaMenu = [
 const beheerMenu = [
   { label: "Loonfiches", path: "/loonfiches", icon: FileText },
   { label: "Rapporten", path: "/rapporten", icon: BarChart3 },
-  { label: "Instellingen", path: "/instellingen", icon: Settings },
 ];
 
 export default function Sidebar() {
@@ -51,6 +54,9 @@ export default function Sidebar() {
   );
   const [acertaOpen, setAcertaOpen] = useState(
     location.pathname.startsWith("/acerta")
+  );
+  const [instellingenOpen, setInstellingenOpen] = useState(
+    location.pathname.startsWith("/instellingen") || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [importBadge, setImportBadge] = useState(0);
@@ -201,6 +207,50 @@ export default function Sidebar() {
               <span>{item.label}</span>
             </Link>
           ))}
+
+          {/* Instellingen dropdown */}
+          <button
+            onClick={() => setInstellingenOpen(!instellingenOpen)}
+            className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+              location.pathname.startsWith("/instellingen") || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
+                ? "bg-[#1e3a5f] text-white"
+                : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Settings className="w-4 h-4 flex-shrink-0" />
+              <span>Instellingen</span>
+            </div>
+            {instellingenOpen ? (
+              <ChevronDown className="w-4 h-4" />
+            ) : (
+              <ChevronRight className="w-4 h-4" />
+            )}
+          </button>
+
+          {instellingenOpen && (
+            <div className="ml-7 space-y-0.5">
+              {instellingenMenu.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                    isActive(item.path) && location.pathname === item.path
+                      ? "text-[#38bdf8] font-semibold"
+                      : "text-white/60 hover:text-white"
+                  }`}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <span>{item.label}</span>
+                  {item.path === "/prestaties/import" && importBadge > 0 && (
+                    <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
+                      {importBadge}
+                    </span>
+                  )}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </nav>
 
