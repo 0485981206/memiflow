@@ -2,143 +2,246 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Building2, Search, ChevronDown, ChevronRight, Users, Clock } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users } from "lucide-react";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO } from "date-fns";
+import { nl } from "date-fns/locale";
+import KlantCombobox from "@/components/klanten/KlantCombobox";
+
+const PRESTATIE_COLORS = [
+  "bg-blue-100 text-blue-800",
+  "bg-green-100 text-green-800",
+  "bg-purple-100 text-purple-800",
+  "bg-orange-100 text-orange-800",
+  "bg-pink-100 text-pink-800",
+  "bg-teal-100 text-teal-800",
+];
+
+function getWerknemerColor(index) {
+  return PRESTATIE_COLORS[index % PRESTATIE_COLORS.length];
+}
+
+const DAGEN = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
 export default function Eindklanten() {
-  const [search, setSearch] = useState("");
-  const [expanded, setExpanded] = useState({});
+  const [selectedKlant, setSelectedKlant] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [view, setView] = useState("kalender"); // kalender | lijst
 
-  const { data: klanten = [], isLoading: loadingKlanten } = useQuery({
+  const maandStr = format(currentDate, "yyyy-MM");
+
+  const { data: klanten = [] } = useQuery({
     queryKey: ["eindklanten"],
     queryFn: () => base44.entities.Eindklant.list("-created_date"),
   });
 
-  const { data: prestaties = [], isLoading: loadingPrestaties } = useQuery({
-    queryKey: ["allePresaties"],
-    queryFn: () => base44.entities.Prestatie.list("-datum", 2000),
+  const { data: prestaties = [], isLoading } = useQuery({
+    queryKey: ["prestaties-klant", selectedKlant?.id, maandStr],
+    queryFn: () =>
+      base44.entities.Prestatie.filter({ eindklant_id: selectedKlant.id, maand: maandStr }),
+    enabled: !!selectedKlant,
   });
 
-  const filtered = klanten.filter((k) =>
-    (k.naam || "").toLowerCase().includes(search.toLowerCase())
-  );
+  // Group by werknemer
+  const werknemerGroepen = prestaties.reduce((acc, p) => {
+    const key = p.werknemer_naam || p.werknemer_id || "Onbekend";
+    if (!acc[key]) acc[key] = { naam: key, prestaties: [] };
+    acc[key].prestaties.push(p);
+    return acc;
+  }, {});
+  const werknemers = Object.values(werknemerGroepen).sort((a, b) => a.naam.localeCompare(b.naam));
 
-  const toggleExpand = (id) => {
-    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
-  };
+  // Calendar helpers
+  const firstDay = startOfMonth(currentDate);
+  const lastDay = endOfMonth(currentDate);
+  const days = eachDayOfInterval({ start: firstDay, end: lastDay });
+  // Monday-based padding
+  const startPad = (getDay(firstDay) + 6) % 7;
 
-  // Group prestaties by eindklant_id, then by werknemer
-  const getKlantData = (klantId) => {
-    const klantPrestaties = prestaties.filter((p) => p.eindklant_id === klantId);
-    const byWerknemer = {};
-    for (const p of klantPrestaties) {
-      const key = p.werknemer_naam || p.werknemer_id || "Onbekend";
-      if (!byWerknemer[key]) byWerknemer[key] = { naam: key, records: [], totaalUren: 0 };
-      byWerknemer[key].records.push(p);
-      byWerknemer[key].totaalUren += p.totaal_uren || p.uren || 0;
-    }
-    return {
-      werknemers: Object.values(byWerknemer).sort((a, b) => b.totaalUren - a.totaalUren),
-      totaalUren: klantPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0),
-      aantalRecords: klantPrestaties.length,
-    };
-  };
+  const prestatiesOpDag = (datum) =>
+    prestaties.filter((p) => p.datum === datum);
+
+  const totaalUren = prestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Building2 className="w-6 h-6 text-accent" />
-          Klanten
-        </h1>
+      <div className="flex items-center gap-2">
+        <Building2 className="w-6 h-6 text-accent" />
+        <h1 className="text-2xl font-bold">Klanten</h1>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Zoeken op naam..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+      {/* Klant selector */}
+      <div className="max-w-sm">
+        <KlantCombobox
+          klanten={klanten}
+          value={selectedKlant?.id || ""}
+          onChange={(id) => setSelectedKlant(klanten.find((k) => k.id === id) || null)}
+          placeholder="Selecteer een klant..."
+        />
       </div>
 
-      {loadingKlanten && <p className="text-muted-foreground text-sm">Laden...</p>}
+      {!selectedKlant ? (
+        <div className="text-center py-16 text-muted-foreground">
+          <Building2 className="w-12 h-12 mx-auto mb-3 opacity-20" />
+          <p className="text-base">Selecteer een klant om de prestatie-records te bekijken.</p>
+        </div>
+      ) : (
+        <Card className="p-4 space-y-4">
+          {/* Header + nav */}
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(subMonths(currentDate, 1))}>
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <h2 className="text-lg font-semibold capitalize min-w-[160px] text-center">
+                {format(currentDate, "MMMM yyyy", { locale: nl })}
+              </h2>
+              <Button variant="outline" size="icon" onClick={() => setCurrentDate(addMonths(currentDate, 1))}>
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setCurrentDate(new Date())}>Vandaag</Button>
+            </div>
 
-      <div className="space-y-3">
-        {filtered.map((k) => {
-          const isOpen = expanded[k.id];
-          const { werknemers, totaalUren, aantalRecords } = getKlantData(k.id);
+            <div className="flex items-center gap-3">
+              {/* Stats */}
+              <div className="flex items-center gap-3 text-sm text-muted-foreground">
+                <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5" /> {werknemers.length}</span>
+                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5" /> {totaalUren.toFixed(1)}u</span>
+              </div>
+              {/* View toggle */}
+              <div className="flex rounded-md border overflow-hidden">
+                <button
+                  onClick={() => setView("kalender")}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "kalender" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                >
+                  <Calendar className="w-3.5 h-3.5" /> Kalender
+                </button>
+                <button
+                  onClick={() => setView("lijst")}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${view === "lijst" ? "bg-primary text-primary-foreground" : "bg-background hover:bg-muted"}`}
+                >
+                  <List className="w-3.5 h-3.5" /> Lijst
+                </button>
+              </div>
+            </div>
+          </div>
 
+          {isLoading ? (
+            <div className="py-12 text-center text-muted-foreground text-sm">Laden...</div>
+          ) : prestaties.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground text-sm">Geen records gevonden voor deze maand.</div>
+          ) : view === "kalender" ? (
+            <KalenderView days={days} startPad={startPad} prestatiesOpDag={prestatiesOpDag} werknemers={werknemers} />
+          ) : (
+            <LijstView werknemers={werknemers} />
+          )}
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function KalenderView({ days, startPad, prestatiesOpDag, werknemers }) {
+  return (
+    <div>
+      {/* Weekday headers */}
+      <div className="grid grid-cols-7 mb-1">
+        {DAGEN.map((d) => (
+          <div key={d} className="text-center text-xs font-semibold text-muted-foreground py-1">{d}</div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-px bg-border rounded-lg overflow-hidden">
+        {Array.from({ length: startPad }).map((_, i) => (
+          <div key={`pad-${i}`} className="bg-muted/30 min-h-[70px]" />
+        ))}
+        {days.map((day) => {
+          const dagStr = format(day, "yyyy-MM-dd");
+          const dagPrestaties = prestatiesOpDag(dagStr);
           return (
-            <Card key={k.id} className="overflow-hidden">
-              <button
-                className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors text-left"
-                onClick={() => toggleExpand(k.id)}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-accent/10 rounded-lg">
-                    <Building2 className="w-4 h-4 text-accent" />
-                  </div>
-                  <div>
-                    <p className="font-semibold">{k.naam}</p>
-                    {k.contactpersoon && <p className="text-xs text-muted-foreground">{k.contactpersoon}</p>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" /> {werknemers.length} werknemers
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="w-3.5 h-3.5" /> {totaalUren.toFixed(1)}u totaal
-                    </span>
-                    <span className="text-xs">{aantalRecords} records</span>
-                  </div>
-                  <Badge variant="secondary" className={k.status === "actief" ? "bg-chart-5/10 text-chart-5" : "bg-muted text-muted-foreground"}>
-                    {k.status}
-                  </Badge>
-                  {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
-                </div>
-              </button>
-
-              {isOpen && (
-                <div className="border-t px-5 py-4 bg-muted/20">
-                  {werknemers.length === 0 ? (
-                    <p className="text-sm text-muted-foreground italic">Geen prestatie-records gevonden voor deze klant.</p>
-                  ) : (
-                    <div className="space-y-3">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Uren per werknemer</p>
-                      <div className="space-y-2">
-                        {werknemers.map((w) => (
-                          <div key={w.naam} className="flex items-center justify-between bg-background rounded-lg px-4 py-2.5 border">
-                            <div className="flex items-center gap-2">
-                              <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">
-                                {w.naam.charAt(0).toUpperCase()}
-                              </div>
-                              <span className="text-sm font-medium">{w.naam}</span>
-                              <span className="text-xs text-muted-foreground">{w.records.length} records</span>
-                            </div>
-                            <div className="flex items-center gap-1 text-sm font-semibold">
-                              <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                              {w.totaalUren.toFixed(1)}u
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-end pt-2 border-t">
-                        <span className="text-sm font-bold">Totaal: {totaalUren.toFixed(1)} uur</span>
-                      </div>
+            <div
+              key={dagStr}
+              className={`bg-card min-h-[70px] p-1.5 ${isToday(day) ? "ring-2 ring-inset ring-accent" : ""}`}
+            >
+              <p className={`text-xs font-medium mb-1 ${isToday(day) ? "text-accent font-bold" : "text-muted-foreground"}`}>
+                {format(day, "d")}
+              </p>
+              <div className="space-y-0.5">
+                {dagPrestaties.slice(0, 3).map((p, i) => {
+                  const wIdx = werknemers.findIndex((w) => w.naam === (p.werknemer_naam || p.werknemer_id || "Onbekend"));
+                  return (
+                    <div key={p.id} className={`text-[10px] rounded px-1 py-0.5 truncate ${getWerknemerColor(wIdx)}`}>
+                      {p.werknemer_naam?.split(" ")[0] || "?"} {p.totaal_uren || p.uren || 0}u
                     </div>
-                  )}
-                </div>
-              )}
-            </Card>
+                  );
+                })}
+                {dagPrestaties.length > 3 && (
+                  <div className="text-[10px] text-muted-foreground pl-1">+{dagPrestaties.length - 3}</div>
+                )}
+              </div>
+            </div>
           );
         })}
-        {filtered.length === 0 && !loadingKlanten && (
-          <div className="text-center py-12 text-muted-foreground">
-            <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
-            <p>Geen klanten gevonden</p>
-          </div>
-        )}
       </div>
+
+      {/* Legend */}
+      {werknemers.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t">
+          {werknemers.map((w, i) => (
+            <div key={w.naam} className="flex items-center gap-1 text-xs">
+              <div className={`w-3 h-3 rounded-full ${getWerknemerColor(i).split(" ")[0]}`} />
+              <span className="text-muted-foreground">{w.naam}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function LijstView({ werknemers }) {
+  return (
+    <div className="space-y-4">
+      {werknemers.map((w, wIdx) => {
+        const totaal = w.prestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
+        const sorted = [...w.prestaties].sort((a, b) => a.datum.localeCompare(b.datum));
+        return (
+          <div key={w.naam} className="border rounded-lg overflow-hidden">
+            <div className={`flex items-center justify-between px-4 py-2.5 ${getWerknemerColor(wIdx)}`}>
+              <span className="font-semibold text-sm">{w.naam}</span>
+              <div className="flex items-center gap-3 text-xs">
+                <span>{w.prestaties.length} records</span>
+                <span className="font-bold">{totaal.toFixed(1)}u totaal</span>
+              </div>
+            </div>
+            <div className="divide-y">
+              {sorted.map((p) => {
+                const tijden = [1,2,3,4,5,6].map(n => {
+                  const inn = p[`in_${n}`]; const uit = p[`uit_${n}`];
+                  return inn ? `${inn}–${uit || "?"}` : null;
+                }).filter(Boolean);
+                return (
+                  <div key={p.id} className="flex items-center justify-between px-4 py-2.5 text-sm hover:bg-muted/20">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium text-muted-foreground w-24 shrink-0">
+                        {format(parseISO(p.datum), "EEE d MMM", { locale: nl })}
+                      </span>
+                      {tijden.length > 0 && (
+                        <span className="text-xs text-muted-foreground hidden sm:block">{tijden.join(" | ")}</span>
+                      )}
+                      {p.code && <Badge variant="secondary" className="text-xs">{p.code}</Badge>}
+                    </div>
+                    <span className="font-semibold flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                      {(p.totaal_uren || p.uren || 0).toFixed(1)}u
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
