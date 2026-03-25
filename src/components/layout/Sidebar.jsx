@@ -22,7 +22,6 @@ const mainMenu = [
   { label: "Workspaces", path: "/workspace", icon: Grid3x3 },
   { label: "Werknemers", path: "/werknemers", icon: Users },
   { label: "Klanten", path: "/eindklanten", icon: Building2 },
-  { label: "Plaatsingen", path: "/plaatsingen", icon: Link2 },
 ];
 
 const prestatieMenu = [
@@ -34,6 +33,7 @@ const prestatieMenu = [
 
 const instellingenMenu = [
   { label: "Algemeen", path: "/instellingen" },
+  { label: "Plaatsingen", path: "/plaatsingen" },
   { label: "Codes", path: "/prestaties/codes" },
   { label: "PDF Import", path: "/prestaties/import" },
 ];
@@ -56,7 +56,7 @@ export default function Sidebar() {
     location.pathname.startsWith("/acerta")
   );
   const [instellingenOpen, setInstellingenOpen] = useState(
-    location.pathname.startsWith("/instellingen") || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
+    location.pathname.startsWith("/instellingen") || location.pathname === "/plaatsingen" || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
   );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [importBadge, setImportBadge] = useState(0);
@@ -212,7 +212,7 @@ export default function Sidebar() {
           <button
             onClick={() => setInstellingenOpen(!instellingenOpen)}
             className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
-              location.pathname.startsWith("/instellingen") || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
+              location.pathname.startsWith("/instellingen") || location.pathname === "/plaatsingen" || location.pathname === "/prestaties/codes" || location.pathname === "/prestaties/import"
                 ? "bg-[#1e3a5f] text-white"
                 : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
             }`}
