@@ -150,58 +150,9 @@ export default function PrestatieDialog({
 
         {/* Footer */}
         <div className="sticky bottom-0 bg-background border-t px-5 py-4">
-          {activeTab === "prestaties" ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {!selectedWerknemer && (
-                <div>
-                  <Label>Werknemer</Label>
-                  <WerknemerCombobox
-                    werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
-                    value={form.werknemer_id}
-                    onChange={(id) => setForm({ ...form, werknemer_id: id })}
-                  />
-                </div>
-              )}
-
-              <div>
-                <Label>Uren</Label>
-                <Input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="24"
-                  value={form.uren}
-                  onChange={(e) => setForm({ ...form, uren: e.target.value })}
-                  placeholder="8"
-                />
-              </div>
-
-              <div>
-                <Label>Opmerking</Label>
-                <Input
-                  value={form.opmerking}
-                  onChange={(e) => setForm({ ...form, opmerking: e.target.value })}
-                  placeholder="Optioneel..."
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={onClose}>
-                  Sluiten
-                </Button>
-                <Button
-                  type="submit"
-                  disabled={!form.werknemer_id || !form.uren}
-                >
-                  Toevoegen
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onClose}>Sluiten</Button>
-            </div>
-          )}
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={onClose}>Sluiten</Button>
+          </div>
         </div>
       </div>
     </div>
