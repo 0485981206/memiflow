@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
-import { X, Send, Loader2, Plus, MessageSquare } from "lucide-react";
+import { X, Send, Loader2, Plus, Paperclip, FileIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ReactMarkdown from "react-markdown";
 
@@ -34,8 +34,11 @@ export default function BaciChatPanel({ open, onClose }) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [attachments, setAttachments] = useState([]);
+  const [uploading, setUploading] = useState(false);
   const messagesEndRef = useRef(null);
   const unsubRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Load conversations on open
   useEffect(() => {
@@ -72,10 +75,28 @@ export default function BaciChatPanel({ open, onClose }) {
     await selectConversation(conv.id);
   };
 
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    setUploading(true);
+    for (const file of files) {
+      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      setAttachments((prev) => [...prev, { name: file.name, url: file_url }]);
+    }
+    setUploading(false);
+    e.target.value = "";
+  };
+
+  const removeAttachment = (idx) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== idx));
+  };
+
   const sendMessage = async () => {
-    if (!input.trim() || sending) return;
+    if ((!input.trim() && attachments.length === 0) || sending) return;
     const text = input.trim();
+    const fileUrls = attachments.map((a) => a.url);
     setInput("");
+    setAttachments([]);
     setSending(true);
 
     let conv = activeConv;
@@ -91,7 +112,9 @@ export default function BaciChatPanel({ open, onClose }) {
       });
     }
 
-    await base44.agents.addMessage(conv, { role: "user", content: text });
+    const msg = { role: "user", content: text || "(bijlage)" };
+    if (fileUrls.length > 0) msg.file_urls = fileUrls;
+    await base44.agents.addMessage(conv, msg);
     setSending(false);
   };
 
@@ -143,8 +166,31 @@ export default function BaciChatPanel({ open, onClose }) {
       </div>
 
       {/* Input */}
-      <div className="border-t px-3 py-2.5">
+      <div className="border-t px-3 py-2.5 space-y-2">
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-1.5">
+            {attachments.map((a, i) => (
+              <div key={i} className="flex items-center gap-1 bg-muted rounded-full px-2.5 py-1 text-xs">
+                <FileIcon className="w-3 h-3 text-muted-foreground" />
+                <span className="max-w-[120px] truncate">{a.name}</span>
+                <button onClick={() => removeAttachment(i)} className="text-muted-foreground hover:text-destructive ml-0.5">
+                  <X className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
         <div className="flex items-center gap-2">
+          <input type="file" ref={fileInputRef} className="hidden" multiple onChange={handleFileSelect} />
+          <Button
+            size="icon"
+            variant="ghost"
+            className="h-9 w-9 shrink-0 text-muted-foreground hover:text-foreground"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading || sending}
+          >
+            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Paperclip className="w-4 h-4" />}
+          </Button>
           <input
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -157,7 +203,7 @@ export default function BaciChatPanel({ open, onClose }) {
             size="icon"
             className="h-9 w-9 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700"
             onClick={sendMessage}
-            disabled={sending || !input.trim()}
+            disabled={sending || (!input.trim() && attachments.length === 0)}
           >
             {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </Button>
