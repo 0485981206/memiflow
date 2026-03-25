@@ -1,14 +1,15 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { format, parseISO, getDay } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
 import { Clock } from "lucide-react";
-import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import { berekenPrestatieCodes, buildCodeMap } from "@/lib/prestatie-codes";
 import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const BRON_LABELS = { gps: "GPS", uitsnext: "UitsNext", manueel: "Manueel" };
 
 export default function ListView({ prestaties, codes, onDayClick }) {
+  const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const sorted = [...prestaties].sort((a, b) => a.datum.localeCompare(b.datum));
 
   // Group by date
@@ -17,9 +18,6 @@ export default function ListView({ prestaties, codes, onDayClick }) {
     acc[p.datum].push(p);
     return acc;
   }, {});
-
-  const codeMap = {};
-  codes.forEach((c) => { codeMap[c.code] = c; });
 
   if (sorted.length === 0) {
     return (
@@ -102,7 +100,7 @@ export default function ListView({ prestaties, codes, onDayClick }) {
             {(() => {
               const d = parseISO(datum);
               const totalUren = items.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
-              const lines = berekenPrestatieCodes(datum, getDay(d), totalUren);
+              const lines = berekenPrestatieCodes(datum, getDay(d), totalUren, codeMap);
               if (lines.length === 0) return null;
               return (
                 <div className="px-4 py-2 border-t bg-muted/20">

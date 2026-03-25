@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, RotateCcw } from "lucide-react";
 import { PRESTATIE_CODES } from "@/lib/prestatie-codes";
-
-const allCodes = Object.entries(PRESTATIE_CODES).map(([code, info]) => ({
-  code,
-  naam: info.naam,
-  kleur: info.kleur,
-}));
 
 function fmt(n) {
   return n.toFixed(2).replace(".", ",");
 }
 
-export default function AcertaCodesTab({ lines, onChange }) {
+export default function AcertaCodesTab({ lines, onChange, dbCodes, onReset }) {
+  // Build allCodes from DB codes if available, fallback to hardcoded
+  const allCodes = (dbCodes && dbCodes.length > 0)
+    ? dbCodes.map(c => ({ code: c.code, naam: c.naam, kleur: c.kleur || "#999" }))
+    : Object.entries(PRESTATIE_CODES).map(([code, info]) => ({ code, naam: info.naam, kleur: info.kleur }));
+
+  const codeMap = {};
+  allCodes.forEach(c => { codeMap[c.code] = c; });
   const [showAdd, setShowAdd] = useState(false);
   const [newCode, setNewCode] = useState("");
   const [newUren, setNewUren] = useState("");
@@ -28,15 +29,26 @@ export default function AcertaCodesTab({ lines, onChange }) {
     onChange(lines.filter((_, i) => i !== index));
   };
 
+  const updateLine = (index, field, value) => {
+    const updated = lines.map((l, i) => (i === index ? { ...l, [field]: value } : l));
+    onChange(updated);
+  };
+
+  const removeLine = (index) => {
+    onChange(lines.filter((_, i) => i !== index));
+  };
+
   const addLine = () => {
     if (!newCode || !newUren) return;
-    const info = PRESTATIE_CODES[newCode];
+    const info = codeMap[newCode] || PRESTATIE_CODES[newCode];
     onChange([
       ...lines,
       {
         code: newCode,
+        naam: info?.naam || newCode,
         uren: parseFloat(newUren) || 0,
         kleur: info?.kleur || "#999",
+        isSecondary: false,
       },
     ]);
     setNewCode("");
@@ -46,9 +58,16 @@ export default function AcertaCodesTab({ lines, onChange }) {
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-medium text-muted-foreground">
-        Bewerk de automatisch berekende Acerta-codes voor deze dag.
-      </p>
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground">
+          Bewerk de automatisch berekende Acerta-codes voor deze dag.
+        </p>
+        {onReset && (
+          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={onReset}>
+            <RotateCcw className="w-3 h-3" /> Reset
+          </Button>
+        )}
+      </div>
 
       {lines.length === 0 && (
         <p className="text-sm text-muted-foreground py-4 text-center">
@@ -59,6 +78,7 @@ export default function AcertaCodesTab({ lines, onChange }) {
       <div className="space-y-2">
         {lines.map((line, i) => (
           <div key={i} className="flex items-center gap-2 border rounded-lg p-2.5 bg-muted/20">
+            {line.isSecondary && <span className="text-muted-foreground font-bold text-xs">↓</span>}
             <span
               className="w-3 h-3 rounded-full shrink-0"
               style={{ backgroundColor: line.kleur }}
@@ -67,9 +87,9 @@ export default function AcertaCodesTab({ lines, onChange }) {
             <select
               value={line.code}
               onChange={(e) => {
-                const info = PRESTATIE_CODES[e.target.value];
-                updateLine(i, "code", e.target.value);
-                if (info) updateLine(i, "kleur", info.kleur);
+                const info = codeMap[e.target.value];
+                const updated = lines.map((l, idx) => idx === i ? { ...l, code: e.target.value, kleur: info?.kleur || l.kleur, naam: info?.naam || l.naam } : l);
+                onChange(updated);
               }}
               className="text-xs bg-transparent border rounded px-2 py-1.5 min-w-[80px]"
             >

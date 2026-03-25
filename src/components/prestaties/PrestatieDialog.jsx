@@ -9,7 +9,8 @@ import { Trash2 } from "lucide-react";
 import WerknemerCombobox from "./WerknemerCombobox.jsx";
 import AcertaCodesTab from "./AcertaCodesTab";
 import PrestatieCard from "./PrestatieCard";
-import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import PrestatieCodeLines from "./PrestatieCodeLines";
+import { berekenPrestatieCodes, buildCodeMap } from "@/lib/prestatie-codes";
 
 export default function PrestatieDialog({
   open, onClose, date, werknemers, codes, plaatsingen,
@@ -33,18 +34,24 @@ export default function PrestatieDialog({
     setActiveTab("prestaties");
   }, [date, selectedWerknemer]);
 
-  // Bereken acerta codes wanneer date of prestaties wijzigen
-  useEffect(() => {
-    if (!date || !selectedWerknemer) { setAcertaLines([]); return; }
+  const codeMap = React.useMemo(() => buildCodeMap(codes), [codes]);
+
+  const computeLines = () => {
+    if (!date || !selectedWerknemer) return [];
     const totalUren = existingPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
     const hasData = existingPrestaties.length > 0;
-    const lines = berekenPrestatieCodes(
+    return berekenPrestatieCodes(
       format(date, "yyyy-MM-dd"),
       getDay(date),
-      hasData ? totalUren : null
+      hasData ? totalUren : null,
+      codeMap
     );
-    setAcertaLines(lines);
-  }, [date, existingPrestaties, selectedWerknemer]);
+  };
+
+  // Bereken acerta codes wanneer date of prestaties wijzigen
+  useEffect(() => {
+    setAcertaLines(computeLines());
+  }, [date, existingPrestaties, selectedWerknemer, codes]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -108,13 +115,35 @@ export default function PrestatieDialog({
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">Bestaande prestaties</p>
                   {existingPrestaties.map((p) => (
-                        <PrestatieCard key={p.id} p={p} onDelete={onDelete} onUpdate={onUpdate} />
+                    <PrestatieCard key={p.id} p={p} onDelete={onDelete} onUpdate={onUpdate} />
                   ))}
-                  </div>
-                  )}
+                </div>
+              )}
+              {/* Berekende codes in Prestaties tab */}
+              {acertaLines.length > 0 && (
+                <div className="border rounded-lg p-3 bg-muted/20 space-y-1.5">
+                  <p className="text-xs font-semibold text-muted-foreground uppercase">Berekende codes</p>
+                  {acertaLines.map((l, i) => (
+                    <div key={i} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        {l.isSecondary && <span className="text-muted-foreground font-bold">↓</span>}
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: l.kleur }} />
+                        <span className="font-medium">{l.code}</span>
+                        <span className="text-muted-foreground text-xs">{l.naam}</span>
+                      </div>
+                      <span className="font-semibold">{l.uren.toFixed(2).replace('.', ',')}u</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </>
           ) : (
-            <AcertaCodesTab lines={acertaLines} onChange={setAcertaLines} />
+            <AcertaCodesTab
+              lines={acertaLines}
+              onChange={setAcertaLines}
+              dbCodes={codes}
+              onReset={() => setAcertaLines(computeLines())}
+            />
           )}
         </div>
 

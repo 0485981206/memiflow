@@ -10,9 +10,12 @@ export default function PrestatieCodeLines({ lines }) {
     <div className="space-y-px">
       {lines.map((l, i) => (
         <div key={i} className="flex items-center gap-1 text-[9px] leading-tight">
+          {l.isSecondary && (
+            <span className="text-muted-foreground font-bold mr-0.5">↓</span>
+          )}
           <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: l.kleur }} />
           <span className="font-semibold" style={{ color: l.kleur }}>{fmt(l.uren)}</span>
-          <span className="text-muted-foreground">{l.code}</span>
+          <span className="text-muted-foreground">● {l.code}</span>
         </div>
       ))}
     </div>

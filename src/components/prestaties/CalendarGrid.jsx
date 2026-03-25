@@ -1,12 +1,12 @@
-import React from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isSameMonth, isToday, isSameDay } from "date-fns";
-import { nl } from "date-fns/locale";
-import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import React, { useMemo } from "react";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday } from "date-fns";
+import { berekenPrestatieCodes, buildCodeMap } from "@/lib/prestatie-codes";
 import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const DAY_NAMES = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
 export default function CalendarGrid({ currentMonth, prestaties, codes, onDayClick, selectedWerknemer }) {
+  const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const monthStart = startOfMonth(currentMonth);
   const monthEnd = endOfMonth(currentMonth);
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
@@ -84,7 +84,8 @@ export default function CalendarGrid({ currentMonth, prestaties, codes, onDayCli
                 const lines = berekenPrestatieCodes(
                   format(day, "yyyy-MM-dd"),
                   getDay(day),
-                  hasData ? totalUren : null
+                  hasData ? totalUren : null,
+                  codeMap
                 );
                 return <PrestatieCodeLines lines={lines} />;
               })()}

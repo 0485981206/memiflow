@@ -1,12 +1,12 @@
-import React from "react";
-import { format, startOfWeek, addDays, getDay, isToday, isSameDay } from "date-fns";
-import { nl } from "date-fns/locale";
-import { berekenPrestatieCodes } from "@/lib/prestatie-codes";
+import React, { useMemo } from "react";
+import { format, startOfWeek, addDays, getDay, isToday } from "date-fns";
+import { berekenPrestatieCodes, buildCodeMap } from "@/lib/prestatie-codes";
 import PrestatieCodeLines from "./PrestatieCodeLines";
 
 const DAY_NAMES = ["Ma", "Di", "Wo", "Do", "Vr", "Za", "Zo"];
 
 export default function WeekView({ currentDate, prestaties, codes, onDayClick, selectedWerknemer }) {
+  const codeMap = useMemo(() => buildCodeMap(codes), [codes]);
   const weekStart = startOfWeek(currentDate, { weekStartsOn: 1 });
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
@@ -55,7 +55,7 @@ export default function WeekView({ currentDate, prestaties, codes, onDayClick, s
               {selectedWerknemer && (() => {
                 const totalUren = dayPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
                 const hasData = dayPrestaties.length > 0;
-                const lines = berekenPrestatieCodes(dateStr, getDay(day), hasData ? totalUren : null);
+                const lines = berekenPrestatieCodes(dateStr, getDay(day), hasData ? totalUren : null, codeMap);
                 return <PrestatieCodeLines lines={lines} />;
               })()}
             </div>
