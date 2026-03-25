@@ -195,6 +195,20 @@ export default function BaciChatPanel({ open, onClose }) {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+            onPaste={async (e) => {
+              const items = Array.from(e.clipboardData?.items || []);
+              const imageItems = items.filter((item) => item.type.startsWith("image/"));
+              if (imageItems.length === 0) return;
+              e.preventDefault();
+              setUploading(true);
+              for (const item of imageItems) {
+                const file = item.getAsFile();
+                if (!file) continue;
+                const { file_url } = await base44.integrations.Core.UploadFile({ file });
+                setAttachments((prev) => [...prev, { name: file.name || "afbeelding.png", url: file_url }]);
+              }
+              setUploading(false);
+            }}
             placeholder="Stel een vraag..."
             className="flex-1 bg-muted rounded-full px-4 py-2 text-sm outline-none focus:ring-1 focus:ring-primary"
             disabled={sending}
