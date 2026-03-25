@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users, Search, CalendarDays, BarChart3 } from "lucide-react";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO, startOfWeek, addWeeks, subWeeks, addDays } from "date-fns";
+import { nl } from "date-fns/locale";
 import KlantCombobox from "@/components/klanten/KlantCombobox";
 import DagDetailSheet from "@/components/klanten/DagDetailSheet";
 import KlantStatistieken from "@/components/klanten/KlantStatistieken";
