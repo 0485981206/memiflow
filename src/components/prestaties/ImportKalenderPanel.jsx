@@ -65,17 +65,13 @@ export default function ImportKalenderPanel({ batch, onClose, onImported }) {
   const handleImport = async () => {
     setIsSaving(true);
     
-    // Filter selected concept rules
-    const teImporteren = regels.filter(r => selected.has(r.werknemer_naam || "Onbekend"));
+    // Pass selected werknemer names to backend — it handles all DB updates
+    const geselecteerdeNamen = [...selected];
     
-    // Mark concept rules as approved one by one with longer delay to avoid rate limiting
-    for (const r of teImporteren) {
-      await base44.entities.PrestatieConceptRegel.update(r.id, { status: "goedgekeurd" });
-      await new Promise(res => setTimeout(res, 800));
-    }
-
-    // Start background import
-    base44.functions.invoke('importPrestaties', { batchId: batch.id }).catch(err => {
+    base44.functions.invoke('importPrestaties', { 
+      batchId: batch.id,
+      geselecteerdeNamen 
+    }).catch(err => {
       console.error('Background import failed:', err);
     });
     

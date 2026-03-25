@@ -3,14 +3,17 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { batchId } = await req.json();
+    const { batchId, geselecteerdeNamen } = await req.json();
 
     if (!batchId) {
       return Response.json({ error: 'Batch ID missing' }, { status: 400 });
     }
 
-    // Get concept rules
-    const regels = await base44.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
+    // Get concept rules, filtered by selected names if provided
+    const alleRegels = await base44.asServiceRole.entities.PrestatieConceptRegel.filter({ batch_id: batchId });
+    const regels = geselecteerdeNamen?.length
+      ? alleRegels.filter(r => geselecteerdeNamen.includes(r.werknemer_naam || "Onbekend"))
+      : alleRegels;
     
     if (regels.length === 0) {
       return Response.json({ imported: 0 });
@@ -18,13 +21,13 @@ Deno.serve(async (req) => {
 
     // Get unique firmas and resolve eindklanten
     const firmaSet = [...new Set(regels.map(r => r.firma).filter(Boolean))];
-    const bestaandeEindklanten = await base44.entities.Eindklant.list();
+    const bestaandeEindklanten = await base44.asServiceRole.entities.Eindklant.list();
     const eindklantMap = {};
 
     for (const firma of firmaSet) {
       let ek = bestaandeEindklanten.find(e => e.naam?.toLowerCase() === firma.toLowerCase());
       if (!ek) {
-        ek = await base44.entities.Eindklant.create({
+        ek = await base44.asServiceRole.entities.Eindklant.create({
           naam: firma,
           facturatie_tarief: 29,
           status: "actief"
@@ -42,7 +45,7 @@ Deno.serve(async (req) => {
       try {
         const ek = r.firma ? eindklantMap[r.firma] : null;
         const bronNaam = bronMap[r.bron?.toLowerCase()] || r.bron || "";
-        await base44.entities.Prestatie.create({
+        await base44.asServiceRole.entities.Prestatie.create({
           werknemer_id: r.werknemer_id,
           werknemer_naam: r.werknemer_naam,
           eindklant_id: ek?.id || r.eindklant_id || "",
@@ -66,6 +69,8 @@ Deno.serve(async (req) => {
           in_5: r.in_5 || "", uit_5: r.uit_5 || "",
           in_6: r.in_6 || "", uit_6: r.uit_6 || "",
         });
+        // Mark concept regel as approved
+        await base44.asServiceRole.entities.PrestatieConceptRegel.update(r.id, { status: "goedgekeurd" });
         imported++;
       } catch (err) {
         console.error("Create error:", err);
@@ -73,7 +78,7 @@ Deno.serve(async (req) => {
     }
 
     // Update batch status
-    await base44.entities.PrestatieImportBatch.update(batchId, {
+    await base44.asServiceRole.entities.PrestatieImportBatch.update(batchId, {
       status: "goedgekeurd",
       aantal_goedgekeurd: imported,
     });
