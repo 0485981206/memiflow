@@ -87,10 +87,8 @@ export function berekenPrestatieCodes(datumStr, dayOfWeek, gewerkte_uren, codeMa
   // 2. FEESTDAG
   if (FEESTDAGEN.has(datumStr)) {
     const c220 = getCodeInfo("220", map);
-    const c100 = getCodeInfo("100", map);
     return [
       { uren: r2(dagmax), code: "220", naam: c220.naam, kleur: c220.kleur, isSecondary: false },
-      { uren: r2(dagmax), code: "100", naam: c100.naam, kleur: c100.kleur, isSecondary: false },
     ];
   }
 
