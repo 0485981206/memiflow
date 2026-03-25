@@ -1,220 +1,144 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
-import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Upload, FileText, X, Loader2, Bot } from "lucide-react";
-import { Textarea } from "@/components/ui/textarea";
-
-const emptyForm = {
-  naam: "", contactpersoon: "", email: "", telefoon: "",
-  adres: "", btw_nummer: "", status: "actief", facturatie_tarief: "",
-  prestatie_pdf_url: "", prestatie_pdf_naam: "", pdf_instructies: "",
-};
+import { Building2, Search, ChevronDown, ChevronRight, Users, Clock } from "lucide-react";
 
 export default function Eindklanten() {
   const [search, setSearch] = useState("");
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState(emptyForm);
-  const [editId, setEditId] = useState(null);
-  const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = React.useRef(null);
-  const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState({});
 
-  const { data: klanten = [], isLoading } = useQuery({
+  const { data: klanten = [], isLoading: loadingKlanten } = useQuery({
     queryKey: ["eindklanten"],
     queryFn: () => base44.entities.Eindklant.list("-created_date"),
   });
 
-  const createMut = useMutation({
-    mutationFn: (data) => base44.entities.Eindklant.create(data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["eindklanten"] }); closeDialog(); },
+  const { data: prestaties = [], isLoading: loadingPrestaties } = useQuery({
+    queryKey: ["allePresaties"],
+    queryFn: () => base44.entities.Prestatie.list("-datum", 2000),
   });
-
-  const updateMut = useMutation({
-    mutationFn: ({ id, data }) => base44.entities.Eindklant.update(id, data),
-    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["eindklanten"] }); closeDialog(); },
-  });
-
-  const deleteMut = useMutation({
-    mutationFn: (id) => base44.entities.Eindklant.delete(id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["eindklanten"] }),
-  });
-
-  const closeDialog = () => { setDialogOpen(false); setForm(emptyForm); setEditId(null); };
-
-  const handlePdfUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setIsUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
-    setForm(f => ({ ...f, prestatie_pdf_url: file_url, prestatie_pdf_naam: file.name }));
-    setIsUploading(false);
-    e.target.value = "";
-  };
-
-  const openEdit = (k) => {
-    setForm({
-      naam: k.naam || "", contactpersoon: k.contactpersoon || "", email: k.email || "",
-      telefoon: k.telefoon || "", adres: k.adres || "", btw_nummer: k.btw_nummer || "",
-      status: k.status || "actief", facturatie_tarief: k.facturatie_tarief || "",
-      prestatie_pdf_url: k.prestatie_pdf_url || "", prestatie_pdf_naam: k.prestatie_pdf_naam || "",
-      pdf_instructies: k.pdf_instructies || "",
-    });
-    setEditId(k.id);
-    setDialogOpen(true);
-  };
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const data = { ...form, facturatie_tarief: form.facturatie_tarief ? Number(form.facturatie_tarief) : undefined };
-    editId ? updateMut.mutate({ id: editId, data }) : createMut.mutate(data);
-  };
 
   const filtered = klanten.filter((k) =>
-    (k.naam || "").toLowerCase().includes(search.toLowerCase()) ||
-    (k.contactpersoon || "").toLowerCase().includes(search.toLowerCase())
+    (k.naam || "").toLowerCase().includes(search.toLowerCase())
   );
+
+  const toggleExpand = (id) => {
+    setExpanded((prev) => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  // Group prestaties by eindklant_id, then by werknemer
+  const getKlantData = (klantId) => {
+    const klantPrestaties = prestaties.filter((p) => p.eindklant_id === klantId);
+    const byWerknemer = {};
+    for (const p of klantPrestaties) {
+      const key = p.werknemer_naam || p.werknemer_id || "Onbekend";
+      if (!byWerknemer[key]) byWerknemer[key] = { naam: key, records: [], totaalUren: 0 };
+      byWerknemer[key].records.push(p);
+      byWerknemer[key].totaalUren += p.totaal_uren || p.uren || 0;
+    }
+    return {
+      werknemers: Object.values(byWerknemer).sort((a, b) => b.totaalUren - a.totaalUren),
+      totaalUren: klantPrestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0),
+      aantalRecords: klantPrestaties.length,
+    };
+  };
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold">Eindklanten</h1>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Klant toevoegen
-        </Button>
+      <div className="flex items-center gap-3">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Building2 className="w-6 h-6 text-accent" />
+          Klanten
+        </h1>
       </div>
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-        <Input placeholder="Zoeken..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+        <Input placeholder="Zoeken op naam..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <Card className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Naam</TableHead>
-              <TableHead className="hidden md:table-cell">Contactpersoon</TableHead>
-              <TableHead className="hidden md:table-cell">E-mail</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="hidden md:table-cell">PDF</TableHead>
-              <TableHead className="w-24">Acties</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Laden...</TableCell></TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center py-8 text-muted-foreground">Geen klanten gevonden</TableCell></TableRow>
-            ) : filtered.map((k) => (
-              <TableRow key={k.id} className="hover:bg-muted/30">
-                <TableCell className="font-medium">{k.naam}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{k.contactpersoon}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{k.email}</TableCell>
-                <TableCell>
+      {isLoading && <p className="text-muted-foreground text-sm">Laden...</p>}
+
+      <div className="space-y-3">
+        {filtered.map((k) => {
+          const isOpen = expanded[k.id];
+          const { werknemers, totaalUren, aantalRecords } = getKlantData(k.id);
+
+          return (
+            <Card key={k.id} className="overflow-hidden">
+              <button
+                className="w-full flex items-center justify-between px-5 py-4 hover:bg-muted/30 transition-colors text-left"
+                onClick={() => toggleExpand(k.id)}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-accent/10 rounded-lg">
+                    <Building2 className="w-4 h-4 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-semibold">{k.naam}</p>
+                    {k.contactpersoon && <p className="text-xs text-muted-foreground">{k.contactpersoon}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="hidden sm:flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5" /> {werknemers.length} werknemers
+                    </span>
+                    <span className="flex items-center gap-1">
+                      <Clock className="w-3.5 h-3.5" /> {totaalUren.toFixed(1)}u totaal
+                    </span>
+                    <span className="text-xs">{aantalRecords} records</span>
+                  </div>
                   <Badge variant="secondary" className={k.status === "actief" ? "bg-chart-5/10 text-chart-5" : "bg-muted text-muted-foreground"}>
                     {k.status}
                   </Badge>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  {k.prestatie_pdf_url ? (
-                    <a href={k.prestatie_pdf_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-xs text-accent hover:underline">
-                      <FileText className="w-3 h-3" />
-                      <span className="max-w-[100px] truncate">{k.prestatie_pdf_naam || "PDF"}</span>
-                    </a>
-                  ) : (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(k)}><Pencil className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMut.mutate(k.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-
-      <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>{editId ? "Klant bewerken" : "Nieuwe klant"}</DialogTitle></DialogHeader>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div><Label>Bedrijfsnaam *</Label><Input required value={form.naam} onChange={(e) => setForm({ ...form, naam: e.target.value })} /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Contactpersoon</Label><Input value={form.contactpersoon} onChange={(e) => setForm({ ...form, contactpersoon: e.target.value })} /></div>
-              <div><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Telefoon</Label><Input value={form.telefoon} onChange={(e) => setForm({ ...form, telefoon: e.target.value })} /></div>
-              <div><Label>BTW-nummer</Label><Input value={form.btw_nummer} onChange={(e) => setForm({ ...form, btw_nummer: e.target.value })} /></div>
-            </div>
-            <div><Label>Adres</Label><Input value={form.adres} onChange={(e) => setForm({ ...form, adres: e.target.value })} /></div>
-            <div>
-              <Label>Prestatie PDF bijlage</Label>
-              <input type="file" accept=".pdf" ref={fileInputRef} onChange={handlePdfUpload} className="hidden" />
-              {form.prestatie_pdf_url ? (
-                <div className="flex items-center gap-2 mt-1 p-2 border rounded-md bg-muted/30">
-                  <FileText className="w-4 h-4 text-accent shrink-0" />
-                  <span className="text-sm flex-1 truncate">{form.prestatie_pdf_naam || "PDF bijlage"}</span>
-                  <button type="button" onClick={() => setForm(f => ({ ...f, prestatie_pdf_url: "", prestatie_pdf_naam: "" }))} className="text-muted-foreground hover:text-foreground">
-                    <X className="w-4 h-4" />
-                  </button>
+                  {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
                 </div>
-              ) : (
-                <Button type="button" variant="outline" className="mt-1 w-full gap-2" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                  {isUploading ? "Uploaden..." : "PDF uploaden"}
-                </Button>
+              </button>
+
+              {isOpen && (
+                <div className="border-t px-5 py-4 bg-muted/20">
+                  {werknemers.length === 0 ? (
+                    <p className="text-sm text-muted-foreground italic">Geen prestatie-records gevonden voor deze klant.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">Uren per werknemer</p>
+                      <div className="space-y-2">
+                        {werknemers.map((w) => (
+                          <div key={w.naam} className="flex items-center justify-between bg-background rounded-lg px-4 py-2.5 border">
+                            <div className="flex items-center gap-2">
+                              <div className="w-7 h-7 rounded-full bg-accent/10 flex items-center justify-center text-xs font-bold text-accent">
+                                {w.naam.charAt(0).toUpperCase()}
+                              </div>
+                              <span className="text-sm font-medium">{w.naam}</span>
+                              <span className="text-xs text-muted-foreground">{w.records.length} records</span>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm font-semibold">
+                              <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                              {w.totaalUren.toFixed(1)}u
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-end pt-2 border-t">
+                        <span className="text-sm font-bold">Totaal: {totaalUren.toFixed(1)} uur</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
               )}
-            </div>
-            <div>
-              <Label className="flex items-center gap-1.5">
-                <Bot className="w-4 h-4" /> PDF-instructies voor de agent
-              </Label>
-              <Textarea
-                value={form.pdf_instructies}
-                onChange={(e) => setForm({ ...form, pdf_instructies: e.target.value })}
-                placeholder="Beschrijf het formaat van de PDF, welke kolommen gebruikt worden, bijzonderheden per werknemer, enz. De agent gebruikt dit om prestaties sneller en accurater uit te lezen."
-                className="mt-1 h-28 text-sm"
-              />
-              <p className="text-xs text-muted-foreground mt-1">De agent gebruikt deze instructies automatisch bij het importeren van PDF's van deze klant.</p>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Status</Label>
-                <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="actief">Actief</SelectItem>
-                    <SelectItem value="inactief">Inactief</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div><Label>Tarief (€/uur)</Label><Input type="number" step="0.01" value={form.facturatie_tarief} onChange={(e) => setForm({ ...form, facturatie_tarief: e.target.value })} /></div>
-            </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button type="button" variant="outline" onClick={closeDialog}>Annuleren</Button>
-              <Button type="submit" disabled={createMut.isPending || updateMut.isPending}>{editId ? "Opslaan" : "Toevoegen"}</Button>
-            </div>
-          </form>
-        </DialogContent>
-      </Dialog>
+            </Card>
+          );
+        })}
+        {filtered.length === 0 && !loadingKlanten && (
+          <div className="text-center py-12 text-muted-foreground">
+            <Building2 className="w-10 h-10 mx-auto mb-3 opacity-30" />
+            <p>Geen klanten gevonden</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

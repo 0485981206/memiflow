@@ -1,10 +1,11 @@
 import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
-import { Settings, Zap, Monitor, Grid3x3 } from "lucide-react";
+import { Settings, Zap, Monitor, Grid3x3, Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import EndklantTemplateAgent from "@/components/instellingen/EndklantTemplateAgent";
+import KlantenTab from "@/components/instellingen/KlantenTab";
 import WorkspacesTab from "@/components/instellingen/WorkspacesTab";
 import { getUISetting, setUISetting } from "@/lib/ui-settings";
 
@@ -52,6 +53,14 @@ export default function Instellingen() {
           Workspaces
         </Button>
         <Button
+          variant={activeTab === "klanten" ? "default" : "ghost"}
+          onClick={() => setActiveTab("klanten")}
+          className="rounded-none gap-2"
+        >
+          <Building2 className="w-4 h-4" />
+          Klanten
+        </Button>
+        <Button
           variant={activeTab === "ui" ? "default" : "ghost"}
           onClick={() => setActiveTab("ui")}
           className="rounded-none gap-2"
@@ -64,6 +73,7 @@ export default function Instellingen() {
       <Card className="p-6">
         {activeTab === "templates" && <EndklantTemplateAgent />}
         {activeTab === "workspaces" && <WorkspacesTab />}
+        {activeTab === "klanten" && <KlantenTab />}
         {activeTab === "ui" && (
           <div className="space-y-6">
             <div>
