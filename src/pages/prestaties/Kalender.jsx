@@ -94,11 +94,23 @@ export default function Kalender() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex items-center gap-3">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <CalIcon className="w-6 h-6 text-accent" />
           Prestatie Kalender
         </h1>
+        {selectedWerknemer && (() => {
+          const w = werknemers.find(wn => wn.id === selectedWerknemer);
+          return w ? (
+            <div className="flex items-center gap-1.5">
+              <span className="text-lg font-semibold text-muted-foreground">—</span>
+              <span className="text-lg font-semibold">{w.voornaam} {w.achternaam}</span>
+              <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setWerknemerDetailOpen(true)}>
+                <Info className="w-4 h-4 text-accent" />
+              </Button>
+            </div>
+          ) : null;
+        })()}
       </div>
 
       <Card className="p-4">
