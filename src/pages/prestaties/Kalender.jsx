@@ -95,23 +95,10 @@ export default function Kalender() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <CalIcon className="w-6 h-6 text-accent" />
-            Prestatie Kalender
-          </h1>
-          {selectedWerknemer && (() => {
-            const w = werknemers.find(wn => wn.id === selectedWerknemer);
-            return w ? (
-              <div className="flex items-center gap-2 bg-accent/10 border border-accent/30 rounded-lg px-3 py-1.5">
-                <span className="text-sm font-medium">{w.voornaam} {w.achternaam}</span>
-                <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => setWerknemerDetailOpen(true)}>
-                  <Info className="w-4 h-4 text-accent" />
-                </Button>
-              </div>
-            ) : null;
-          })()}
-        </div>
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <CalIcon className="w-6 h-6 text-accent" />
+          Prestatie Kalender
+        </h1>
       </div>
 
       <Card className="p-4">
@@ -188,15 +175,22 @@ export default function Kalender() {
             </div>
           </div>
 
-          <div className="w-64">
-            <WerknemerCombobox
-              werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
-              value={selectedWerknemer}
-              onChange={(id) => setSelectedWerknemer(id || "")}
-              placeholder="Selecteer een werknemer..."
-            />
-            {!selectedWerknemer && (
-              <p className="text-xs text-muted-foreground mt-1">Selecteer eerst een werknemer om prestaties in te geven.</p>
+          <div className="flex items-center gap-2">
+            <div className="w-64">
+              <WerknemerCombobox
+                werknemers={werknemers.filter((w) => !w.status || w.status === "actief")}
+                value={selectedWerknemer}
+                onChange={(id) => setSelectedWerknemer(id || "")}
+                placeholder="Selecteer een werknemer..."
+              />
+              {!selectedWerknemer && (
+                <p className="text-xs text-muted-foreground mt-1">Selecteer eerst een werknemer om prestaties in te geven.</p>
+              )}
+            </div>
+            {selectedWerknemer && (
+              <Button size="icon" variant="outline" className="shrink-0" onClick={() => setWerknemerDetailOpen(true)}>
+                <Info className="w-4 h-4 text-accent" />
+              </Button>
             )}
           </div>
         </div>
