@@ -11,6 +11,7 @@ import {
   BarChart3,
   Settings,
   ChevronDown,
+  ChevronRight,
   Menu,
   X,
   Grid3x3
@@ -45,17 +46,18 @@ const beheerMenu = [
 
 export default function Sidebar() {
   const location = useLocation();
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [openDropdown, setOpenDropdown] = useState(null);
-  const [hoveredDropdown, setHoveredDropdown] = useState(null);
+  const [prestatiesOpen, setPrestatiesOpen] = useState(
+    location.pathname.startsWith("/prestaties")
+  );
+  const [acertaOpen, setAcertaOpen] = useState(
+    location.pathname.startsWith("/acerta")
+  );
   const [mobileOpen, setMobileOpen] = useState(false);
   const [importBadge, setImportBadge] = useState(0);
 
   useEffect(() => {
     const fetchBadge = async () => {
-      const batches = await base44.entities.PrestatieImportBatch.filter({ 
-        status: "klaar_voor_review" 
-      });
+      const batches = await base44.entities.PrestatieImportBatch.filter({ status: "klaar_voor_review" });
       setImportBadge(batches.length);
     };
     fetchBadge();
@@ -63,146 +65,154 @@ export default function Sidebar() {
     return () => clearInterval(interval);
   }, []);
 
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!isCollapsed || !openDropdown) return;
-    
-    const handleClickOutside = () => {
-      setOpenDropdown(null);
-    };
-    
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  }, [isCollapsed, openDropdown]);
-
   const isActive = (path) => {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   };
 
-  const toggleDropdown = (name) => {
-    setOpenDropdown(openDropdown === name ? null : name);
-  };
+  const linkClass = (path) =>
+    `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+      isActive(path)
+        ? "bg-[#1e3a5f] text-white"
+        : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+    }`;
 
-  const closeDropdown = () => {
-    setOpenDropdown(null);
-  };
+  const sidebarContent = (
+    <div className="flex flex-col h-full" style={{ backgroundColor: "#152d4a" }}>
+      {/* Logo */}
+      <div className="px-5 py-6 border-b border-white/10">
+        <h1 className="text-xl font-bold text-white tracking-tight">
+          Memi's Uitzend
+        </h1>
+      </div>
 
-  const handleNavClick = () => {
-    setMobileOpen(false);
-    if (!isCollapsed) {
-      closeDropdown();
-    }
-  };
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+          Hoofdmenu
+        </p>
 
-  const MenuLink = ({ item }) => (
-    <Link
-      to={item.path}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
-        isActive(item.path)
-          ? "bg-[#1e3a5f] text-white"
-          : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-      }`}
-      onClick={handleNavClick}
-      title={isCollapsed ? item.label : ""}
-    >
-      <item.icon className="w-4 h-4 flex-shrink-0" />
-      {!isCollapsed && <span>{item.label}</span>}
-    </Link>
-  );
-
-  const MenuButton = ({ icon: Icon, label, name, onClick, isActive: active, onMouseEnter, onMouseLeave }) => (
-    <button
-      onClick={onClick}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all w-full relative group ${
-        active
-          ? "bg-[#1e3a5f] text-white"
-          : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
-      }`}
-      title={isCollapsed ? label : ""}
-    >
-      <Icon className="w-4 h-4 flex-shrink-0" />
-      {!isCollapsed && (
-        <>
-          <span className="flex-1 text-left">{label}</span>
-          <ChevronDown
-            className={`w-4 h-4 transition-transform ${
-              openDropdown === name ? "rotate-180" : ""
-            }`}
-          />
-        </>
-      )}
-      {isCollapsed && (openDropdown === name || hoveredDropdown === name) && (
-        <div className="absolute w-1 h-1 rounded-full bg-white right-1.5"></div>
-      )}
-      {/* Tooltip label on hover when collapsed */}
-      {isCollapsed && (
-        <div className="absolute left-full ml-2 px-3 py-1.5 bg-[#1e3a5f] text-white text-xs rounded-md opacity-0 group-hover:opacity-100 pointer-events-none whitespace-nowrap z-40 border border-white/10">
-          {label}
-        </div>
-      )}
-    </button>
-  );
-
-  const Dropdown = ({ isOpen, items, name }) => {
-    if (!isOpen && !(isCollapsed && hoveredDropdown === name)) return null;
-
-    if (isCollapsed) {
-      return (
-        <div 
-          className="absolute left-full top-0 ml-2 bg-[#1e3a5f] rounded-lg shadow-lg py-2 z-50 min-w-48 border border-white/10"
-          onMouseEnter={() => setHoveredDropdown(name)}
-          onMouseLeave={() => setHoveredDropdown(null)}
-        >
-          {items.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="flex items-center justify-between px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-[#2a4a6f] transition-colors"
-              onClick={handleNavClick}
-            >
-              <span>{item.label}</span>
-              {item.path === "/prestaties/import" && importBadge > 0 && (
-                <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {importBadge}
-                </span>
-              )}
-            </Link>
-          ))}
-        </div>
-      );
-    }
-
-    return (
-      <div className="ml-7 space-y-0.5">
-        {items.map((item) => (
+        {mainMenu.map((item) => (
           <Link
             key={item.path}
             to={item.path}
-            className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all ${
-              isActive(item.path)
-                ? "text-[#38bdf8] font-semibold"
-                : "text-white/60 hover:text-white"
-            }`}
-            onClick={handleNavClick}
+            className={linkClass(item.path)}
+            onClick={() => setMobileOpen(false)}
           >
+            <item.icon className="w-4 h-4 flex-shrink-0" />
             <span>{item.label}</span>
-            {item.path === "/prestaties/import" && importBadge > 0 && (
-              <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {importBadge}
-              </span>
-            )}
           </Link>
         ))}
+
+        {/* Prestaties dropdown */}
+        <button
+          onClick={() => setPrestatiesOpen(!prestatiesOpen)}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            location.pathname.startsWith("/prestaties")
+              ? "bg-[#1e3a5f] text-white"
+              : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <Clock className="w-4 h-4 flex-shrink-0" />
+            <span>Prestaties</span>
+          </div>
+          {prestatiesOpen ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+        </button>
+
+        {prestatiesOpen && (
+          <div className="ml-7 space-y-0.5">
+            {prestatieMenu.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center justify-between px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "text-[#38bdf8] font-semibold"
+                    : "text-white/60 hover:text-white"
+                }`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span>{item.label}</span>
+                {item.path === "/prestaties/import" && importBadge > 0 && (
+                  <span className="bg-blue-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center shrink-0">
+                    {importBadge}
+                  </span>
+                )}
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {/* Acerta dropdown */}
+        <button
+          onClick={() => setAcertaOpen(!acertaOpen)}
+          className={`flex items-center justify-between w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+            location.pathname.startsWith("/acerta")
+              ? "bg-[#1e3a5f] text-white"
+              : "text-white/80 hover:text-white hover:bg-[#1e3a5f]/60"
+          }`}
+        >
+          <div className="flex items-center gap-3">
+            <FileText className="w-4 h-4 flex-shrink-0" />
+            <span>Acerta</span>
+          </div>
+          {acertaOpen ? (
+            <ChevronDown className="w-4 h-4" />
+          ) : (
+            <ChevronRight className="w-4 h-4" />
+          )}
+        </button>
+
+        {acertaOpen && (
+          <div className="ml-7 space-y-0.5">
+            {acertaMenu.map((item) => (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={`flex items-center px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                  isActive(item.path)
+                    ? "text-[#38bdf8] font-semibold"
+                    : "text-white/60 hover:text-white"
+                }`}
+                onClick={() => setMobileOpen(false)}
+              >
+                <span>{item.label}</span>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        <div className="pt-4">
+          <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2">
+            Beheer
+          </p>
+          {beheerMenu.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={linkClass(item.path)}
+              onClick={() => setMobileOpen(false)}
+            >
+              <item.icon className="w-4 h-4 flex-shrink-0" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </nav>
+
+      <div className="px-4 py-4 border-t border-white/10">
+        <p className="text-xs text-white/30">© 2026 Memi Group</p>
       </div>
-    );
-  };
+    </div>
+  );
 
   return (
     <>
-      {/* Mobile Menu Button */}
+      {/* Mobile toggle */}
       <button
         className="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg text-white"
         style={{ backgroundColor: "#152d4a" }}
@@ -211,7 +221,7 @@ export default function Sidebar() {
         {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
       </button>
 
-      {/* Mobile Overlay */}
+      {/* Mobile overlay */}
       {mobileOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-black/50 z-40"
@@ -221,91 +231,12 @@ export default function Sidebar() {
 
       {/* Sidebar */}
       <aside
-        className={`fixed top-0 left-0 h-screen z-40 transition-all duration-300 lg:translate-x-0 flex flex-col ${
-          mobileOpen ? "translate-x-0 w-60" : "-translate-x-full w-60"
-        } ${!mobileOpen && isCollapsed ? "lg:w-20" : "lg:w-60"}`}
+        className={`fixed top-0 left-0 h-screen w-60 z-40 transition-transform duration-300 lg:translate-x-0 ${
+          mobileOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
         style={{ backgroundColor: "#152d4a" }}
       >
-        {/* Header */}
-        <div className="px-5 py-6 border-b border-white/10 flex items-center justify-between gap-3">
-          {!isCollapsed && (
-            <h1 className="text-xl font-bold text-white tracking-tight">
-              Memi's Uitzend
-            </h1>
-          )}
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="hidden lg:block p-1.5 rounded hover:bg-white/10 transition-colors text-white/60 hover:text-white"
-            title={isCollapsed ? "Uitvouwen" : "Samenvouwen"}
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Navigation */}
-        <nav className={`flex-1 overflow-y-auto py-4 ${isCollapsed ? "px-1.5" : "px-3"}`}>
-          {!isCollapsed && (
-            <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-3">
-              Hoofdmenu
-            </p>
-          )}
-
-          {/* Main Menu */}
-          {mainMenu.map((item) => (
-            <MenuLink key={item.path} item={item} />
-          ))}
-
-          {/* Prestaties Dropdown */}
-          <div className="relative">
-            <MenuButton
-              icon={Clock}
-              label="Prestaties"
-              name="prestaties"
-              onClick={() => toggleDropdown("prestaties")}
-              onMouseEnter={() => isCollapsed && setHoveredDropdown("prestaties")}
-              onMouseLeave={() => isCollapsed && setHoveredDropdown(null)}
-              isActive={location.pathname.startsWith("/prestaties")}
-            />
-            {(openDropdown === "prestaties" || (isCollapsed && hoveredDropdown === "prestaties")) && (
-              <Dropdown isOpen={true} items={prestatieMenu} name="prestaties" />
-            )}
-          </div>
-
-          {/* Acerta Dropdown */}
-          <div className="relative">
-            <MenuButton
-              icon={FileText}
-              label="Acerta"
-              name="acerta"
-              onClick={() => toggleDropdown("acerta")}
-              onMouseEnter={() => isCollapsed && setHoveredDropdown("acerta")}
-              onMouseLeave={() => isCollapsed && setHoveredDropdown(null)}
-              isActive={location.pathname.startsWith("/acerta")}
-            />
-            {(openDropdown === "acerta" || (isCollapsed && hoveredDropdown === "acerta")) && (
-              <Dropdown isOpen={true} items={acertaMenu} name="acerta" />
-            )}
-          </div>
-
-          {/* Beheer Section */}
-          {!isCollapsed && (
-            <p className="px-3 text-[11px] font-semibold uppercase tracking-widest text-white/40 mt-6 mb-3">
-              Beheer
-            </p>
-          )}
-          {beheerMenu.map((item) => (
-            <MenuLink key={item.path} item={item} />
-          ))}
-        </nav>
-
-        {/* Footer */}
-        {!isCollapsed && (
-          <div className="px-4 py-4 border-t border-white/10">
-            <p className="text-xs text-white/30">© 2026 Memi Group</p>
-          </div>
-        )}
+        {sidebarContent}
       </aside>
     </>
   );
