@@ -18,7 +18,8 @@ import {
   X,
   Grid3x3,
   PanelLeftClose,
-  PanelLeftOpen
+  PanelLeftOpen,
+  Euro
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -199,6 +200,7 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
         <CollapsedLink to="/workspace" icon={Grid3x3} label="Workspaces" />
         <div className="w-8 border-t border-white/10 my-2" />
         <CollapsedLink to="/eindklanten" icon={Building2} label="Klanten" />
+        <CollapsedLink to="/finance" icon={Euro} label="Finance" />
         <div className="w-8 border-t border-white/10 my-2" />
         <CollapsedMenuLink
           to={prestatieMenu[0].path}
@@ -289,6 +291,20 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
           onClick={() => setMobileOpen(false)}
         >
           <span>Overzicht</span>
+        </Link>
+
+        {/* Finance */}
+        <p className="px-3 pt-4 text-[11px] font-semibold uppercase tracking-widest text-white/40 mb-2 flex items-center gap-1.5">
+          <Euro className="w-3 h-3" /> Finance
+        </p>
+        <Link
+          to="/finance"
+          className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
+            location.pathname === "/finance" ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <span>Dashboard</span>
         </Link>
 
         {/* Prestaties */}

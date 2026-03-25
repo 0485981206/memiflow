@@ -22,6 +22,7 @@ import Rapporten from './pages/Rapporten';
 import Instellingen from './pages/Instellingen';
 import AcertaKalender from './pages/acerta/Kalender';
 import Workspace from './pages/Workspace';
+import Finance from './pages/Finance';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
         <Route path="/rapporten" element={<Rapporten />} />
         <Route path="/instellingen" element={<Instellingen />} />
         <Route path="/workspace" element={<Workspace />} />
+        <Route path="/finance" element={<Finance />} />
         <Route path="/acerta/kalender" element={<AcertaKalender />} />
       </Route>
       <Route path="*" element={<PageNotFound />} />
