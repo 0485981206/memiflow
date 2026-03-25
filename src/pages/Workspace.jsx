@@ -7,13 +7,12 @@ import { Link } from 'react-router-dom';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
 
 export default function Workspace() {
-  const { data: workspaces = [], isLoading } = useQuery({
-    queryKey: ['workspaces'],
-    queryFn: async () => {
-      const user = await base44.auth.me();
-      return JSON.parse(user.workspaces || '[]');
-    },
+  const { data: user, isLoading } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => base44.auth.me(),
   });
+
+  const workspaces = user?.workspaces ? JSON.parse(user.workspaces) : [];
 
   return (
     <div className="space-y-6">
