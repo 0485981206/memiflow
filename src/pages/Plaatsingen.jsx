@@ -129,7 +129,7 @@ export default function Plaatsingen() {
         ) : grouped.length === 0 ? (
           <Card className="p-8 text-center text-muted-foreground">Geen plaatsingen gevonden</Card>
         ) : grouped.map((group) => {
-          const isOpen = expandedKlanten[group.naam] !== false;
+          const isOpen = expandedKlanten[group.naam] === true;
           const actief = group.plaatsingen.filter((p) => p.status === "actief").length;
           return (
             <Card key={group.naam} className="overflow-hidden">
