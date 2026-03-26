@@ -121,9 +121,9 @@ export default function EmployeeBoard({ klant, werknemers, actieveRegistraties, 
                   isActive ? "bg-green-500" : "bg-gray-300"
                 }`}
               >
-                {w.naam.charAt(0)}
+                {(w.naam || "?").charAt(0)}
               </div>
-              <p className="text-sm font-semibold text-gray-800 truncate">{w.naam}</p>
+              <p className="text-sm font-semibold text-gray-800 truncate">{w.naam || "Onbekend"}</p>
               {w.functie && <p className="text-[10px] text-gray-400 truncate">{w.functie}</p>}
               {isActive && reg && (
                 <div className="mt-2 flex items-center justify-center gap-1 text-xs text-green-700 font-medium">
