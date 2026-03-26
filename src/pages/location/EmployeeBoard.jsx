@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 
-export default function EmployeeBoard({ klant, werknemers, actieveRegistraties, onAction, onLogout, actionLoading }) {
+export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], onAction, onLogout, actionLoading }) {
+  if (!klant) return null;
   const [selected, setSelected] = useState([]);
   const [mode, setMode] = useState(null); // 'start' or 'stop'
 
