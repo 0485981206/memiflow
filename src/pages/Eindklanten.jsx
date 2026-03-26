@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarPicker } from "@/components/ui/calendar";
-import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users, Search, CalendarDays, BarChart3 } from "lucide-react";
+import { Building2, ChevronLeft, ChevronRight, Calendar, List, Clock, Users, Search, CalendarDays, BarChart3, Download } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, getDay, isToday, parseISO, startOfWeek, addWeeks, subWeeks, addDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import KlantCombobox from "@/components/klanten/KlantCombobox";
@@ -97,6 +97,35 @@ export default function Eindklanten() {
 
   const totaalUren = prestaties.reduce((s, p) => s + (p.totaal_uren || p.uren || 0), 0);
 
+  const handleExport = () => {
+    if (!prestaties.length) return;
+    const header = ["Datum", "Dag", "Werknemer", "Uren", "In 1", "Uit 1", "In 2", "Uit 2", "In 3", "Uit 3", "Code", "Bron", "Opmerking"];
+    const rows = [...prestaties].sort((a, b) => (a.datum || "").localeCompare(b.datum || "") || (a.werknemer_naam || "").localeCompare(b.werknemer_naam || "")).map(p => [
+      p.datum || "",
+      p.dag || "",
+      p.werknemer_naam || "",
+      (p.totaal_uren || p.uren || 0).toFixed(2),
+      p.in_1 || "",
+      p.uit_1 || "",
+      p.in_2 || "",
+      p.uit_2 || "",
+      p.in_3 || "",
+      p.uit_3 || "",
+      p.code || "",
+      p.bron || "",
+      p.opmerking || "",
+    ]);
+    const csvContent = [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
+    const bom = "\uFEFF";
+    const blob = new Blob([bom + csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `${selectedKlant?.naam || "klant"}_${maandStr}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-2">
@@ -153,6 +182,9 @@ export default function Eindklanten() {
                 <Button variant="ghost" size="sm" className="h-9 text-xs" onClick={() => { setDateFrom(null); setDateTo(null); setSearchQuery(""); }}>Reset</Button>
               )}
             </div>
+            <Button variant="outline" size="sm" className="h-9 text-xs gap-1.5" onClick={handleExport} disabled={!prestaties.length}>
+              <Download className="w-3.5 h-3.5" /> Export CSV
+            </Button>
           </>
         )}
       </div>
