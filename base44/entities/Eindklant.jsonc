@@ -1,0 +1,62 @@
+{
+  "name": "Eindklant",
+  "type": "object",
+  "properties": {
+    "naam": {
+      "type": "string",
+      "description": "Naam van de eindklant/bedrijf"
+    },
+    "contactpersoon": {
+      "type": "string",
+      "description": "Naam contactpersoon"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "E-mailadres contactpersoon"
+    },
+    "telefoon": {
+      "type": "string",
+      "description": "Telefoonnummer"
+    },
+    "adres": {
+      "type": "string",
+      "description": "Adres van de klant"
+    },
+    "btw_nummer": {
+      "type": "string",
+      "description": "BTW-nummer"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "actief",
+        "inactief"
+      ],
+      "default": "actief"
+    },
+    "facturatie_tarief": {
+      "type": "number",
+      "description": "Standaard facturatietarief per uur"
+    },
+    "prestatie_pdf_url": {
+      "type": "string",
+      "description": "URL van de meest recente prestatie PDF bijlage"
+    },
+    "prestatie_pdf_naam": {
+      "type": "string",
+      "description": "Bestandsnaam van de meest recente prestatie PDF"
+    },
+    "pdf_instructies": {
+      "type": "string",
+      "description": "Instructies voor de import-agent hoe PDF's van deze klant te verwerken"
+    },
+    "pincode": {
+      "type": "string",
+      "description": "6-cijferige pincode voor teamleader login op de klokregistratie pagina"
+    }
+  },
+  "required": [
+    "naam"
+  ]
+}

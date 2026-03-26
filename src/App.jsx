@@ -23,6 +23,8 @@ import Instellingen from './pages/Instellingen';
 import AcertaKalender from './pages/acerta/Kalender';
 import Workspace from './pages/Workspace';
 import Finance from './pages/Finance';
+import Location from './pages/location/Location';
+import KlantPincodes from './pages/KlantPincodes';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -62,8 +64,10 @@ const AuthenticatedApp = () => {
         <Route path="/instellingen" element={<Instellingen />} />
         <Route path="/workspace" element={<Workspace />} />
         <Route path="/finance" element={<Finance />} />
+        <Route path="/klant-pincodes" element={<KlantPincodes />} />
         <Route path="/acerta/kalender" element={<AcertaKalender />} />
       </Route>
+      <Route path="/location" element={<Location />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

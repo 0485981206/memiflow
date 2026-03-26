@@ -1,0 +1,54 @@
+{
+  "name": "Klokregistratie",
+  "type": "object",
+  "properties": {
+    "werknemer_id": {
+      "type": "string",
+      "description": "ID van de werknemer"
+    },
+    "werknemer_naam": {
+      "type": "string",
+      "description": "Naam van de werknemer"
+    },
+    "eindklant_id": {
+      "type": "string",
+      "description": "ID van de eindklant"
+    },
+    "eindklant_naam": {
+      "type": "string",
+      "description": "Naam van de eindklant"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum van de registratie"
+    },
+    "start_tijd": {
+      "type": "string",
+      "description": "Starttijd (HH:mm)"
+    },
+    "stop_tijd": {
+      "type": "string",
+      "description": "Stoptijd (HH:mm)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "gestart",
+        "gestopt"
+      ],
+      "default": "gestart",
+      "description": "Status: gestart of gestopt"
+    },
+    "prestatie_id": {
+      "type": "string",
+      "description": "ID van de gekoppelde Prestatie record"
+    }
+  },
+  "required": [
+    "werknemer_id",
+    "eindklant_id",
+    "datum",
+    "start_tijd"
+  ]
+}
