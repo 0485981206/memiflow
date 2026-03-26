@@ -9,16 +9,21 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Ongeldige pincode' }, { status: 400 });
     }
 
-    // Use service role to look up the pincode (this is a public endpoint)
+    // Use service role — this endpoint is public (no user auth needed)
     const klanten = await base44.asServiceRole.entities.Eindklant.filter({ pincode, status: 'actief' });
 
-    if (!klanten || klanten.length === 0) {
-      return Response.json({ error: 'Ongeldige pincode' }, { status: 401 });
+    // Also check with capitalized status
+    let klant = klanten?.[0];
+    if (!klant) {
+      const klanten2 = await base44.asServiceRole.entities.Eindklant.filter({ pincode });
+      klant = klanten2?.find(k => k.status?.toLowerCase() === 'actief');
     }
 
-    const klant = klanten[0];
+    if (!klant) {
+      return Response.json({ error: 'Ongeldige pincode' }, { status: 200 });
+    }
 
-    // Get all active prestaties for this klant to find werknemers
+    // Get all prestaties for this klant to find werknemers
     const prestaties = await base44.asServiceRole.entities.Prestatie.filter({ eindklant_naam: klant.naam });
     const werknemerIds = [...new Set(prestaties.map(p => p.werknemer_id).filter(Boolean))];
 

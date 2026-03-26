@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { base44 } from "@/api/base44Client";
+import { appParams } from "@/lib/app-params";
 import PincodeLogin from "./PincodeLogin";
 import EmployeeBoard from "./EmployeeBoard";
 
@@ -12,26 +12,36 @@ export default function Location() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
+  const callFunction = async (name, payload) => {
+    const baseUrl = appParams.appBaseUrl || '';
+    const res = await fetch(`${baseUrl}/api/functions/${name}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    return res.json();
+  };
+
   const handleLogin = useCallback(async (pincode) => {
     setError("");
     setLoginLoading(true);
-    const res = await base44.functions.invoke("klokLogin", { pincode });
+    const data = await callFunction("klokLogin", { pincode });
     setLoginLoading(false);
 
-    if (res.data.error) {
-      setError(res.data.error);
+    if (data.error) {
+      setError(data.error);
       return;
     }
 
-    setKlant(res.data.klant);
-    setWerknemers(res.data.werknemers);
-    setActieveRegistraties(res.data.actieveRegistraties || []);
+    setKlant(data.klant);
+    setWerknemers(data.werknemers);
+    setActieveRegistraties(data.actieveRegistraties || []);
     setLoggedIn(true);
   }, []);
 
   const handleAction = useCallback(async (action, werknemerIds) => {
     setActionLoading(true);
-    const res = await base44.functions.invoke("klokRegistratie", {
+    const data = await callFunction("klokRegistratie", {
       action,
       werknemer_ids: werknemerIds,
       eindklant_id: klant.id,
@@ -39,25 +49,22 @@ export default function Location() {
     });
     setActionLoading(false);
 
-    if (res.data.error) {
-      setError(res.data.error);
+    if (data.error) {
+      setError(data.error);
       return;
     }
 
-    // Refresh data
-    const refresh = await base44.functions.invoke("klokLogin", { pincode: "__refresh__" });
-    // Re-login to refresh — but we don't have the pincode anymore, so update locally
     if (action === "start") {
-      const newRegs = res.data.results
+      const newRegs = data.results
         .filter((r) => r.status === "gestart")
         .map((r) => ({
           werknemer_id: r.werknemer_id,
-          start_tijd: new Date().toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit", hour12: false }),
+          start_tijd: r.start_tijd || new Date().toLocaleTimeString("nl-BE", { hour: "2-digit", minute: "2-digit", hour12: false }),
           status: "gestart",
         }));
       setActieveRegistraties((prev) => [...prev, ...newRegs]);
     } else {
-      const stoppedIds = res.data.results.filter((r) => r.status === "gestopt").map((r) => r.werknemer_id);
+      const stoppedIds = data.results.filter((r) => r.status === "gestopt").map((r) => r.werknemer_id);
       setActieveRegistraties((prev) => prev.filter((r) => !stoppedIds.includes(r.werknemer_id)));
     }
   }, [klant]);

@@ -11,7 +11,9 @@ Deno.serve(async (req) => {
 
     const now = new Date();
     const today = now.toISOString().split('T')[0];
-    const currentTime = now.toLocaleTimeString('nl-BE', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const hours = String(now.getUTCHours() + 2).padStart(2, '0'); // Brussels = UTC+2 (summer) / UTC+1 (winter)
+    const minutes = String(now.getMinutes()).padStart(2, '0');
+    const currentTime = `${hours}:${minutes}`;
     const maand = today.slice(0, 7);
     const dagNamen = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
     const dag = dagNamen[now.getDay()];
@@ -19,7 +21,6 @@ Deno.serve(async (req) => {
     const results = [];
 
     if (action === 'start') {
-      // Get werknemer names
       const alleWerknemers = await base44.asServiceRole.entities.Werknemer.filter({ status: 'actief' });
       const werknemerMap = {};
       alleWerknemers.forEach(w => { werknemerMap[w.id] = w; });
@@ -43,7 +44,6 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Create klokregistratie
         const klok = await base44.asServiceRole.entities.Klokregistratie.create({
           werknemer_id: wId,
           werknemer_naam: naam,
@@ -54,11 +54,10 @@ Deno.serve(async (req) => {
           status: 'gestart',
         });
 
-        results.push({ werknemer_id: wId, naam, status: 'gestart', klok_id: klok.id });
+        results.push({ werknemer_id: wId, naam, status: 'gestart', klok_id: klok.id, start_tijd: currentTime });
       }
     } else if (action === 'stop') {
       for (const wId of werknemer_ids) {
-        // Find active klokregistratie
         const actieve = await base44.asServiceRole.entities.Klokregistratie.filter({
           werknemer_id: wId,
           eindklant_id,
@@ -73,19 +72,16 @@ Deno.serve(async (req) => {
 
         const klok = actieve[0];
 
-        // Update klokregistratie with stop time
         await base44.asServiceRole.entities.Klokregistratie.update(klok.id, {
           stop_tijd: currentTime,
           status: 'gestopt',
         });
 
-        // Calculate total hours
         const [startH, startM] = klok.start_tijd.split(':').map(Number);
         const [stopH, stopM] = currentTime.split(':').map(Number);
         const totalMinutes = (stopH * 60 + stopM) - (startH * 60 + startM);
         const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
 
-        // Create a Prestatie record linked to this klokregistratie
         const prestatie = await base44.asServiceRole.entities.Prestatie.create({
           werknemer_id: wId,
           werknemer_naam: klok.werknemer_naam,
@@ -101,7 +97,6 @@ Deno.serve(async (req) => {
           status: 'ingevoerd',
         });
 
-        // Update klokregistratie with prestatie link
         await base44.asServiceRole.entities.Klokregistratie.update(klok.id, {
           prestatie_id: prestatie.id,
         });
