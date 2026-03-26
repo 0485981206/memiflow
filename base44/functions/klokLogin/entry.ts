@@ -23,9 +23,9 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Ongeldige pincode' }, { status: 200 });
     }
 
-    // Get all prestaties for this klant to find werknemers
-    const prestaties = await base44.asServiceRole.entities.Prestatie.filter({ eindklant_naam: klant.naam });
-    const werknemerIds = [...new Set(prestaties.map(p => p.werknemer_id).filter(Boolean))];
+    // Get all active plaatsingen for this klant
+    const plaatsingen = await base44.asServiceRole.entities.Plaatsing.filter({ eindklant_id: klant.id, status: 'actief' });
+    const werknemerIds = [...new Set(plaatsingen.map(p => p.werknemer_id).filter(Boolean))];
 
     // Get werknemer details
     const alleWerknemers = await base44.asServiceRole.entities.Werknemer.filter({ status: 'actief' });
