@@ -25,18 +25,28 @@ export default function Location() {
   const handleLogin = useCallback(async (pincode) => {
     setError("");
     setLoginLoading(true);
-    const data = await callFunction("klokLogin", { pincode });
-    setLoginLoading(false);
+    try {
+      const data = await callFunction("klokLogin", { pincode });
+      setLoginLoading(false);
 
-    if (data.error) {
-      setError(data.error);
-      return;
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      if (!data.klant) {
+        setError("Geen klant gevonden voor deze pincode");
+        return;
+      }
+
+      setKlant(data.klant);
+      setWerknemers(data.werknemers || []);
+      setActieveRegistraties(data.actieveRegistraties || []);
+      setLoggedIn(true);
+    } catch (err) {
+      setLoginLoading(false);
+      setError("Er ging iets mis. Probeer opnieuw.");
     }
-
-    setKlant(data.klant);
-    setWerknemers(data.werknemers);
-    setActieveRegistraties(data.actieveRegistraties || []);
-    setLoggedIn(true);
   }, []);
 
   const handleAction = useCallback(async (action, werknemerIds) => {
