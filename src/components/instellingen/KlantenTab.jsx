@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2, Upload, FileText, X, Loader2, Bot } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Upload, FileText, X, Loader2, Bot, Download } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 
 const emptyForm = {
@@ -89,9 +89,29 @@ export default function KlantenTab() {
           <h2 className="text-lg font-semibold">Klanten beheren</h2>
           <p className="text-sm text-muted-foreground">Beheer eindklanten en hun instellingen</p>
         </div>
-        <Button onClick={() => setDialogOpen(true)} className="gap-2">
-          <Plus className="w-4 h-4" /> Klant toevoegen
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => {
+            const header = ["Naam", "Contactpersoon", "E-mail", "Telefoon", "Adres", "BTW-nummer", "Status", "Tarief (€/uur)"];
+            const rows = filtered.map(k => [
+              k.naam || "", k.contactpersoon || "", k.email || "",
+              k.telefoon || "", k.adres || "", k.btw_nummer || "",
+              k.status || "", k.facturatie_tarief || "",
+            ]);
+            const csv = [header, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(";")).join("\n");
+            const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "klanten_export.csv";
+            a.click();
+            URL.revokeObjectURL(url);
+          }} disabled={filtered.length === 0}>
+            <Download className="w-4 h-4" /> Export CSV
+          </Button>
+          <Button onClick={() => setDialogOpen(true)} className="gap-2">
+            <Plus className="w-4 h-4" /> Klant toevoegen
+          </Button>
+        </div>
       </div>
 
       <div className="relative max-w-sm">
