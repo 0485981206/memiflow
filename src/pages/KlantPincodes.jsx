@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Building2, Key, Eye, EyeOff, RefreshCw, Save } from "lucide-react";
+import { Building2, Key, Eye, EyeOff, RefreshCw, Save, Users } from "lucide-react";
 
 function generatePin() {
   return String(Math.floor(100000 + Math.random() * 900000));
@@ -20,6 +20,16 @@ export default function KlantPincodes() {
     queryKey: ["eindklanten-pincodes"],
     queryFn: () => base44.entities.Eindklant.list(),
   });
+
+  const { data: plaatsingen = [] } = useQuery({
+    queryKey: ["plaatsingen-pincodes"],
+    queryFn: () => base44.entities.Plaatsing.filter({ status: "actief" }),
+  });
+
+  const werknemerCountPerKlant = plaatsingen.reduce((acc, p) => {
+    if (p.eindklant_id) acc[p.eindklant_id] = (acc[p.eindklant_id] || 0) + 1;
+    return acc;
+  }, {});
 
   const toggleShow = (id) => setShowPins((p) => ({ ...p, [id]: !p[id] }));
 
@@ -70,7 +80,10 @@ export default function KlantPincodes() {
                     </div>
                     <div className="min-w-0">
                       <p className="font-semibold text-sm truncate">{k.naam}</p>
-                      <p className="text-xs text-muted-foreground">€{k.facturatie_tarief || 0}/uur</p>
+                      <p className="text-xs text-muted-foreground flex items-center gap-2">
+                        <span>€{k.facturatie_tarief || 0}/uur</span>
+                        <span className="flex items-center gap-1"><Users className="w-3 h-3" />{werknemerCountPerKlant[k.id] || 0}</span>
+                      </p>
                     </div>
                   </div>
 
