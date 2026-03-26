@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, Users, Building2, ChevronDown, ChevronRight } from "lucide-react";
 
 const emptyForm = {
   werknemer_id: "", eindklant_id: "", startdatum: "", einddatum: "",
@@ -90,6 +90,19 @@ export default function Plaatsingen() {
     (p.eindklant_naam || "").toLowerCase().includes(search.toLowerCase())
   );
 
+  const grouped = useMemo(() => {
+    const groups = {};
+    filtered.forEach((p) => {
+      const key = p.eindklant_naam || "Onbekend";
+      if (!groups[key]) groups[key] = { naam: key, plaatsingen: [] };
+      groups[key].plaatsingen.push(p);
+    });
+    return Object.values(groups).sort((a, b) => b.plaatsingen.length - a.plaatsingen.length);
+  }, [filtered]);
+
+  const [expandedKlanten, setExpandedKlanten] = useState({});
+  const toggleKlant = (naam) => setExpandedKlanten((prev) => ({ ...prev, [naam]: !prev[naam] }));
+
   const statusColors = {
     actief: "bg-chart-5/10 text-chart-5",
     beeindigd: "bg-muted text-muted-foreground",
@@ -110,43 +123,69 @@ export default function Plaatsingen() {
         <Input placeholder="Zoeken..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
       </div>
 
-      <Card className="overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableRow className="bg-muted/50">
-              <TableHead>Werknemer</TableHead>
-              <TableHead>Eindklant</TableHead>
-              <TableHead className="hidden md:table-cell">Functie</TableHead>
-              <TableHead className="hidden md:table-cell">Start</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-24">Acties</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {isLoading ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Laden...</TableCell></TableRow>
-            ) : filtered.length === 0 ? (
-              <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Geen plaatsingen gevonden</TableCell></TableRow>
-            ) : filtered.map((p) => (
-              <TableRow key={p.id} className="hover:bg-muted/30">
-                <TableCell className="font-medium">{p.werknemer_naam}</TableCell>
-                <TableCell>{p.eindklant_naam}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{p.functie}</TableCell>
-                <TableCell className="hidden md:table-cell text-muted-foreground">{p.startdatum}</TableCell>
-                <TableCell>
-                  <Badge variant="secondary" className={statusColors[p.status] || ""}>{p.status}</Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex gap-1">
-                    <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="w-4 h-4" /></Button>
-                    <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMut.mutate(p.id)}><Trash2 className="w-4 h-4" /></Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
+      <div className="space-y-3">
+        {isLoading ? (
+          <Card className="p-8 text-center text-muted-foreground">Laden...</Card>
+        ) : grouped.length === 0 ? (
+          <Card className="p-8 text-center text-muted-foreground">Geen plaatsingen gevonden</Card>
+        ) : grouped.map((group) => {
+          const isOpen = expandedKlanten[group.naam] !== false;
+          const actief = group.plaatsingen.filter((p) => p.status === "actief").length;
+          return (
+            <Card key={group.naam} className="overflow-hidden">
+              <button
+                onClick={() => toggleKlant(group.naam)}
+                className="w-full flex items-center justify-between px-4 py-3 bg-muted/40 hover:bg-muted/60 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  {isOpen ? <ChevronDown className="w-4 h-4 text-muted-foreground" /> : <ChevronRight className="w-4 h-4 text-muted-foreground" />}
+                  <Building2 className="w-4 h-4 text-accent" />
+                  <span className="font-semibold text-sm">{group.naam}</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Users className="w-3.5 h-3.5" /> {group.plaatsingen.length} werknemers
+                  </span>
+                  {actief > 0 && (
+                    <Badge variant="secondary" className="bg-chart-5/10 text-chart-5 text-xs">{actief} actief</Badge>
+                  )}
+                </div>
+              </button>
+              {isOpen && (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/20">
+                      <TableHead>Werknemer</TableHead>
+                      <TableHead className="hidden md:table-cell">Functie</TableHead>
+                      <TableHead className="hidden md:table-cell">Start</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="w-24">Acties</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {group.plaatsingen.map((p) => (
+                      <TableRow key={p.id} className="hover:bg-muted/30">
+                        <TableCell className="font-medium">{p.werknemer_naam}</TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">{p.functie}</TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">{p.startdatum}</TableCell>
+                        <TableCell>
+                          <Badge variant="secondary" className={statusColors[p.status] || ""}>{p.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => openEdit(p)}><Pencil className="w-4 h-4" /></Button>
+                            <Button size="icon" variant="ghost" className="text-destructive" onClick={() => deleteMut.mutate(p.id)}><Trash2 className="w-4 h-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </Card>
+          );
+        })}
+      </div>
 
       <Dialog open={dialogOpen} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-lg">
