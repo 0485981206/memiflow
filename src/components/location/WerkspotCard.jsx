@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { MapPin, Trash2, Users, UserPlus, X, Check, Search } from "lucide-react";
+import { MapPin, Trash2, Users, UserPlus, X, Check, Search, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAssign, onRemoveWorker }) {
+export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAssign, onRemoveWorker, onCheckin }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -140,6 +140,16 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
             ))}
           </div>
         )}
+      </div>
+
+      {/* Action buttons */}
+      <div className="flex gap-2 pt-2 border-t">
+        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setOpen(true)}>
+          <UserPlus className="w-3.5 h-3.5" /> Toewijzen
+        </Button>
+        <Button variant="default" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckin?.(werkspot.id, assigned)} disabled={assigned.length === 0}>
+          <LogIn className="w-3.5 h-3.5" /> Check-in
+        </Button>
       </div>
     </div>
   );
