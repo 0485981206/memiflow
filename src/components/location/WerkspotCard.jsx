@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, geplandAantal }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -98,6 +98,9 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
         <div className="flex items-center justify-between">
           <span className="text-xs text-gray-400 flex items-center gap-1">
             <Users className="w-3 h-3" /> {assignedWerknemers.length} werknemer{assignedWerknemers.length !== 1 ? "s" : ""}
+            {geplandAantal > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 text-[10px] font-semibold">Gepland: {geplandAantal}</span>
+            )}
           </span>
           <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-blue-600 hover:text-blue-700 gap-1" onClick={() => setOpen(true)}>
             <UserPlus className="w-3 h-3" /> Toewijzen

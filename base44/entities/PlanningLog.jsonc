@@ -1,0 +1,50 @@
+{
+  "name": "PlanningLog",
+  "type": "object",
+  "properties": {
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum van de planning"
+    },
+    "werkspot_id": {
+      "type": "string",
+      "description": "ID van de werkspot"
+    },
+    "werkspot_naam": {
+      "type": "string",
+      "description": "Naam van de werkspot"
+    },
+    "eindklant_id": {
+      "type": "string",
+      "description": "ID van de eindklant"
+    },
+    "eindklant_naam": {
+      "type": "string",
+      "description": "Naam van de eindklant"
+    },
+    "oud_aantal": {
+      "type": "number",
+      "description": "Vorig gepland aantal"
+    },
+    "nieuw_aantal": {
+      "type": "number",
+      "description": "Nieuw gepland aantal"
+    },
+    "gewijzigd_door": {
+      "type": "string",
+      "description": "Naam van de gebruiker die de wijziging maakte"
+    },
+    "reden": {
+      "type": "string",
+      "description": "Optionele reden voor de wijziging"
+    }
+  },
+  "required": [
+    "datum",
+    "werkspot_id",
+    "eindklant_id",
+    "oud_aantal",
+    "nieuw_aantal"
+  ]
+}

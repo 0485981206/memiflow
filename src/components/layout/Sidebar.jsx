@@ -24,7 +24,8 @@ import {
   MapPin,
   Nfc,
   UserPlus,
-  AlertTriangle
+  AlertTriangle,
+  CalendarDays
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -334,6 +335,15 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
           onClick={() => setMobileOpen(false)}
         >
           <span>Afwijkingen</span>
+        </Link>
+        <Link
+          to="/agendaplanning"
+          className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
+            location.pathname === "/agendaplanning" ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <span>Agendaplanning</span>
         </Link>
 
         {/* Finance */}
