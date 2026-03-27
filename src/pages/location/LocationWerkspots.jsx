@@ -30,6 +30,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   // Quick assign state
   const [quickAssignOpen, setQuickAssignOpen] = useState(false);
   const [quickAssignWorker, setQuickAssignWorker] = useState(null);
+  const [actieveRegistraties, setActieveRegistraties] = useState([]);
 
   const loadWerkspots = async () => {
     setLoading(true);
@@ -41,7 +42,12 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     setLoading(false);
   };
 
-  useEffect(() => { loadWerkspots(); loadTijdelijkeWerknemers(); }, [klant.id]);
+  useEffect(() => { loadWerkspots(); loadTijdelijkeWerknemers(); loadRegistraties(); }, [klant.id]);
+
+  const loadRegistraties = async () => {
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
+    setActieveRegistraties((res.data.records || []).filter(r => r.status === "gestart"));
+  };
 
   const loadTijdelijkeWerknemers = async () => {
     const res = await base44.functions.invoke("tijdelijkeWerknemer", { action: "list", eindklant_id: klant.id });
@@ -92,6 +98,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
       eindklant_naam: klant.naam,
     });
     setCheckinLoading(false);
+    loadRegistraties();
   };
 
   // Afwijking: open sheet for each werknemer in the werkspot
@@ -238,6 +245,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                   werkspot={ws}
                   werknemers={werknemers}
                   tijdelijkeWerknemers={tijdelijkeWerknemers}
+                  actieveRegistraties={actieveRegistraties}
                   onDelete={handleDelete}
                   onAssign={handleAssign}
                   onRemoveWorker={handleRemoveWorker}

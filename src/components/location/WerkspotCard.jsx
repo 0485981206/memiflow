@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -16,6 +16,11 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
     const regular = werknemers.filter((w) => assigned.includes(w.id));
     return regular;
   }, [werknemers, assigned]);
+
+  const isCheckedIn = useMemo(() => {
+    if (assigned.length === 0) return false;
+    return assigned.some(id => actieveRegistraties.some(r => r.werknemer_id === id));
+  }, [assigned, actieveRegistraties]);
 
   const filteredAssigned = useMemo(() => {
     if (!assignedSearch.trim()) return assignedWerknemers;
@@ -48,10 +53,14 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
   };
 
   return (
-    <div className="bg-white rounded-xl border p-4 flex flex-col gap-3">
+    <div className={`rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${
+      isCheckedIn
+        ? "bg-green-50 border-green-400"
+        : "bg-white border-gray-200"
+    }`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <MapPin className="w-4 h-4 text-blue-500" />
+          <MapPin className={`w-4 h-4 ${isCheckedIn ? "text-green-600" : "text-blue-500"}`} />
           <span className="font-semibold text-sm">{werkspot.naam}</span>
         </div>
         <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => onDelete(werkspot.id)}>
