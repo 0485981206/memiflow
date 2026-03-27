@@ -182,35 +182,56 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
 
       {/* Employee grid */}
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {/* Tijdelijke werknemers (ingecheckt of uitgecheckt, niet gekoppeld) */}
+        {/* Tijdelijke werknemers (nieuw, ingecheckt of uitgecheckt, niet gekoppeld) */}
         {tijdelijkeWerknemers.filter(t => t.status !== "gekoppeld").map((t) => {
+          const isNieuw = t.status === "nieuw";
           const isUitgecheckt = t.status === "uitgecheckt";
+          const isIngecheckt = t.status === "ingecheckt";
           return (
           <div
             key={`tmp-${t.id}`}
-            className={`rounded-xl border-2 p-4 text-center relative ${isUitgecheckt ? "border-gray-300 bg-gray-50 opacity-70" : "border-orange-300 bg-orange-50"}`}
+            className={`rounded-xl border-2 p-4 text-center relative ${
+              isNieuw ? "border-orange-200 bg-orange-50/50" :
+              isUitgecheckt ? "border-gray-300 bg-gray-50 opacity-70" : "border-orange-300 bg-orange-50"
+            }`}
           >
-            <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg ${isUitgecheckt ? "bg-gray-400" : "bg-orange-500"}`}>
+            <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg ${
+              isNieuw ? "bg-orange-400" :
+              isUitgecheckt ? "bg-gray-400" : "bg-orange-500"
+            }`}>
               {(t.voornaam || "?").charAt(0)}
             </div>
             <p className="text-sm font-semibold text-gray-800 truncate">{t.voornaam} {t.achternaam}</p>
-            <p className={`text-[10px] font-medium ${isUitgecheckt ? "text-gray-500" : "text-orange-600"}`}>(tijdelijk)</p>
-            <div className={`mt-2 flex items-center justify-center gap-1 text-xs font-medium ${isUitgecheckt ? "text-gray-500" : "text-green-700"}`}>
-              <Clock className="w-3 h-3" /> {t.start_tijd}
-              {isUitgecheckt && t.stop_tijd && (
-                <><span className="mx-0.5">→</span>{t.stop_tijd}</>
-              )}
-            </div>
-            {!isUitgecheckt && (
-              <button
-                onClick={() => handleStopTijdelijk(t.id)}
-                className="mt-2 text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full hover:bg-red-600"
-              >
-                Stop
-              </button>
+            <p className={`text-[10px] font-medium ${
+              isNieuw ? "text-orange-500" :
+              isUitgecheckt ? "text-gray-500" : "text-orange-600"
+            }`}>(tijdelijk)</p>
+            {isNieuw && (
+              <p className="mt-2 text-[10px] text-orange-500">Nog niet toegewezen</p>
+            )}
+            {isIngecheckt && t.start_tijd && (
+              <>
+                <div className="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-green-700">
+                  <Clock className="w-3 h-3" /> {t.start_tijd}
+                </div>
+                <button
+                  onClick={() => handleStopTijdelijk(t.id)}
+                  className="mt-2 text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full hover:bg-red-600"
+                >
+                  Stop
+                </button>
+              </>
             )}
             {isUitgecheckt && (
-              <p className="mt-2 text-[10px] text-gray-400">Wacht op koppeling</p>
+              <>
+                {t.start_tijd && (
+                  <div className="mt-2 flex items-center justify-center gap-1 text-xs font-medium text-gray-500">
+                    <Clock className="w-3 h-3" /> {t.start_tijd}
+                    {t.stop_tijd && <><span className="mx-0.5">→</span>{t.stop_tijd}</>}
+                  </div>
+                )}
+                <p className="mt-2 text-[10px] text-gray-400">Wacht op koppeling</p>
+              </>
             )}
           </div>
         );
