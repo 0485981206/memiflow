@@ -3,31 +3,53 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { nfc_id } = await req.json();
+    const { nfc_id, overeenkomstnummer, eindklant_id: override_klant_id } = await req.json();
 
-    if (!nfc_id) {
-      return Response.json({ error: 'Geen NFC ID opgegeven' }, { status: 400 });
+    const lookupKey = overeenkomstnummer || nfc_id;
+    if (!lookupKey) {
+      return Response.json({ error: 'Geen badge ID of overeenkomstnummer opgegeven' }, { status: 400 });
     }
 
-    // Find werknemer by nfc_id
-    const werknemers = await base44.asServiceRole.entities.Werknemer.filter({ nfc_id, status: 'actief' });
+    // Find werknemer by overeenkomstnummer or nfc_id
+    let werknemers;
+    if (overeenkomstnummer) {
+      werknemers = await base44.asServiceRole.entities.Werknemer.filter({ overeenkomstnummer, status: 'actief' });
+    } else {
+      werknemers = await base44.asServiceRole.entities.Werknemer.filter({ nfc_id, status: 'actief' });
+    }
     const werknemer = werknemers?.[0];
 
     if (!werknemer) {
-      return Response.json({ error: 'Werknemer niet gevonden voor deze badge' }, { status: 404 });
+      return Response.json({ error: `Werknemer niet gevonden voor ${overeenkomstnummer ? 'overeenkomstnummer ' + overeenkomstnummer : 'deze badge'}` }, { status: 404 });
     }
 
     // Find active plaatsing to determine eindklant
-    const plaatsingen = await base44.asServiceRole.entities.Plaatsing.filter({ 
-      werknemer_id: werknemer.id, 
-      status: 'actief' 
-    });
-
-    if (!plaatsingen || plaatsingen.length === 0) {
-      return Response.json({ error: 'Geen actieve plaatsing gevonden voor deze werknemer' }, { status: 404 });
+    let plaatsing;
+    if (override_klant_id) {
+      // If called from location context, match plaatsing for that specific klant
+      const plaatsingen = await base44.asServiceRole.entities.Plaatsing.filter({ 
+        werknemer_id: werknemer.id, 
+        eindklant_id: override_klant_id,
+        status: 'actief' 
+      });
+      plaatsing = plaatsingen?.[0];
+      // If no plaatsing for this klant, still allow but use klant info from Eindklant
+      if (!plaatsing) {
+        const klanten = await base44.asServiceRole.entities.Eindklant.filter({ id: override_klant_id });
+        const klant = klanten?.[0];
+        plaatsing = { id: null, eindklant_id: override_klant_id, eindklant_naam: klant?.naam || 'Onbekend' };
+      }
+    } else {
+      const plaatsingen = await base44.asServiceRole.entities.Plaatsing.filter({ 
+        werknemer_id: werknemer.id, 
+        status: 'actief' 
+      });
+      if (!plaatsingen || plaatsingen.length === 0) {
+        return Response.json({ error: 'Geen actieve plaatsing gevonden voor deze werknemer' }, { status: 404 });
+      }
+      plaatsing = plaatsingen[0];
     }
 
-    const plaatsing = plaatsingen[0];
     const now = new Date();
     const offset = 1; // CET offset
     const localNow = new Date(now.getTime() + offset * 60 * 60 * 1000);
