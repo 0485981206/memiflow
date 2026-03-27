@@ -62,11 +62,10 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
   };
 
   const getAvailableWerknemers = (currentWsId) => {
-    const usedInOthers = new Set();
-    Object.entries(werknemerSelecties).forEach(([wsId, ids]) => {
-      if (wsId !== currentWsId) ids.forEach(id => usedInOthers.add(id));
-    });
-    return allWerknemers.filter(w => !usedInOthers.has(w.id));
+    const ws = werkspots.find(w => w.id === currentWsId);
+    const toegewezen = ws?.toegewezen_werknemers || [];
+    if (toegewezen.length === 0) return allWerknemers;
+    return allWerknemers.filter(w => toegewezen.includes(w.id));
   };
 
   const handleSave = async () => {

@@ -52,14 +52,12 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
 
   const totaal = useMemo(() => Object.values(aantallen).reduce((sum, v) => sum + (Number(v) || 0), 0), [aantallen]);
 
-  // Get werknemers already selected in OTHER werkspots (to show who's available)
+  // Get werknemers assigned to this specific werkspot
   const getAvailableWerknemers = (currentWsId) => {
-    const usedInOthers = new Set();
-    Object.entries(werknemerSelecties).forEach(([wsId, ids]) => {
-      if (wsId !== currentWsId) ids.forEach(id => usedInOthers.add(id));
-    });
-    // Show all but mark used ones - actually just filter them out for simplicity
-    return allWerknemers.filter(w => !usedInOthers.has(w.id));
+    const ws = werkspots.find(w => w.id === currentWsId);
+    const toegewezen = ws?.toegewezen_werknemers || [];
+    if (toegewezen.length === 0) return allWerknemers;
+    return allWerknemers.filter(w => toegewezen.includes(w.id));
   };
 
   const handleSave = async () => {
