@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, MapPin, Loader2, Search, X, User, AlertCircle, UserPlus } from "lucide-react";
+import { Plus, MapPin, Loader2, Search, X, User, AlertCircle, UserPlus, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import LocationSidebar from "../../components/location/LocationSidebar";
 import WerkspotCard from "../../components/location/WerkspotCard";
+import WerkspotListView from "../../components/location/WerkspotListView";
 import AfwijkingSheet from "../../components/location/AfwijkingSheet";
 
 export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout, onRefresh }) {
@@ -18,6 +19,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [saving, setSaving] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState("grid");
 
   // Afwijking state
   const [afwijkingOpen, setAfwijkingOpen] = useState(false);
@@ -221,9 +223,25 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
             <h1 className="text-lg font-bold">Werkspots — {klant.naam}</h1>
             <p className="text-xs text-white/60">Beheer werkplekken voor deze locatie</p>
           </div>
-          <Button size="sm" className="gap-1 bg-white/10 hover:bg-white/20 text-white" onClick={() => setDialogOpen(true)}>
-            <Plus className="w-4 h-4" /> Nieuwe werkspot
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-white/10 rounded-lg p-0.5">
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === "grid" ? "bg-white/20 text-white" : "text-white/50 hover:text-white"}`}
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-1.5 rounded-md transition-colors ${viewMode === "list" ? "bg-white/20 text-white" : "text-white/50 hover:text-white"}`}
+              >
+                <List className="w-4 h-4" />
+              </button>
+            </div>
+            <Button size="sm" className="gap-1 bg-white/10 hover:bg-white/20 text-white" onClick={() => setDialogOpen(true)}>
+              <Plus className="w-4 h-4" /> Nieuwe werkspot
+            </Button>
+          </div>
         </div>
 
         <div className="p-6 space-y-4">
@@ -309,28 +327,38 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
               <MapPin className="w-10 h-10 mx-auto mb-2 opacity-40" />
               <p>Nog geen werkspots aangemaakt</p>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {werkspots
-                .filter((ws) => !search.trim() || ws.naam.toLowerCase().includes(search.toLowerCase()))
-                .map((ws, idx) => (
-                <WerkspotCard
-                  key={ws.id}
-                  werkspot={ws}
-                  colorIndex={idx}
-                  werknemers={werknemers}
-                  tijdelijkeWerknemers={tijdelijkeWerknemers}
-                  actieveRegistraties={actieveRegistraties}
-                  onDelete={handleDelete}
-                  onAssign={handleAssign}
-                  onRemoveWorker={handleRemoveWorker}
-                  onCheckin={handleCheckin}
-                  onCheckout={handleCheckout}
-                  onAfwijking={handleAfwijking}
-                />
-              ))}
-            </div>
-          )}
+          ) : viewMode === "grid" ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {werkspots
+                  .filter((ws) => !search.trim() || ws.naam.toLowerCase().includes(search.toLowerCase()))
+                  .map((ws, idx) => (
+                  <WerkspotCard
+                    key={ws.id}
+                    werkspot={ws}
+                    colorIndex={idx}
+                    werknemers={werknemers}
+                    tijdelijkeWerknemers={tijdelijkeWerknemers}
+                    actieveRegistraties={actieveRegistraties}
+                    onDelete={handleDelete}
+                    onAssign={handleAssign}
+                    onRemoveWorker={handleRemoveWorker}
+                    onCheckin={handleCheckin}
+                    onCheckout={handleCheckout}
+                    onAfwijking={handleAfwijking}
+                  />
+                ))}
+              </div>
+            ) : (
+              <WerkspotListView
+                werkspots={werkspots.filter((ws) => !search.trim() || ws.naam.toLowerCase().includes(search.toLowerCase()))}
+                werknemers={werknemers}
+                tijdelijkeWerknemers={tijdelijkeWerknemers}
+                actieveRegistraties={actieveRegistraties}
+                onCheckin={handleCheckin}
+                onCheckout={handleCheckout}
+                onAfwijking={handleAfwijking}
+              />
+            )}
         </div>
 
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
