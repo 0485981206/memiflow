@@ -10,10 +10,11 @@ Deno.serve(async (req) => {
     }
 
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const hours = String(now.getUTCHours() + 2).padStart(2, '0'); // Brussels = UTC+2 (summer) / UTC+1 (winter)
-    const minutes = String(now.getMinutes()).padStart(2, '0');
-    const currentTime = `${hours}:${minutes}`;
+    // Use proper Brussels timezone formatting
+    const brusselsFormatter = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit' });
+    const today = brusselsFormatter.format(now);
+    const timeFormatter = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Brussels', hour: '2-digit', minute: '2-digit', hour12: false });
+    const currentTime = timeFormatter.format(now);
     const maand = today.slice(0, 7);
     const dagNamen = ['Zo', 'Ma', 'Di', 'Wo', 'Do', 'Vr', 'Za'];
     const dag = dagNamen[now.getDay()];
