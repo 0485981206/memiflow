@@ -26,6 +26,13 @@
     "gepland_aantal": {
       "type": "number",
       "description": "Gepland aantal werknemers voor deze werkspot"
+    },
+    "geselecteerde_werknemers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs van de geselecteerde werknemers voor deze werkspot"
     }
   },
   "required": [

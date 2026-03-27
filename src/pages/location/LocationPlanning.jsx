@@ -2,18 +2,20 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { format, addDays, isSameDay, isToday, isBefore, startOfDay } from "date-fns";
 import { nl } from "date-fns/locale";
-import { ChevronLeft, ChevronRight, Save, Loader2, Copy, MapPin, Users, Calendar } from "lucide-react";
+import { Save, Loader2, Copy, Users, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 import LocationSidebar from "../../components/location/LocationSidebar";
+import PlanningSpotRow from "../../components/planning/PlanningSpotRow";
 
 export default function LocationPlanning({ klant, onNavigate, onLogout, onRefresh }) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [werkspots, setWerkspots] = useState([]);
   const [planning, setPlanning] = useState({});
   const [aantallen, setAantallen] = useState({});
+  const [werknemerSelecties, setWerknemerSelecties] = useState({});
+  const [allWerknemers, setAllWerknemers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -39,15 +41,32 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
     setPlanning(map);
 
     const aantalMap = {};
+    const selectieMap = {};
     wsRes.data.werkspots?.forEach(ws => {
       aantalMap[ws.id] = map[ws.id]?.gepland_aantal || 0;
+      selectieMap[ws.id] = map[ws.id]?.geselecteerde_werknemers || [];
     });
     setAantallen(aantalMap);
+    setWerknemerSelecties(selectieMap);
+
+    // Load werknemers
+    const plaatsingen = await base44.entities.Plaatsing.filter({ eindklant_id: klant.id, status: "actief" });
+    const ids = [...new Set(plaatsingen.map(p => p.werknemer_id))];
+    if (ids.length > 0) {
+      const werknemers = await base44.entities.Werknemer.filter({ status: "actief" });
+      setAllWerknemers(werknemers.filter(w => ids.includes(w.id)).map(w => ({ id: w.id, naam: `${w.voornaam} ${w.achternaam}` })));
+    } else {
+      setAllWerknemers([]);
+    }
     setLoading(false);
   };
 
-  const handleChange = (wsId, value) => {
-    setAantallen(prev => ({ ...prev, [wsId]: value === "" ? "" : Number(value) }));
+  const getAvailableWerknemers = (currentWsId) => {
+    const usedInOthers = new Set();
+    Object.entries(werknemerSelecties).forEach(([wsId, ids]) => {
+      if (wsId !== currentWsId) ids.forEach(id => usedInOthers.add(id));
+    });
+    return allWerknemers.filter(w => !usedInOthers.has(w.id));
   };
 
   const handleSave = async () => {
@@ -58,21 +77,30 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
       const nieuw = Number(aantallen[ws.id]) || 0;
       const existing = planning[ws.id];
       const oud = existing?.gepland_aantal || 0;
+      const selectie = werknemerSelecties[ws.id] || [];
 
-      if (nieuw !== oud) {
-        await base44.entities.PlanningLog.create({
-          datum: datumStr,
-          werkspot_id: ws.id,
-          werkspot_naam: ws.naam,
-          eindklant_id: klant.id,
-          eindklant_naam: klant.naam,
-          oud_aantal: oud,
-          nieuw_aantal: nieuw,
-          gewijzigd_door: user?.full_name || "Teamleader",
-        });
+      const hasChanges = nieuw !== oud ||
+        JSON.stringify(selectie.sort()) !== JSON.stringify((existing?.geselecteerde_werknemers || []).sort());
+
+      if (hasChanges) {
+        if (nieuw !== oud) {
+          await base44.entities.PlanningLog.create({
+            datum: datumStr,
+            werkspot_id: ws.id,
+            werkspot_naam: ws.naam,
+            eindklant_id: klant.id,
+            eindklant_naam: klant.naam,
+            oud_aantal: oud,
+            nieuw_aantal: nieuw,
+            gewijzigd_door: user?.full_name || "Teamleader",
+          });
+        }
 
         if (existing) {
-          await base44.entities.WerkspotPlanning.update(existing.id, { gepland_aantal: nieuw });
+          await base44.entities.WerkspotPlanning.update(existing.id, {
+            gepland_aantal: nieuw,
+            geselecteerde_werknemers: selectie,
+          });
         } else {
           await base44.entities.WerkspotPlanning.create({
             datum: datumStr,
@@ -81,6 +109,7 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
             eindklant_id: klant.id,
             eindklant_naam: klant.naam,
             gepland_aantal: nieuw,
+            geselecteerde_werknemers: selectie,
           });
         }
       }
@@ -97,10 +126,11 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
 
     for (const ws of werkspots) {
       const aantal = Number(aantallen[ws.id]) || 0;
+      const selectie = werknemerSelecties[ws.id] || [];
       if (aantal > 0) {
         const existing = await base44.entities.WerkspotPlanning.filter({ eindklant_id: klant.id, datum: morgen, werkspot_id: ws.id });
         if (existing.length > 0) {
-          await base44.entities.WerkspotPlanning.update(existing[0].id, { gepland_aantal: aantal });
+          await base44.entities.WerkspotPlanning.update(existing[0].id, { gepland_aantal: aantal, geselecteerde_werknemers: selectie });
         } else {
           await base44.entities.WerkspotPlanning.create({
             datum: morgen,
@@ -109,6 +139,7 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
             eindklant_id: klant.id,
             eindklant_naam: klant.naam,
             gepland_aantal: aantal,
+            geselecteerde_werknemers: selectie,
           });
         }
       }
@@ -190,18 +221,16 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
             ) : (
               <div className="space-y-2">
                 {werkspots.map(ws => (
-                  <div key={ws.id} className="flex items-center gap-3 p-3 rounded-lg border bg-white">
-                    <MapPin className="w-4 h-4 text-accent shrink-0" />
-                    <span className="text-sm font-medium flex-1 truncate">{ws.naam}</span>
-                    <Input
-                      type="number"
-                      min="0"
-                      value={aantallen[ws.id] ?? 0}
-                      onChange={(e) => handleChange(ws.id, e.target.value)}
-                      disabled={isPast}
-                      className="w-20 h-9 text-center"
-                    />
-                  </div>
+                  <PlanningSpotRow
+                    key={ws.id}
+                    werkspot={ws}
+                    aantal={aantallen[ws.id] ?? 0}
+                    geselecteerdeWerknemers={werknemerSelecties[ws.id] || []}
+                    beschikbareWerknemers={getAvailableWerknemers(ws.id)}
+                    onChangeAantal={(v) => setAantallen(prev => ({ ...prev, [ws.id]: v === "" ? "" : Number(v) }))}
+                    onChangeWerknemers={(ids) => setWerknemerSelecties(prev => ({ ...prev, [ws.id]: ids }))}
+                    disabled={isPast}
+                  />
                 ))}
               </div>
             )}
