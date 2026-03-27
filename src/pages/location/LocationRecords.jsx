@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { Clock, Loader2, CheckCircle2, ArrowRight, Pencil, Check, X, Trash2, Search, Calendar } from "lucide-react";
-import { format, parseISO, isToday } from "date-fns";
+import { format, parseISO, isToday, differenceInCalendarDays } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarPicker } from "@/components/ui/calendar";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
 export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh }) {
@@ -12,7 +14,14 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
   const [loading, setLoading] = useState(true);
 
   const [search, setSearch] = useState("");
-  const [numDays, setNumDays] = useState(3);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [calOpen, setCalOpen] = useState(false);
+
+  // Calculate numDays from selectedDate to today
+  const numDays = useMemo(() => {
+    const diff = differenceInCalendarDays(new Date(), selectedDate);
+    return Math.max(1, diff + 1);
+  }, [selectedDate]);
 
   const loadAll = async (days) => {
     setLoading(true);
@@ -110,19 +119,23 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
                 </button>
               )}
             </div>
-            <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
-              {[{days: 1, label: "Vandaag"}, {days: 2, label: "Gisteren"}, {days: 3, label: "3d"}, {days: 7, label: "7d"}, {days: 14, label: "14d"}].map(({days, label}) => (
-                <button
-                  key={days}
-                  onClick={() => setNumDays(days)}
-                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                    numDays === days ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
+            <Popover open={calOpen} onOpenChange={setCalOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5 h-10 text-xs">
+                  <Calendar className="w-3.5 h-3.5" />
+                  {isToday(selectedDate) ? "Vandaag" : format(selectedDate, "d MMM yyyy", { locale: nl })}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <CalendarPicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => { if (d) { setSelectedDate(d); setCalOpen(false); } }}
+                  disabled={(d) => d > new Date()}
+                  locale={nl}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
 
           {loading ? (
