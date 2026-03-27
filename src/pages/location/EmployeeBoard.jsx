@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus, MapPin, ChevronDown, ChevronRight } from "lucide-react";
+import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus, MapPin, ChevronDown, ChevronRight } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,8 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
     );
   }
 
+  const [selected, setSelected] = useState([]);
+  const [mode, setMode] = useState(null);
   const [search, setSearch] = useState("");
   const [showTijdelijkForm, setShowTijdelijkForm] = useState(false);
   const [tijdelijkForm, setTijdelijkForm] = useState({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
@@ -122,8 +124,35 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
     actieveMap[r.werknemer_id] = r;
   });
 
+  const toggleSelect = (id) => {
+    setSelected((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+  };
+
+  const toggleGroupSelect = (werknemersInGroup) => {
+    const ids = werknemersInGroup.map(w => w.id);
+    const allSelected = ids.every(id => selected.includes(id));
+    if (allSelected) {
+      setSelected(prev => prev.filter(id => !ids.includes(id)));
+    } else {
+      setSelected(prev => [...new Set([...prev, ...ids])]);
+    }
+  };
+
   const toggleCollapse = (groupName) => {
     setCollapsedGroups(prev => ({ ...prev, [groupName]: !prev[groupName] }));
+  };
+
+  const handleAction = async (action) => {
+    const ids = action === "start"
+      ? selected.filter((id) => !actieveMap[id])
+      : selected.filter((id) => !!actieveMap[id]);
+    if (ids.length === 0) return;
+    setMode(action);
+    await onAction(action, ids);
+    setSelected([]);
+    setMode(null);
   };
 
   const gestartCount = Object.keys(actieveMap).length;
@@ -132,17 +161,26 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
   const renderEmployeeCard = (w) => {
     const isCheckedIn = !!actieveMap[w.id];
     const reg = actieveMap[w.id];
+    const isSelected = selected.includes(w.id);
 
     return (
       <div
         key={w.id}
         onClick={() => setSelectedEmployee(w)}
         className={`rounded-xl border-2 p-3 text-center transition-all duration-200 cursor-pointer relative group ${
-          isCheckedIn
+          isSelected
+            ? "border-blue-500 bg-blue-50 shadow-md"
+            : isCheckedIn
             ? "border-green-300 bg-green-50"
             : "border-gray-200 bg-white hover:border-gray-300"
         }`}
       >
+        <input
+          type="checkbox"
+          checked={isSelected}
+          onChange={(e) => { e.stopPropagation(); toggleSelect(w.id); }}
+          className="absolute top-2 left-2 w-4 h-4 accent-blue-500 cursor-pointer"
+        />
         <div
           className={`w-10 h-10 rounded-full mx-auto mb-1.5 flex items-center justify-center text-white font-bold text-sm ${
             isCheckedIn ? "bg-green-500" : "bg-gray-300"
@@ -163,6 +201,9 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
 
   const renderGroupHeader = (name, werknemersInGroup) => {
     const isCollapsed = collapsedGroups[name];
+    const groupIds = werknemersInGroup.map(w => w.id);
+    const allSelected = groupIds.length > 0 && groupIds.every(id => selected.includes(id));
+    const someSelected = groupIds.some(id => selected.includes(id));
     const activeCount = werknemersInGroup.filter(w => actieveMap[w.id]).length;
 
     return (
@@ -176,6 +217,15 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
         {activeCount > 0 && (
           <span className="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">{activeCount} actief</span>
         )}
+        <div className="flex-1" />
+        <input
+          type="checkbox"
+          checked={allSelected}
+          ref={el => { if (el) el.indeterminate = someSelected && !allSelected; }}
+          onChange={() => toggleGroupSelect(werknemersInGroup)}
+          className="w-4 h-4 accent-blue-500 cursor-pointer"
+        />
+        <span className="text-[10px] text-gray-400">Alles</span>
       </div>
     );
   };
@@ -203,8 +253,8 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
           </div>
         </div>
 
-        {/* Search bar */}
-        <div className="bg-white border-b px-4 py-3">
+        {/* Search + Action bar */}
+        <div className="bg-white border-b px-4 py-3 space-y-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
@@ -217,6 +267,37 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
               <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
                 <X className="w-4 h-4" />
               </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {selected.length > 0 ? (
+              <>
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 gap-1"
+                  onClick={() => handleAction("start")}
+                  disabled={actionLoading || selected.every((id) => !!actieveMap[id])}
+                >
+                  {actionLoading && mode === "start" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                  Start ({selected.filter((id) => !actieveMap[id]).length})
+                </Button>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="gap-1"
+                  onClick={() => handleAction("stop")}
+                  disabled={actionLoading || selected.every((id) => !actieveMap[id])}
+                >
+                  {actionLoading && mode === "stop" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+                  Stop ({selected.filter((id) => !!actieveMap[id]).length})
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setSelected([])}>
+                  Deselecteer ({selected.length})
+                </Button>
+              </>
+            ) : (
+              <p className="text-sm text-gray-400">Selecteer werknemers via de checkbox of per werkspot</p>
             )}
           </div>
         </div>
