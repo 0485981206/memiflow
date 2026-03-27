@@ -3,6 +3,8 @@ import { base44 } from "@/api/base44Client";
 import PincodeLogin from "./PincodeLogin";
 import EmployeeBoard from "./EmployeeBoard";
 import LocationSelector from "../../components/location/LocationSelector";
+import LocationWerkspots from "./LocationWerkspots";
+import LocationRecords from "./LocationRecords";
 
 export default function Location() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -14,6 +16,7 @@ export default function Location() {
   const [error, setError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [activePage, setActivePage] = useState("home");
 
   const callFunction = async (name, payload) => {
     const response = await base44.functions.invoke(name, payload);
@@ -103,6 +106,11 @@ export default function Location() {
     setIsSuperuser(false);
     setSuperuserKlanten([]);
     setError("");
+    setActivePage("home");
+  }, []);
+
+  const handleNavigate = useCallback((page) => {
+    setActivePage(page);
   }, []);
 
   if (isSuperuser && !loggedIn) {
@@ -113,6 +121,14 @@ export default function Location() {
     return <PincodeLogin onLogin={handleLogin} error={error} loading={loginLoading} />;
   }
 
+  if (activePage === "werkspots") {
+    return <LocationWerkspots klant={klant} werknemers={werknemers} onNavigate={handleNavigate} onLogout={handleLogout} />;
+  }
+
+  if (activePage === "records") {
+    return <LocationRecords klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
+  }
+
   return (
     <EmployeeBoard
       klant={klant}
@@ -120,6 +136,7 @@ export default function Location() {
       actieveRegistraties={actieveRegistraties}
       onAction={handleAction}
       onLogout={handleLogout}
+      onNavigate={handleNavigate}
       actionLoading={actionLoading}
     />
   );

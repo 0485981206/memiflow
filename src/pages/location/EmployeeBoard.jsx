@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
-export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], onAction, onLogout, actionLoading }) {
+export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], onAction, onLogout, onNavigate, actionLoading }) {
   if (!klant) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -58,7 +58,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <LocationSidebar onLogout={onLogout} />
+      <LocationSidebar activePage="home" onNavigate={onNavigate} onLogout={onLogout} />
       <div className="flex-1 ml-16">
       {/* Header */}
       <div className="bg-[#0f2744] text-white px-4 py-4 flex items-center justify-between">
