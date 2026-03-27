@@ -6,6 +6,7 @@ import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 
+import AuthGuard from './components/AuthGuard';
 import AppLayout from './components/layout/AppLayout';
 import Dashboard from './pages/Dashboard';
 import Werknemers from './pages/Werknemers';
@@ -41,7 +42,7 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
-      // Allow /location without auth
+      // /location is always accessible without login
       if (window.location.pathname === '/location') {
         return (
           <Routes>
@@ -57,7 +58,11 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      <Route element={<AppLayout />}>
+      <Route element={
+        <AuthGuard>
+          <AppLayout />
+        </AuthGuard>
+      }>
         <Route path="/" element={<Dashboard />} />
         <Route path="/werknemers" element={<Werknemers />} />
         <Route path="/eindklanten" element={<Eindklanten />} />
