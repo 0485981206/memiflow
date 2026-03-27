@@ -92,8 +92,9 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     if (ids.length === 0) return;
     setCheckinLoading(true);
 
-    const regularIds = ids.filter(id => werknemers.some(w => w.id === id));
-    const tijdelijkIds = ids.filter(id => tijdelijkeWerknemers.some(t => t.id === id));
+    const tijdelijkIdSet = new Set(tijdelijkeWerknemers.map(t => t.id));
+    const regularIds = ids.filter(id => !tijdelijkIdSet.has(id));
+    const tijdelijkIds = ids.filter(id => tijdelijkIdSet.has(id));
 
     if (regularIds.length > 0) {
       await base44.functions.invoke("klokRegistratie", {
@@ -125,8 +126,9 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     if (ids.length === 0) return;
     setCheckinLoading(true);
 
-    const regularIds = ids.filter(id => actieveRegistraties.some(r => r.werknemer_id === id));
-    const tijdelijkIds = ids.filter(id => tijdelijkeWerknemers.some(t => t.id === id && t.status === "ingecheckt"));
+    const tijdelijkIdSet = new Set(tijdelijkeWerknemers.map(t => t.id));
+    const regularIds = ids.filter(id => !tijdelijkIdSet.has(id) && actieveRegistraties.some(r => r.werknemer_id === id));
+    const tijdelijkIds = ids.filter(id => tijdelijkIdSet.has(id) && tijdelijkeWerknemers.some(t => t.id === id && t.status === "ingecheckt"));
 
     if (regularIds.length > 0) {
       await base44.functions.invoke("klokRegistratie", {
