@@ -31,22 +31,27 @@ Deno.serve(async (req) => {
       if (!ws.length) return Response.json({ error: 'Werkspot niet gevonden' }, { status: 404 });
 
       const newIds = werknemer_ids || [];
+      const newIdSet = new Set(newIds);
 
-      // Remove these workers from any other werkspots at this eindklant
+      // Remove these workers from other werkspots + add to target in parallel
       const allWerkspots = await base44.asServiceRole.entities.Werkspot.filter({ eindklant_id: ws[0].eindklant_id });
+      const updates = [];
+
       for (const other of allWerkspots) {
         if (other.id === werkspot_id) continue;
         const otherAssigned = other.toegewezen_werknemers || [];
-        const cleaned = otherAssigned.filter(id => !newIds.includes(id));
+        const cleaned = otherAssigned.filter(id => !newIdSet.has(id));
         if (cleaned.length !== otherAssigned.length) {
-          await base44.asServiceRole.entities.Werkspot.update(other.id, { toegewezen_werknemers: cleaned });
+          updates.push(base44.asServiceRole.entities.Werkspot.update(other.id, { toegewezen_werknemers: cleaned }));
         }
       }
 
       // Add to target werkspot
       const current = ws[0].toegewezen_werknemers || [];
       const merged = [...new Set([...current, ...newIds])];
-      await base44.asServiceRole.entities.Werkspot.update(werkspot_id, { toegewezen_werknemers: merged });
+      updates.push(base44.asServiceRole.entities.Werkspot.update(werkspot_id, { toegewezen_werknemers: merged }));
+
+      await Promise.all(updates);
       return Response.json({ ok: true });
     }
 
