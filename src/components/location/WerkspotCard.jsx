@@ -233,13 +233,25 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
       {/* Action buttons */}
       <div className={`flex gap-2 pt-2 border-t ${isAnyLoading ? "pointer-events-none" : ""}`}>
         {isCheckedIn ? (
-          <Button variant="destructive" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckout?.(werkspot)} disabled={assigned.length === 0 || isAnyLoading}>
-            {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
+          <Button
+            variant="destructive"
+            size="sm"
+            className={`flex-1 gap-1.5 transition-all duration-150 ${isActionLoading ? "animate-pulse" : ""}`}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(12); onCheckout?.(werkspot); }}
+            disabled={assigned.length === 0 || isAnyLoading}
+          >
+            {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
             {isActionLoading ? "Bezig..." : "Check-out"}
           </Button>
         ) : (
-          <Button variant="default" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckin?.(werkspot)} disabled={assigned.length === 0 || isAnyLoading}>
-            {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />}
+          <Button
+            variant="default"
+            size="sm"
+            className={`flex-1 gap-1.5 transition-all duration-150 ${isActionLoading ? "animate-pulse" : ""}`}
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(12); onCheckin?.(werkspot); }}
+            disabled={assigned.length === 0 || isAnyLoading}
+          >
+            {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogIn className="w-4 h-4" />}
             {isActionLoading ? "Bezig..." : "Check-in"}
           </Button>
         )}
@@ -247,7 +259,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
           variant="outline"
           size="sm"
           className="gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
-          onClick={() => onAfwijking?.(werkspot)}
+          onClick={() => { if (navigator.vibrate) navigator.vibrate(8); onAfwijking?.(werkspot); }}
           disabled={assigned.length === 0 || isAnyLoading}
         >
           <AlertTriangle className="w-3.5 h-3.5" />
