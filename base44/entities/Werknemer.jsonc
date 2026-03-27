@@ -1,0 +1,209 @@
+{
+  "name": "Werknemer",
+  "type": "object",
+  "properties": {
+    "voornaam": {
+      "type": "string",
+      "description": "Voornaam van de werknemer"
+    },
+    "achternaam": {
+      "type": "string",
+      "description": "Achternaam van de werknemer"
+    },
+    "overeenkomstnummer": {
+      "type": "string",
+      "description": "Overeenkomstnummer (uit Acerta)"
+    },
+    "externe_id": {
+      "type": "string",
+      "description": "Extern ID / referentienummer"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "description": "E-mailadres"
+    },
+    "telefoon": {
+      "type": "string",
+      "description": "Telefoonnummer"
+    },
+    "contactnummer": {
+      "type": "string",
+      "description": "Contactnummer"
+    },
+    "noodcontact": {
+      "type": "string",
+      "description": "Noodcontact (naam + telefoonnummer)"
+    },
+    "functie": {
+      "type": "string",
+      "description": "Functietitel"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "actief",
+        "inactief",
+        "ziekteverlof"
+      ],
+      "default": "actief",
+      "description": "Status van de werknemer"
+    },
+    "startdatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum indiensttreding"
+    },
+    "einddatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum uitdienst"
+    },
+    "uurloon": {
+      "type": "number",
+      "description": "Uurloon van de werknemer"
+    },
+    "rijksregisternummer": {
+      "type": "string",
+      "description": "Rijksregisternummer"
+    },
+    "adres": {
+      "type": "string",
+      "description": "Adres van de werknemer"
+    },
+    "geboortedatum": {
+      "type": "string",
+      "format": "date",
+      "description": "Geboortedatum"
+    },
+    "geslacht": {
+      "type": "string",
+      "description": "Geslacht"
+    },
+    "nationaliteit": {
+      "type": "string",
+      "description": "Nationaliteit"
+    },
+    "officiele_taal": {
+      "type": "string",
+      "description": "Offici\u00eble taal"
+    },
+    "land": {
+      "type": "string",
+      "description": "Land"
+    },
+    "burgerlijke_staat": {
+      "type": "string",
+      "description": "Burgerlijke staat"
+    },
+    "aantal_kinderen_ten_laste": {
+      "type": "string",
+      "description": "Aantal kinderen ten laste"
+    },
+    "personen_65_plus_ten_laste": {
+      "type": "string",
+      "description": "Personen 65+ ten laste"
+    },
+    "persoon_met_handicap": {
+      "type": "string",
+      "description": "Persoon met handicap"
+    },
+    "type_overeenkomst": {
+      "type": "string",
+      "description": "Type overeenkomst"
+    },
+    "werknemerstypering": {
+      "type": "string",
+      "description": "Werknemerstypering"
+    },
+    "paritair_comite": {
+      "type": "string",
+      "description": "Paritair Comit\u00e9"
+    },
+    "type_werktijd": {
+      "type": "string",
+      "description": "Type werktijd"
+    },
+    "werkregime": {
+      "type": "string",
+      "description": "Werkregime"
+    },
+    "tewerkstellingsbreuk": {
+      "type": "string",
+      "description": "Tewerkstellingsbreuk"
+    },
+    "berekeningswijze": {
+      "type": "string",
+      "description": "Berekeningswijze"
+    },
+    "barema_type": {
+      "type": "string",
+      "description": "Barema type"
+    },
+    "barema_code": {
+      "type": "string",
+      "description": "Barema code"
+    },
+    "looncode_411": {
+      "type": "string",
+      "description": "Looncode 411 (Kledij)"
+    },
+    "looncode_591": {
+      "type": "string",
+      "description": "Looncode 591 (Maaltijdcheques)"
+    },
+    "looncode_691": {
+      "type": "string",
+      "description": "Looncode 691 (Werkgeversbijdr. MC)"
+    },
+    "looncode_104": {
+      "type": "string",
+      "description": "Looncode 104 (Nachtploeg)"
+    },
+    "sturingsgroep": {
+      "type": "string",
+      "description": "Sturingsgroep"
+    },
+    "kostenplaats": {
+      "type": "string",
+      "description": "Kostenplaats"
+    },
+    "ploeg_type": {
+      "type": "string",
+      "enum": [
+        "dagploeg",
+        "dag_nacht"
+      ],
+      "default": "dagploeg",
+      "description": "Ploegverdeling: alleen dagploeg of dagploeg + nachtploeg"
+    },
+    "dagploeg_uren_mado": {
+      "type": "number",
+      "default": 8,
+      "description": "Dagploeg uren ma-do (standaard 8)"
+    },
+    "nachtploeg_uren_mado": {
+      "type": "number",
+      "default": 0,
+      "description": "Nachtploeg uren ma-do (standaard 0)"
+    },
+    "dagploeg_uren_vr": {
+      "type": "number",
+      "default": 6,
+      "description": "Dagploeg uren vrijdag (standaard 6)"
+    },
+    "nachtploeg_uren_vr": {
+      "type": "number",
+      "default": 0,
+      "description": "Nachtploeg uren vrijdag (standaard 0)"
+    },
+    "nfc_id": {
+      "type": "string",
+      "description": "Unieke NFC badge ID voor automatische check-in via URL"
+    }
+  },
+  "required": [
+    "voornaam",
+    "achternaam"
+  ]
+}

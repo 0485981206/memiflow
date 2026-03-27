@@ -1,0 +1,41 @@
+{
+  "name": "Werkspot",
+  "type": "object",
+  "properties": {
+    "naam": {
+      "type": "string",
+      "description": "Naam van de werkplek (bijv. Hal A, Kantoor 3)"
+    },
+    "eindklant_id": {
+      "type": "string",
+      "description": "ID van de eindklant"
+    },
+    "eindklant_naam": {
+      "type": "string",
+      "description": "Naam van de eindklant"
+    },
+    "beschrijving": {
+      "type": "string",
+      "description": "Beschrijving of locatie-instructies"
+    },
+    "toegewezen_werknemers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Lijst van werknemer IDs toegewezen aan deze werkplek"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "actief",
+        "inactief"
+      ],
+      "default": "actief"
+    }
+  },
+  "required": [
+    "naam",
+    "eindklant_id"
+  ]
+}

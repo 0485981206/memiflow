@@ -26,6 +26,9 @@ import Workspace from './pages/Workspace';
 import Finance from './pages/Finance';
 import Location from './pages/location/Location';
 import KlantPincodes from './pages/KlantPincodes';
+import Werkspots from './pages/Werkspots';
+import NfcBadges from './pages/NfcBadges';
+import NfcCheckin from './pages/NfcCheckin';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -76,10 +79,13 @@ const AuthenticatedApp = () => {
           <Route path="/workspace" element={<Workspace />} />
           <Route path="/finance" element={<Finance />} />
           <Route path="/klant-pincodes" element={<KlantPincodes />} />
+          <Route path="/werkspots" element={<Werkspots />} />
+          <Route path="/nfc-badges" element={<NfcBadges />} />
           <Route path="/acerta/kalender" element={<AcertaKalender />} />
         </Route>
       </Route>
       <Route path="/location" element={<Location />} />
+      <Route path="/nfc" element={<NfcCheckin />} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

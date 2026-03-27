@@ -20,7 +20,9 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Euro,
-  Key
+  Key,
+  MapPin,
+  Nfc
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -44,11 +46,13 @@ const instellingenMenu = [
   { label: "Algemeen", path: "/instellingen" },
   { label: "Werknemers", path: "/werknemers" },
   { label: "Plaatsingen", path: "/plaatsingen" },
+  { label: "Werkspots", path: "/werkspots" },
+  { label: "NFC Badges", path: "/nfc-badges" },
   { label: "Codes", path: "/prestaties/codes" },
   { label: "PDF Import", path: "/prestaties/import" },
 ];
 
-const instellingenPaths = ["/instellingen", "/werknemers", "/plaatsingen", "/prestaties/codes", "/prestaties/import"];
+const instellingenPaths = ["/instellingen", "/werknemers", "/plaatsingen", "/werkspots", "/nfc-badges", "/prestaties/codes", "/prestaties/import"];
 
 const beheerMenu = [
   { label: "Loonfiches", path: "/loonfiches", icon: FileText },
@@ -301,6 +305,24 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
           onClick={() => setMobileOpen(false)}
         >
           <span>Pincodes</span>
+        </Link>
+        <Link
+          to="/werkspots"
+          className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
+            location.pathname === "/werkspots" ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <span>Werkspots</span>
+        </Link>
+        <Link
+          to="/nfc-badges"
+          className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
+            location.pathname === "/nfc-badges" ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+          }`}
+          onClick={() => setMobileOpen(false)}
+        >
+          <span>NFC Badges</span>
         </Link>
 
         {/* Finance */}
