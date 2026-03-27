@@ -89,20 +89,24 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   // Check-in: all assigned werknemers of the werkspot
   const handleCheckin = async (werkspot) => {
     const ids = werkspot.toegewezen_werknemers || [];
+    console.log("Check-in clicked, werkspot:", werkspot.naam, "ids:", ids);
     if (ids.length === 0) return;
     setCheckinLoading(true);
 
     const tijdelijkIdSet = new Set(tijdelijkeWerknemers.map(t => t.id));
     const regularIds = ids.filter(id => !tijdelijkIdSet.has(id));
     const tijdelijkIds = ids.filter(id => tijdelijkIdSet.has(id));
+    console.log("Regular IDs:", regularIds, "Tijdelijk IDs:", tijdelijkIds);
 
     if (regularIds.length > 0) {
-      await base44.functions.invoke("klokRegistratie", {
+      console.log("Calling klokRegistratie start for", regularIds.length, "werknemers");
+      const res = await base44.functions.invoke("klokRegistratie", {
         action: "start",
         werknemer_ids: regularIds,
         eindklant_id: klant.id,
         eindklant_naam: klant.naam,
       });
+      console.log("klokRegistratie response:", res.data);
     }
 
     for (const id of tijdelijkIds) {
@@ -116,7 +120,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     }
 
     setCheckinLoading(false);
-    loadRegistraties();
+    await loadRegistraties();
     loadTijdelijkeWerknemers();
   };
 
