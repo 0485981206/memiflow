@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { MapPin, Trash2, Users, UserPlus, X, Check, Search, LogIn, AlertTriangle } from "lucide-react";
+import { Trash2, Users, UserPlus, X, Check, Search, LogIn, AlertTriangle } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const SPOT_COLORS = [
   { border: "border-l-blue-500", dot: "bg-blue-500" },
@@ -20,6 +21,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
   const [assignedSearch, setAssignedSearch] = useState("");
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   const assigned = werkspot.toegewezen_werknemers || [];
 
@@ -80,7 +82,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
           <div className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? "bg-green-500" : spotColor.dot}`} />
           <span className="font-semibold text-sm">{werkspot.naam}</span>
         </div>
-        <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => onDelete(werkspot.id)}>
+        <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => setDeleteConfirmOpen(true)}>
           <Trash2 className="w-3.5 h-3.5" />
         </Button>
       </div>
@@ -194,6 +196,22 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
           <AlertTriangle className="w-3.5 h-3.5" />
         </Button>
       </div>
+
+      {/* Delete confirmation */}
+      <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Werkspot verwijderen?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Weet je zeker dat je <strong>{werkspot.naam}</strong> wilt verwijderen? Dit kan niet ongedaan worden gemaakt.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+            <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90" onClick={() => onDelete(werkspot.id)}>Verwijderen</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

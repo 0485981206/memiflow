@@ -91,14 +91,35 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     const ids = werkspot.toegewezen_werknemers || [];
     if (ids.length === 0) return;
     setCheckinLoading(true);
-    await base44.functions.invoke("klokRegistratie", {
-      action: "start",
-      werknemer_ids: ids,
-      eindklant_id: klant.id,
-      eindklant_naam: klant.naam,
-    });
+
+    // Split IDs into regular employees and tijdelijke werknemers
+    const regularIds = ids.filter(id => werknemers.some(w => w.id === id));
+    const tijdelijkIds = ids.filter(id => tijdelijkeWerknemers.some(t => t.id === id));
+
+    // Start regular employees
+    if (regularIds.length > 0) {
+      await base44.functions.invoke("klokRegistratie", {
+        action: "start",
+        werknemer_ids: regularIds,
+        eindklant_id: klant.id,
+        eindklant_naam: klant.naam,
+      });
+    }
+
+    // Start tijdelijke werknemers
+    for (const id of tijdelijkIds) {
+      const t = tijdelijkeWerknemers.find(tw => tw.id === id);
+      if (t && t.status === "nieuw") {
+        await base44.functions.invoke("tijdelijkeWerknemer", {
+          action: "start",
+          id,
+        });
+      }
+    }
+
     setCheckinLoading(false);
     loadRegistraties();
+    loadTijdelijkeWerknemers();
   };
 
   // Afwijking: open sheet for each werknemer in the werkspot
