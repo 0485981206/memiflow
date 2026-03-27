@@ -111,15 +111,15 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
               )}
             </div>
             <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
-              {[1, 3, 7, 14].map(d => (
+              {[{days: 1, label: "Vandaag"}, {days: 2, label: "Gisteren"}, {days: 3, label: "3d"}, {days: 7, label: "7d"}, {days: 14, label: "14d"}].map(({days, label}) => (
                 <button
-                  key={d}
-                  onClick={() => setNumDays(d)}
+                  key={days}
+                  onClick={() => setNumDays(days)}
                   className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
-                    numDays === d ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+                    numDays === days ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"
                   }`}
                 >
-                  {d === 1 ? "Vandaag" : `${d}d`}
+                  {label}
                 </button>
               ))}
             </div>
