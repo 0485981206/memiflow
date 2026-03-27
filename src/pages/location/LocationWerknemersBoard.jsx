@@ -31,7 +31,7 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
   const [werkspots, setWerkspots] = useState([]);
   const [search, setSearch] = useState("");
   const [filterWerkspot, setFilterWerkspot] = useState("all");
-  const [viewMode, setViewMode] = useState("grid");
+  const [viewMode, setViewMode] = useState("list");
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [afwijkingEmployee, setAfwijkingEmployee] = useState(null);
   
