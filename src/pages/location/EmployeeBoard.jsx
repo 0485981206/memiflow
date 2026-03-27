@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, User } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 
@@ -15,8 +16,19 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
       </div>
     );
   }
+
   const [selected, setSelected] = useState([]);
-  const [mode, setMode] = useState(null); // 'start' or 'stop'
+  const [mode, setMode] = useState(null);
+  const [search, setSearch] = useState("");
+
+  const filteredWerknemers = useMemo(() => {
+    if (!search.trim()) return werknemers;
+    const q = search.toLowerCase();
+    return werknemers.filter((w) =>
+      (w.naam || "").toLowerCase().includes(q) ||
+      (w.functie || "").toLowerCase().includes(q)
+    );
+  }, [werknemers, search]);
 
   const actieveMap = {};
   actieveRegistraties.forEach((r) => {
@@ -29,18 +41,13 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     );
   };
 
-  const selectAll = () => {
-    if (mode === "stop") {
-      setSelected(Object.keys(actieveMap));
-    } else {
-      const notStarted = werknemers.filter((w) => !actieveMap[w.id]).map((w) => w.id);
-      setSelected(notStarted);
-    }
-  };
-
   const handleAction = async (action) => {
-    if (selected.length === 0) return;
-    await onAction(action, selected);
+    const ids = action === "start"
+      ? selected.filter((id) => !actieveMap[id])
+      : selected.filter((id) => !!actieveMap[id]);
+    if (ids.length === 0) return;
+    setMode(action);
+    await onAction(action, ids);
     setSelected([]);
     setMode(null);
   };
@@ -69,61 +76,72 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
         </div>
       </div>
 
-      {/* Action bar */}
-      <div className="bg-white border-b px-4 py-3 flex items-center gap-3 flex-wrap">
-        {!mode ? (
-          <>
-            <Button onClick={() => setMode("start")} className="bg-green-600 hover:bg-green-700 gap-2">
-              <Play className="w-4 h-4" /> Start werknemers
-            </Button>
-            <Button onClick={() => setMode("stop")} variant="destructive" className="gap-2" disabled={gestartCount === 0}>
-              <Square className="w-4 h-4" /> Stop werknemers
-            </Button>
-          </>
-        ) : (
-          <>
-            <p className="text-sm font-medium text-gray-700">
-              {mode === "start" ? "Selecteer werknemers om te starten:" : "Selecteer werknemers om te stoppen:"}
-            </p>
-            <Button size="sm" variant="outline" onClick={selectAll}>Selecteer alles</Button>
-            <Button size="sm" variant="outline" onClick={() => { setMode(null); setSelected([]); }}>Annuleer</Button>
-            <Button
-              size="sm"
-              className={mode === "start" ? "bg-green-600 hover:bg-green-700 gap-1" : "bg-red-600 hover:bg-red-700 gap-1"}
-              onClick={() => handleAction(mode)}
-              disabled={selected.length === 0 || actionLoading}
-            >
-              {actionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-              {mode === "start" ? `Start (${selected.length})` : `Stop (${selected.length})`}
-            </Button>
-          </>
-        )}
+      {/* Search + Action bar */}
+      <div className="bg-white border-b px-4 py-3 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Zoek werknemer..."
+            className="pl-9 pr-9 h-10"
+          />
+          {search && (
+            <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          {selected.length > 0 ? (
+            <>
+              <Button
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 gap-1"
+                onClick={() => handleAction("start")}
+                disabled={actionLoading || selected.every((id) => !!actieveMap[id])}
+              >
+                {actionLoading && mode === "start" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
+                Start ({selected.filter((id) => !actieveMap[id]).length})
+              </Button>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1"
+                onClick={() => handleAction("stop")}
+                disabled={actionLoading || selected.every((id) => !actieveMap[id])}
+              >
+                {actionLoading && mode === "stop" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
+                Stop ({selected.filter((id) => !!actieveMap[id]).length})
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => setSelected([])}>
+                Deselecteer ({selected.length})
+              </Button>
+            </>
+          ) : (
+            <p className="text-sm text-gray-400">Tik op werknemers om te selecteren</p>
+          )}
+        </div>
       </div>
 
       {/* Employee grid */}
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
-        {werknemers.map((w) => {
+        {filteredWerknemers.map((w) => {
           const isActive = !!actieveMap[w.id];
           const reg = actieveMap[w.id];
           const isSelected = selected.includes(w.id);
-          const isSelectable = mode === "start" ? !isActive : isActive;
 
           return (
             <div
               key={w.id}
-              onClick={() => mode && isSelectable && toggleSelect(w.id)}
-              className={`rounded-xl border-2 p-4 text-center transition-all duration-200 ${
-                mode && !isSelectable
-                  ? "opacity-30 cursor-not-allowed"
-                  : mode
-                  ? "cursor-pointer"
-                  : ""
-              } ${
+              onClick={() => toggleSelect(w.id)}
+              className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer ${
                 isSelected
                   ? "border-blue-500 bg-blue-50 shadow-md"
                   : isActive
                   ? "border-green-300 bg-green-50"
-                  : "border-gray-200 bg-white"
+                  : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
               <div
