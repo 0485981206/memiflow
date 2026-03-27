@@ -3,7 +3,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { eindklant_id } = await req.json();
+    const { eindklant_id, action, record_id, field, value } = await req.json();
+
+    // Update time action
+    if (action === 'update_time' && record_id && field && value) {
+      const record = await base44.asServiceRole.entities.Klokregistratie.filter({ id: record_id });
+      if (!record.length) return Response.json({ error: 'Record niet gevonden' }, { status: 404 });
+      await base44.asServiceRole.entities.Klokregistratie.update(record_id, { [field]: value });
+      return Response.json({ ok: true });
+    }
 
     if (!eindklant_id) {
       return Response.json({ error: 'Missende eindklant_id' }, { status: 400 });

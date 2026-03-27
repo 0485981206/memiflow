@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Clock, Loader2, CheckCircle2, ArrowRight } from "lucide-react";
+import { Clock, Loader2, CheckCircle2, ArrowRight, Pencil, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
 export default function LocationRecords({ klant, onNavigate, onLogout }) {
@@ -22,8 +24,26 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
   }, [klant.id]);
 
   const now = new Date();
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setTick((p) => p + 1), 1000);
+    return () => clearInterval(t);
+  }, []);
+
   const actief = records.filter((r) => r.status === "gestart");
   const gestopt = records.filter((r) => r.status === "gestopt");
+
+  const handleUpdateTime = async (recordId, field, value) => {
+    await base44.functions.invoke("locationRecords", {
+      action: "update_time",
+      record_id: recordId,
+      field,
+      value,
+    });
+    // Reload
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
+    setRecords(res.data.records || []);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -55,7 +75,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
                   </h2>
                   <div className="space-y-2">
                     {actief.map((r) => (
-                      <RecordRow key={r.id} record={r} />
+                      <RecordRow key={r.id} record={r} tick={tick} onUpdateTime={handleUpdateTime} />
                     ))}
                   </div>
                 </div>
@@ -65,7 +85,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
                   <h2 className="text-sm font-semibold text-gray-500 mb-3">Gestopt ({gestopt.length})</h2>
                   <div className="space-y-2">
                     {gestopt.map((r) => (
-                      <RecordRow key={r.id} record={r} />
+                      <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} />
                     ))}
                   </div>
                 </div>
@@ -78,8 +98,24 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
   );
 }
 
-function RecordRow({ record }) {
+function RecordRow({ record, tick, onUpdateTime }) {
   const isActive = record.status === "gestart";
+  const [editField, setEditField] = useState(null);
+  const [editValue, setEditValue] = useState("");
+
+  const handleEdit = (field) => {
+    setEditField(field);
+    setEditValue(field === "start_tijd" ? record.start_tijd : record.stop_tijd || "");
+  };
+
+  const handleSave = () => {
+    if (editValue && /^\d{2}:\d{2}$/.test(editValue)) {
+      onUpdateTime(record.id, editField, editValue);
+    }
+    setEditField(null);
+  };
+
+  const handleCancel = () => setEditField(null);
 
   return (
     <div className={`bg-white rounded-lg border p-3 flex items-center justify-between ${isActive ? "border-green-200" : "border-gray-200"}`}>
@@ -91,31 +127,85 @@ function RecordRow({ record }) {
           <p className="text-sm font-medium">{record.werknemer_naam}</p>
           <div className="flex items-center gap-1 text-xs text-gray-400">
             <Clock className="w-3 h-3" />
-            <span>{record.start_tijd}</span>
-            {record.stop_tijd && (
+            {editField === "start_tijd" ? (
+              <TimeEditor value={editValue} onChange={setEditValue} onSave={handleSave} onCancel={handleCancel} />
+            ) : (
+              <button onClick={() => handleEdit("start_tijd")} className="hover:text-blue-500 flex items-center gap-0.5">
+                {record.start_tijd} <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />
+              </button>
+            )}
+            {(record.stop_tijd || isActive) && (
               <>
                 <ArrowRight className="w-3 h-3" />
-                <span>{record.stop_tijd}</span>
+                {record.stop_tijd ? (
+                  editField === "stop_tijd" ? (
+                    <TimeEditor value={editValue} onChange={setEditValue} onSave={handleSave} onCancel={handleCancel} />
+                  ) : (
+                    <button onClick={() => handleEdit("stop_tijd")} className="hover:text-blue-500">
+                      {record.stop_tijd}
+                    </button>
+                  )
+                ) : (
+                  <span className="text-green-600 font-medium">nu</span>
+                )}
               </>
             )}
           </div>
         </div>
       </div>
-      {record.stop_tijd && record.start_tijd && (
-        <span className="text-xs font-medium text-gray-500">
-          {calcHours(record.start_tijd, record.stop_tijd)}u
-        </span>
-      )}
-      {isActive && (
-        <span className="text-xs text-green-600 font-medium animate-pulse">Actief</span>
-      )}
+      <div className="text-right">
+        {isActive && record.start_tijd && (
+          <LiveTimer startTime={record.start_tijd} />
+        )}
+        {!isActive && record.stop_tijd && record.start_tijd && (
+          <span className="text-sm font-semibold text-gray-600">
+            {formatDuration(record.start_tijd, record.stop_tijd)}
+          </span>
+        )}
+        {isActive && (
+          <p className="text-[10px] text-green-600 font-medium animate-pulse">Actief</p>
+        )}
+      </div>
     </div>
   );
 }
 
-function calcHours(start, stop) {
+function TimeEditor({ value, onChange, onSave, onCancel }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <Input
+        type="time"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="h-6 w-20 text-xs px-1 py-0"
+        autoFocus
+      />
+      <button onClick={onSave} className="text-green-500 hover:text-green-700"><Check className="w-3.5 h-3.5" /></button>
+      <button onClick={onCancel} className="text-red-400 hover:text-red-600"><X className="w-3.5 h-3.5" /></button>
+    </span>
+  );
+}
+
+function LiveTimer({ startTime }) {
+  const [sh, sm] = startTime.split(":").map(Number);
+  const now = new Date();
+  const startMins = sh * 60 + sm;
+  const nowMins = now.getHours() * 60 + now.getMinutes();
+  const elapsed = Math.max(0, nowMins - startMins);
+  const h = Math.floor(elapsed / 60);
+  const m = elapsed % 60;
+  return (
+    <span className="text-sm font-bold text-green-600 tabular-nums">
+      {String(h).padStart(2, "0")}:{String(m).padStart(2, "0")}
+    </span>
+  );
+}
+
+function formatDuration(start, stop) {
   const [sh, sm] = start.split(":").map(Number);
   const [eh, em] = stop.split(":").map(Number);
-  const mins = (eh * 60 + em) - (sh * 60 + sm);
-  return (Math.round((mins / 60) * 100) / 100).toFixed(1);
+  const mins = Math.max(0, (eh * 60 + em) - (sh * 60 + sm));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  return `${h}u${String(m).padStart(2, "0")}m`;
 }
