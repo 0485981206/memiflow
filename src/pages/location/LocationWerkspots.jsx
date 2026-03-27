@@ -162,13 +162,31 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           {search.trim() && (() => {
             const q = search.toLowerCase();
             const matchedEmployees = werknemers.filter(w => (w.naam || "").toLowerCase().includes(q));
-            if (matchedEmployees.length === 0) return null;
+            const matchedTijdelijk = tijdelijkeWerknemers.filter(t => `${t.voornaam} ${t.achternaam}`.toLowerCase().includes(q));
+            if (matchedEmployees.length === 0 && matchedTijdelijk.length === 0) return null;
             return (
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
                 <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider flex items-center gap-1">
-                  <User className="w-3 h-3" /> Gevonden werknemers
+                  <User className="w-3 h-3" /> Gevonden werknemers ({matchedEmployees.length + matchedTijdelijk.length})
                 </p>
                 <div className="space-y-1">
+                  {matchedTijdelijk.map(t => (
+                    <div key={`t-${t.id}`} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
+                      <span className="font-medium">{t.voornaam} {t.achternaam} <span className="text-[10px] text-orange-500 font-medium">(tijdelijk)</span></span>
+                      {(() => {
+                        const ws = werkspots.find(ws => (ws.toegewezen_werknemers || []).includes(t.id));
+                        return ws ? (
+                          <span className="text-green-600 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {ws.naam}
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> Niet toegewezen
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  ))}
                   {matchedEmployees.map(w => {
                     const assignedWerkspot = werkspots.find(ws => (ws.toegewezen_werknemers || []).includes(w.id));
                     return (
