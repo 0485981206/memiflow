@@ -1,11 +1,46 @@
-import React, { useState } from "react";
-import { Delete, LogIn, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { Delete, LogIn, Loader2, ShieldAlert } from "lucide-react";
 
 export default function PincodeLogin({ onLogin, error, loading }) {
   const [pin, setPin] = useState("");
+  const [attempts, setAttempts] = useState(0);
+  const [locked, setLocked] = useState(false);
+  const [countdown, setCountdown] = useState(0);
+  const timerRef = useRef(null);
+
+  useEffect(() => {
+    if (locked && countdown > 0) {
+      timerRef.current = setInterval(() => {
+        setCountdown((c) => {
+          if (c <= 1) {
+            clearInterval(timerRef.current);
+            setLocked(false);
+            setAttempts(0);
+            return 0;
+          }
+          return c - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timerRef.current);
+    }
+  }, [locked, countdown]);
+
+  // Track failed attempts when error changes
+  const prevError = useRef(error);
+  useEffect(() => {
+    if (error && error !== prevError.current) {
+      const newAttempts = attempts + 1;
+      setAttempts(newAttempts);
+      if (newAttempts >= 3) {
+        setLocked(true);
+        setCountdown(60);
+      }
+    }
+    prevError.current = error;
+  }, [error]);
 
   const handleDigit = (d) => {
+    if (locked || loading) return;
     if (pin.length < 6) {
       const newPin = pin + d;
       setPin(newPin);
@@ -41,9 +76,20 @@ export default function PincodeLogin({ onLogin, error, loading }) {
           ))}
         </div>
 
-        {error && (
-          <p className="text-center text-sm text-red-500 mb-4 font-medium">{error}</p>
-        )}
+        {locked ? (
+          <div className="text-center mb-4 p-3 bg-red-50 rounded-xl">
+            <ShieldAlert className="w-6 h-6 text-red-500 mx-auto mb-1" />
+            <p className="text-sm text-red-600 font-semibold">Te veel pogingen</p>
+            <p className="text-xs text-red-500 mt-1">Probeer opnieuw over <span className="font-bold text-lg">{countdown}</span> seconden</p>
+          </div>
+        ) : error ? (
+          <div className="text-center mb-4">
+            <p className="text-sm text-red-500 font-medium">{error}</p>
+            {attempts > 0 && attempts < 3 && (
+              <p className="text-xs text-gray-400 mt-1">Poging {attempts}/3</p>
+            )}
+          </div>
+        ) : null}
 
         {/* Numpad */}
         <div className="grid grid-cols-3 gap-3 mb-4">
@@ -51,7 +97,7 @@ export default function PincodeLogin({ onLogin, error, loading }) {
             <button
               key={n}
               onClick={() => handleDigit(String(n))}
-              disabled={loading}
+              disabled={loading || locked}
               className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-2xl font-semibold text-gray-800 transition-all duration-150"
             >
               {n}
@@ -59,22 +105,22 @@ export default function PincodeLogin({ onLogin, error, loading }) {
           ))}
           <button
             onClick={handleClear}
-            disabled={loading}
-            className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-500 transition-all"
+            disabled={loading || locked}
+            className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 text-xs font-medium text-gray-500 transition-all disabled:opacity-40"
           >
             Wis
           </button>
           <button
             onClick={() => handleDigit("0")}
-            disabled={loading}
-            className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-2xl font-semibold text-gray-800 transition-all duration-150"
+            disabled={loading || locked}
+            className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-2xl font-semibold text-gray-800 transition-all duration-150 disabled:opacity-40"
           >
             0
           </button>
           <button
             onClick={handleDelete}
-            disabled={loading}
-            className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-all"
+            disabled={loading || locked}
+            className="h-16 rounded-xl bg-gray-50 hover:bg-gray-100 flex items-center justify-center text-gray-500 transition-all disabled:opacity-40"
           >
             <Delete className="w-6 h-6" />
           </button>
