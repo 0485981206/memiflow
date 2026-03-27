@@ -126,18 +126,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
           </Sheet>
         </div>
 
-        {assignedWerknemers.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {assignedWerknemers.map((w) => (
-              <span key={w.id} className="inline-flex items-center gap-1 bg-gray-100 rounded-full px-2.5 py-1 text-xs text-gray-700">
-                {w.naam}
-                <button onClick={() => onRemoveWorker(werkspot.id, w.id)} className="text-gray-400 hover:text-red-500 transition-colors">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-        )}
+
       </div>
 
       {/* Action buttons */}
