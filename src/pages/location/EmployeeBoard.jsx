@@ -238,8 +238,8 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
         {/* Add tijdelijk button - always first */}
         <div
-          onClick={() => setShowTijdelijkForm(true)}
-          className="rounded-xl border-2 border-dashed border-orange-300 p-4 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors flex flex-col items-center justify-center gap-2"
+          onClick={() => { if (navigator.vibrate) navigator.vibrate(8); setShowTijdelijkForm(true); }}
+          className="rounded-xl border-2 border-dashed border-orange-300 p-4 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-all duration-150 active:scale-[0.97] active:brightness-95 select-none touch-manipulation flex flex-col items-center justify-center gap-2"
         >
           <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-orange-100 text-orange-500">
             <UserPlus className="w-6 h-6" />
@@ -256,8 +256,8 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           return (
           <div
             key={`tmp-${t.id}`}
-            onClick={() => setSelectedTijdelijk(t)}
-            className={`rounded-xl border-2 p-4 text-center relative cursor-pointer ${
+            onClick={() => { if (navigator.vibrate) navigator.vibrate(5); setSelectedTijdelijk(t); }}
+            className={`rounded-xl border-2 p-4 text-center relative cursor-pointer transition-all duration-150 active:scale-[0.97] active:brightness-95 select-none touch-manipulation ${
               isSelected ? "border-blue-500 bg-blue-50 shadow-md" :
               isNieuw ? "border-orange-200 bg-orange-50/50" :
               isUitgecheckt ? "border-gray-300 bg-gray-50 opacity-70" : "border-orange-300 bg-orange-50"
@@ -323,14 +323,14 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           return (
             <div
               key={w.id}
-              onClick={() => setSelectedEmployee(w)}
-              className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer relative group ${
-                isSelected
-                  ? "border-blue-500 bg-blue-50 shadow-md"
-                  : isCheckedIn
-                  ? "border-green-300 bg-green-50"
-                  : "border-gray-200 bg-white hover:border-gray-300"
-              }`}
+              onClick={() => { if (navigator.vibrate) navigator.vibrate(5); setSelectedEmployee(w); }}
+              className={`rounded-xl border-2 p-4 text-center transition-all duration-150 cursor-pointer relative group active:scale-[0.97] active:brightness-95 select-none touch-manipulation ${
+                  isSelected
+                    ? "border-blue-500 bg-blue-50 shadow-md"
+                    : isCheckedIn
+                    ? "border-green-300 bg-green-50"
+                    : "border-gray-200 bg-white hover:border-gray-300"
+                }`}
             >
               <input
                 type="checkbox"
@@ -370,8 +370,8 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
             {inactieveWerknemers.map((w) => (
               <div
                 key={w.id}
-                onClick={() => setSelectedEmployee(w)}
-                className="rounded-xl border-2 border-gray-200 bg-gray-100 p-4 text-center cursor-pointer hover:border-gray-300 relative opacity-60"
+                onClick={() => { if (navigator.vibrate) navigator.vibrate(5); setSelectedEmployee(w); }}
+                className="rounded-xl border-2 border-gray-200 bg-gray-100 p-4 text-center cursor-pointer hover:border-gray-300 transition-all duration-150 active:scale-[0.97] select-none touch-manipulation relative opacity-60"
               >
                 <div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg bg-gray-400">
                   {(w.naam || "?").charAt(0)}

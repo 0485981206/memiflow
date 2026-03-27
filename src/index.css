@@ -85,5 +85,37 @@
 
   body {
     @apply bg-background text-foreground font-inter;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* Touch feedback & micro-interactions */
+@layer utilities {
+  .interactive-card {
+    @apply transition-all duration-150 cursor-pointer select-none;
+  }
+  .interactive-card:active {
+    transform: scale(0.985);
+    filter: brightness(0.97);
+  }
+
+  .interactive-row {
+    @apply transition-all duration-100 cursor-pointer select-none;
+  }
+  .interactive-row:active {
+    @apply bg-muted/60;
+    transform: scale(0.995);
+  }
+
+  .interactive-icon {
+    @apply transition-all duration-150 cursor-pointer select-none;
+  }
+  .interactive-icon:active {
+    transform: scale(0.85);
+    opacity: 0.7;
+  }
+
+  .touch-manipulation {
+    touch-action: manipulation;
   }
 }

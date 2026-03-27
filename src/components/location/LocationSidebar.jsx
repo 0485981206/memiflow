@@ -34,8 +34,8 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
               <Tooltip key={item.id} delayDuration={0}>
                 <TooltipTrigger asChild>
                   <button
-                    onClick={() => onNavigate?.(item.id)}
-                    className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
+                    onClick={() => { if (navigator.vibrate) navigator.vibrate(8); onNavigate?.(item.id); }}
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-150 active:scale-90 select-none touch-manipulation ${
                       isActive
                         ? "bg-white/20 text-white shadow-lg"
                         : "text-white/60 hover:text-white hover:bg-white/10"
@@ -55,7 +55,7 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
               <button
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors mb-1 disabled:opacity-50"
+                className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all duration-150 active:scale-90 select-none touch-manipulation mb-1 disabled:opacity-50"
               >
                 <RefreshCw className={`w-7 h-7 ${refreshing ? "animate-spin" : ""}`} />
               </button>
@@ -66,8 +66,8 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>
             <button
-              onClick={onLogout}
-              className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors mb-3"
+              onClick={() => { if (navigator.vibrate) navigator.vibrate(8); onLogout?.(); }}
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-all duration-150 active:scale-90 select-none touch-manipulation mb-3"
             >
               <LogOut className="w-7 h-7" />
             </button>

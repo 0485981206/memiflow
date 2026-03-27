@@ -47,7 +47,7 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
 
   return (
     <div className={`rounded-xl border overflow-hidden ${hasActiveWorker ? "border-green-300 bg-green-50/50" : "border-gray-200 bg-white"}`}>
-      <button onClick={() => setExpanded(!expanded)} className={`w-full px-4 py-3 flex items-center justify-between ${hasActiveWorker ? "bg-green-100/60" : "bg-gray-50"}`}>
+      <button onClick={() => { if (navigator.vibrate) navigator.vibrate(5); setExpanded(!expanded); }} className={`w-full px-4 py-3 flex items-center justify-between transition-all duration-150 active:brightness-95 select-none touch-manipulation ${hasActiveWorker ? "bg-green-100/60" : "bg-gray-50"}`}>
         <div className="flex items-center gap-2">
           <ChevronRight className={`w-4 h-4 transition-transform ${expanded ? "rotate-90" : ""} ${hasActiveWorker ? "text-green-600" : "text-gray-400"}`} />
           <MapPin className={`w-4 h-4 ${hasActiveWorker ? "text-green-600" : "text-gray-400"}`} />
@@ -82,7 +82,7 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
               const startTijd = reg?.start_tijd || (isTijdelijk ? w.start_tijd : null);
 
               return (
-                <div key={w.id} className="px-4 py-2.5 flex items-center justify-between">
+                <div key={w.id} className="px-4 py-2.5 flex items-center justify-between transition-colors duration-100 hover:bg-gray-50 active:bg-gray-100">
                   <div className="flex items-center gap-2.5">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${isActive ? "bg-green-500" : "bg-gray-300"}`}>
                       {(w.naam || "?").charAt(0)}

@@ -76,7 +76,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
   const spotColor = SPOT_COLORS[colorIndex % SPOT_COLORS.length];
 
   return (
-    <div className={`rounded-xl border p-4 flex flex-col gap-3 transition-colors border-l-4 ${
+    <div className={`rounded-xl border p-4 flex flex-col gap-3 transition-all duration-150 border-l-4 ${
       isCheckedIn
         ? "bg-green-50 border-green-300 border-l-green-500"
         : `bg-white border-gray-200 ${spotColor.border}`
@@ -155,7 +155,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
                           <button
                             key={w.id}
                             onClick={() => toggleSelect(w.id)}
-                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-colors border-b last:border-b-0 ${isChecked ? "bg-blue-50" : ""}`}
+                            className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-gray-50 transition-all duration-100 active:bg-gray-100 select-none touch-manipulation border-b last:border-b-0 ${isChecked ? "bg-blue-50" : ""}`}
                           >
                             <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${isChecked ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}>
                               {isChecked && <Check className="w-3 h-3 text-white" />}
