@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { toast } from "sonner";
+import { useToast } from "@/components/ui/use-toast";
 import { CircleUserRound, MapPin, ClipboardList, LogOut, UserPlus, Nfc, RefreshCw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -13,13 +13,14 @@ const items = [
 
 export default function LocationSidebar({ activePage = "home", onNavigate, onLogout, onRefresh }) {
   const [refreshing, setRefreshing] = useState(false);
+  const { toast } = useToast();
 
   const handleRefresh = async () => {
     if (refreshing || !onRefresh) return;
     setRefreshing(true);
     await onRefresh();
     setRefreshing(false);
-    toast.success("Vernieuwen gelukt");
+    toast({ title: "Vernieuwen gelukt", duration: 2000 });
   };
 
   return (
