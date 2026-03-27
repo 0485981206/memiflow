@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, MapPin, Loader2, Users, UserPlus, X } from "lucide-react";
+import { Plus, MapPin, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import LocationSidebar from "../../components/location/LocationSidebar";
 import WerkspotCard from "../../components/location/WerkspotCard";
+import AfwijkingSheet from "../../components/location/AfwijkingSheet";
 
 export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout }) {
   const [werkspots, setWerkspots] = useState([]);
@@ -15,6 +16,14 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [naam, setNaam] = useState("");
   const [beschrijving, setBeschrijving] = useState("");
   const [saving, setSaving] = useState(false);
+  const [checkinLoading, setCheckinLoading] = useState(false);
+
+  // Afwijking state
+  const [afwijkingOpen, setAfwijkingOpen] = useState(false);
+  const [afwijkingWerkspot, setAfwijkingWerkspot] = useState(null);
+  const [afwijkingWerknemer, setAfwijkingWerknemer] = useState(null);
+  const [afwijkingQueue, setAfwijkingQueue] = useState([]);
+  const [afwijkingQueueIndex, setAfwijkingQueueIndex] = useState(0);
 
   const loadWerkspots = async () => {
     setLoading(true);
@@ -46,29 +55,69 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   };
 
   const handleDelete = async (id) => {
-    await base44.functions.invoke("locationWerkspots", {
-      action: "delete",
-      werkspot_id: id,
-    });
+    await base44.functions.invoke("locationWerkspots", { action: "delete", werkspot_id: id });
     loadWerkspots();
   };
 
   const handleAssign = async (werkspotId, werknemer_ids) => {
-    await base44.functions.invoke("locationWerkspots", {
-      action: "assign",
-      werkspot_id: werkspotId,
-      werknemer_ids,
-    });
+    await base44.functions.invoke("locationWerkspots", { action: "assign", werkspot_id: werkspotId, werknemer_ids });
     loadWerkspots();
   };
 
   const handleRemoveWorker = async (werkspotId, werknemerId) => {
-    await base44.functions.invoke("locationWerkspots", {
-      action: "remove_worker",
-      werkspot_id: werkspotId,
-      werknemer_id: werknemerId,
-    });
+    await base44.functions.invoke("locationWerkspots", { action: "remove_worker", werkspot_id: werkspotId, werknemer_id: werknemerId });
     loadWerkspots();
+  };
+
+  // Check-in: all assigned werknemers of the werkspot
+  const handleCheckin = async (werkspot) => {
+    const ids = werkspot.toegewezen_werknemers || [];
+    if (ids.length === 0) return;
+    setCheckinLoading(true);
+    await base44.functions.invoke("klokRegistratie", {
+      action: "start",
+      werknemer_ids: ids,
+      eindklant_id: klant.id,
+      eindklant_naam: klant.naam,
+    });
+    setCheckinLoading(false);
+  };
+
+  // Afwijking: open sheet for each werknemer in the werkspot
+  const handleAfwijking = (werkspot) => {
+    const ids = werkspot.toegewezen_werknemers || [];
+    if (ids.length === 0) return;
+    const queue = ids.map((id) => {
+      const w = werknemers.find((w) => w.id === id);
+      return w ? { id: w.id, naam: w.naam } : { id, naam: "Onbekend" };
+    });
+    setAfwijkingWerkspot(werkspot);
+    setAfwijkingQueue(queue);
+    setAfwijkingQueueIndex(0);
+    setAfwijkingWerknemer(queue[0]);
+    setAfwijkingOpen(true);
+  };
+
+  const handleAfwijkingDone = () => {
+    const nextIndex = afwijkingQueueIndex + 1;
+    if (nextIndex < afwijkingQueue.length) {
+      setAfwijkingQueueIndex(nextIndex);
+      setAfwijkingWerknemer(afwijkingQueue[nextIndex]);
+    } else {
+      setAfwijkingOpen(false);
+      setAfwijkingWerkspot(null);
+      setAfwijkingWerknemer(null);
+      setAfwijkingQueue([]);
+      setAfwijkingQueueIndex(0);
+    }
+  };
+
+  const handleAfwijkingClose = () => {
+    setAfwijkingOpen(false);
+    setAfwijkingWerkspot(null);
+    setAfwijkingWerknemer(null);
+    setAfwijkingQueue([]);
+    setAfwijkingQueueIndex(0);
   };
 
   return (
@@ -105,6 +154,8 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                   onDelete={handleDelete}
                   onAssign={handleAssign}
                   onRemoveWorker={handleRemoveWorker}
+                  onCheckin={handleCheckin}
+                  onAfwijking={handleAfwijking}
                 />
               ))}
             </div>
@@ -132,6 +183,16 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Afwijking Sheet - walks through each werknemer */}
+        <AfwijkingSheet
+          isOpen={afwijkingOpen}
+          onClose={handleAfwijkingClose}
+          werknemer={afwijkingWerknemer}
+          klant={klant}
+          werkspot={afwijkingWerkspot}
+          onAfwijkingDone={handleAfwijkingDone}
+        />
       </div>
     </div>
   );

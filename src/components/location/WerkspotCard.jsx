@@ -1,10 +1,10 @@
 import React, { useState, useMemo } from "react";
-import { MapPin, Trash2, Users, UserPlus, X, Check, Search, LogIn } from "lucide-react";
+import { MapPin, Trash2, Users, UserPlus, X, Check, Search, LogIn, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAssign, onRemoveWorker, onCheckin }) {
+export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -66,7 +66,6 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
               </SheetHeader>
 
               <div className="py-4 space-y-4">
-                {/* Huidige toewijzingen */}
                 {assignedWerknemers.length > 0 && (
                   <div>
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Toegewezen ({assignedWerknemers.length})</p>
@@ -83,7 +82,6 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
                   </div>
                 )}
 
-                {/* Zoek en voeg toe */}
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Werknemer toevoegen</p>
                   <div className="relative mb-2">
@@ -147,8 +145,17 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
         <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setOpen(true)}>
           <UserPlus className="w-3.5 h-3.5" /> Toewijzen
         </Button>
-        <Button variant="default" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckin?.(werkspot.id, assigned)} disabled={assigned.length === 0}>
+        <Button variant="default" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckin?.(werkspot)} disabled={assigned.length === 0}>
           <LogIn className="w-3.5 h-3.5" /> Check-in
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
+          onClick={() => onAfwijking?.(werkspot)}
+          disabled={assigned.length === 0}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
         </Button>
       </div>
     </div>

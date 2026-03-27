@@ -1,0 +1,58 @@
+{
+  "name": "Afwijking",
+  "type": "object",
+  "properties": {
+    "werknemer_id": {
+      "type": "string",
+      "description": "ID van de werknemer"
+    },
+    "werknemer_naam": {
+      "type": "string",
+      "description": "Naam van de werknemer"
+    },
+    "eindklant_id": {
+      "type": "string",
+      "description": "ID van de eindklant"
+    },
+    "eindklant_naam": {
+      "type": "string",
+      "description": "Naam van de eindklant"
+    },
+    "werkspot_id": {
+      "type": "string",
+      "description": "ID van de werkspot"
+    },
+    "werkspot_naam": {
+      "type": "string",
+      "description": "Naam van de werkspot"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum van de afwijking"
+    },
+    "reden": {
+      "type": "string",
+      "description": "Reden van de afwijking"
+    },
+    "stop_tijd": {
+      "type": "string",
+      "description": "Tijdstip waarop gestopt werd (HH:mm)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "behandeld"
+      ],
+      "default": "open",
+      "description": "Status van de afwijking"
+    }
+  },
+  "required": [
+    "werknemer_id",
+    "eindklant_id",
+    "datum",
+    "reden"
+  ]
+}
