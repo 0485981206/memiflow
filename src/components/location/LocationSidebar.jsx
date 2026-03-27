@@ -20,7 +20,7 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
     setRefreshing(true);
     await onRefresh();
     setRefreshing(false);
-    toast({ title: "Vernieuwen gelukt", duration: 2000 });
+    toast({ title: "Vernieuwen gelukt", duration: 1000 });
   };
 
   return (
