@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
+  const [autoCheckinLoading, setAutoCheckinLoading] = useState(false);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -99,13 +100,17 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
       {/* Auto check-in toggle */}
       <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
         <div className="flex items-center gap-2">
-          <Timer className="w-3.5 h-3.5 text-muted-foreground" />
+          {autoCheckinLoading ? <Loader2 className="w-3.5 h-3.5 text-muted-foreground animate-spin" /> : <Timer className="w-3.5 h-3.5 text-muted-foreground" />}
           <span className="text-xs font-medium">Auto check-in (08:00)</span>
         </div>
         <Switch
           checked={!!werkspot.auto_checkin}
+          disabled={autoCheckinLoading}
           onCheckedChange={async (checked) => {
+            if (navigator.vibrate) navigator.vibrate(8);
+            setAutoCheckinLoading(true);
             await base44.entities.Werkspot.update(werkspot.id, { auto_checkin: checked });
+            setAutoCheckinLoading(false);
           }}
           className="scale-90"
         />
