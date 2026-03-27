@@ -3,15 +3,14 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
-import { Save, Loader2, Users } from "lucide-react";
+import { Save, Loader2, MapPin, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
-import PlanningSpotRow from "./PlanningSpotRow";
 
 export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindklantNaam, onSaved }) {
   const [aantallen, setAantallen] = useState({});
-  const [werknemerSelecties, setWerknemerSelecties] = useState({});
   const [saving, setSaving] = useState(false);
   const datumStr = format(datum, "yyyy-MM-dd");
 
@@ -21,52 +20,20 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
     enabled: !!eindklantId,
   });
 
-  // Fetch all werknemers for this klant (via plaatsingen)
-  const { data: allWerknemers = [] } = useQuery({
-    queryKey: ["werknemers-klant", eindklantId],
-    queryFn: async () => {
-      const plaatsingen = await base44.entities.Plaatsing.filter({ eindklant_id: eindklantId, status: "actief" });
-      const ids = [...new Set(plaatsingen.map(p => p.werknemer_id))];
-      if (ids.length === 0) return [];
-      const werknemers = await base44.entities.Werknemer.filter({ status: "actief" });
-      return werknemers.filter(w => ids.includes(w.id)).map(w => ({
-        id: w.id,
-        naam: `${w.voornaam} ${w.achternaam}`,
-      }));
-    },
-    enabled: !!eindklantId,
-  });
-
   // Sync form state from DB
   useEffect(() => {
-    const aantalMap = {};
-    const selectieMap = {};
+    const map = {};
     werkspots.forEach(ws => {
       const existing = bestaandePlanning.find(p => p.werkspot_id === ws.id);
-      aantalMap[ws.id] = existing ? existing.gepland_aantal : 0;
-      selectieMap[ws.id] = existing?.geselecteerde_werknemers || [];
+      map[ws.id] = existing ? existing.gepland_aantal : 0;
     });
-    setAantallen(aantalMap);
-    setWerknemerSelecties(selectieMap);
+    setAantallen(map);
   }, [bestaandePlanning, werkspots, datumStr]);
 
   const totaal = useMemo(() => Object.values(aantallen).reduce((sum, v) => sum + (Number(v) || 0), 0), [aantallen]);
 
-  // Build andereSelecties map for cross-werkspot awareness
-  const andereSelecties = useMemo(() => {
-    const map = {};
-    werkspots.forEach(ws => {
-      map[ws.id] = { naam: ws.naam, ids: werknemerSelecties[ws.id] || [] };
-    });
-    return map;
-  }, [werkspots, werknemerSelecties]);
-
-  // Get werknemers assigned to this specific werkspot
-  const getAvailableWerknemers = (currentWsId) => {
-    const ws = werkspots.find(w => w.id === currentWsId);
-    const toegewezen = ws?.toegewezen_werknemers || [];
-    if (toegewezen.length === 0) return allWerknemers;
-    return allWerknemers.filter(w => toegewezen.includes(w.id));
+  const handleChange = (werkspotId, value) => {
+    setAantallen(prev => ({ ...prev, [werkspotId]: value === "" ? "" : Number(value) }));
   };
 
   const handleSave = async () => {
@@ -77,30 +44,22 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
       const nieuwAantal = Number(aantallen[ws.id]) || 0;
       const existing = bestaandePlanning.find(p => p.werkspot_id === ws.id);
       const oudAantal = existing ? existing.gepland_aantal : 0;
-      const selectie = werknemerSelecties[ws.id] || [];
 
-      const hasChanges = nieuwAantal !== oudAantal ||
-        JSON.stringify(selectie.sort()) !== JSON.stringify((existing?.geselecteerde_werknemers || []).sort());
-
-      if (hasChanges) {
-        if (nieuwAantal !== oudAantal) {
-          await base44.entities.PlanningLog.create({
-            datum: datumStr,
-            werkspot_id: ws.id,
-            werkspot_naam: ws.naam,
-            eindklant_id: eindklantId,
-            eindklant_naam: eindklantNaam,
-            oud_aantal: oudAantal,
-            nieuw_aantal: nieuwAantal,
-            gewijzigd_door: user?.full_name || user?.email || "Onbekend",
-          });
-        }
+      if (nieuwAantal !== oudAantal) {
+        // Log the change
+        await base44.entities.PlanningLog.create({
+          datum: datumStr,
+          werkspot_id: ws.id,
+          werkspot_naam: ws.naam,
+          eindklant_id: eindklantId,
+          eindklant_naam: eindklantNaam,
+          oud_aantal: oudAantal,
+          nieuw_aantal: nieuwAantal,
+          gewijzigd_door: user?.full_name || user?.email || "Onbekend",
+        });
 
         if (existing) {
-          await base44.entities.WerkspotPlanning.update(existing.id, {
-            gepland_aantal: nieuwAantal,
-            geselecteerde_werknemers: selectie,
-          });
+          await base44.entities.WerkspotPlanning.update(existing.id, { gepland_aantal: nieuwAantal });
         } else {
           await base44.entities.WerkspotPlanning.create({
             datum: datumStr,
@@ -109,7 +68,6 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
             eindklant_id: eindklantId,
             eindklant_naam: eindklantNaam,
             gepland_aantal: nieuwAantal,
-            geselecteerde_werknemers: selectie,
           });
         }
       }
@@ -151,16 +109,20 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
       ) : (
         <div className="space-y-2">
           {werkspots.map(ws => (
-            <PlanningSpotRow
-              key={ws.id}
-              werkspot={ws}
-              aantal={aantallen[ws.id] ?? 0}
-              geselecteerdeWerknemers={werknemerSelecties[ws.id] || []}
-              beschikbareWerknemers={getAvailableWerknemers(ws.id)}
-              andereSelecties={andereSelecties}
-              onChangeAantal={(v) => setAantallen(prev => ({ ...prev, [ws.id]: v === "" ? "" : Number(v) }))}
-              onChangeWerknemers={(ids) => setWerknemerSelecties(prev => ({ ...prev, [ws.id]: ids }))}
-            />
+            <div key={ws.id} className="flex items-center gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors">
+              <MapPin className="w-4 h-4 text-accent shrink-0" />
+              <span className="text-sm font-medium flex-1 min-w-0 truncate">{ws.naam}</span>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="number"
+                  min="0"
+                  value={aantallen[ws.id] ?? 0}
+                  onChange={(e) => handleChange(ws.id, e.target.value)}
+                  className="w-20 h-9 text-center"
+                />
+                <span className="text-xs text-muted-foreground w-16">werkn.</span>
+              </div>
+            </div>
           ))}
         </div>
       )}

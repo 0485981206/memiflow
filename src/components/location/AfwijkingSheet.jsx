@@ -5,13 +5,12 @@ import { Button } from "@/components/ui/button";
 import { base44 } from "@/api/base44Client";
 
 const REDENEN = [
-  "Ziek",
-  "Ongeval",
-  "Is naar huis",
-  "Toegestane afwezigheid",
+  "Ziek gemeld",
   "Ongeoorloofd afwezig",
   "Vervoersproblemen",
   "Persoonlijke redenen",
+  "Materiaal niet beschikbaar",
+  "Weer omstandigheden",
   "Andere reden",
 ];
 

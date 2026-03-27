@@ -37,9 +37,7 @@ Deno.serve(async (req) => {
         const [startH, startM] = klok.start_tijd.split(':').map(Number);
         const [stopH, stopM] = currentTime.split(':').map(Number);
         const totalMinutes = (stopH * 60 + stopM) - (startH * 60 + startM);
-        // Subtract 30 minutes for lunch break
-        const nettoMinutes = Math.max(0, totalMinutes - 30);
-        const totalHours = Math.round((nettoMinutes / 60) * 100) / 100;
+        const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
 
         const prestatie = await base44.asServiceRole.entities.Prestatie.create({
           werknemer_id,
@@ -77,52 +75,6 @@ Deno.serve(async (req) => {
       });
 
       return Response.json({ success: true, afwijking_id: afwijking.id, stop_tijd: currentTime });
-    }
-
-    if (action === "transfer") {
-      const { werknemer_id, werknemer_naam, eindklant_id, eindklant_naam, van_werkspot_id, van_werkspot_naam, naar_werkspot_id, naar_werkspot_naam } = body;
-
-      const now = new Date();
-      const today = now.toISOString().split('T')[0];
-      const hours = String(now.getUTCHours() + 1).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const currentTime = `${hours}:${minutes}`;
-
-      // Remove from old werkspot
-      if (van_werkspot_id) {
-        const oldWs = await base44.asServiceRole.entities.Werkspot.filter({ id: van_werkspot_id });
-        if (oldWs.length > 0) {
-          const updated = (oldWs[0].toegewezen_werknemers || []).filter(id => id !== werknemer_id);
-          await base44.asServiceRole.entities.Werkspot.update(oldWs[0].id, { toegewezen_werknemers: updated });
-        }
-      }
-
-      // Add to new werkspot
-      if (naar_werkspot_id) {
-        const newWs = await base44.asServiceRole.entities.Werkspot.filter({ id: naar_werkspot_id });
-        if (newWs.length > 0) {
-          const existing = newWs[0].toegewezen_werknemers || [];
-          if (!existing.includes(werknemer_id)) {
-            await base44.asServiceRole.entities.Werkspot.update(newWs[0].id, { toegewezen_werknemers: [...existing, werknemer_id] });
-          }
-        }
-      }
-
-      // Log as afwijking with transfer info
-      const afwijking = await base44.asServiceRole.entities.Afwijking.create({
-        werknemer_id,
-        werknemer_naam: werknemer_naam || '',
-        eindklant_id,
-        eindklant_naam: eindklant_naam || '',
-        werkspot_id: van_werkspot_id || '',
-        werkspot_naam: van_werkspot_naam || '',
-        datum: today,
-        reden: `Verplaatst van ${van_werkspot_naam || '?'} naar ${naar_werkspot_naam || '?'} om ${currentTime}`,
-        stop_tijd: currentTime,
-        status: 'behandeld',
-      });
-
-      return Response.json({ success: true, afwijking_id: afwijking.id, tijd: currentTime });
     }
 
     if (action === "list") {

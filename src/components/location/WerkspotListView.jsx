@@ -1,25 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { LogIn, LogOut, AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
+import { MapPin, Clock, User, LogIn, LogOut, AlertTriangle, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import WorkTimer from "./WorkTimer";
 
-const SPOT_ICONS = {
-  "Billen": "🍗",
-  "Inpakken": "📦",
-  "File": "🍖",
-  "Filé": "🍖",
-  "Hele kip": "🐔",
-};
-
-const getSpotIcon = (name) => {
-  if (!name) return "📍";
-  for (const [key, icon] of Object.entries(SPOT_ICONS)) {
-    if (name.toLowerCase().includes(key.toLowerCase())) return icon;
-  }
-  return "📍";
-};
-
-export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, onWerknemerAction, checkinLoading }) {
+export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking }) {
   const werknemerMap = useMemo(() => {
     const map = new Map();
     werknemers.forEach(w => map.set(w.id, w));
@@ -45,15 +28,13 @@ export default function WerkspotListView({ werkspots = [], werknemers = [], tijd
           onCheckin={onCheckin}
           onCheckout={onCheckout}
           onAfwijking={onAfwijking}
-          onWerknemerAction={onWerknemerAction}
-          checkinLoading={checkinLoading}
         />
       ))}
     </div>
   );
 }
 
-function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking, onWerknemerAction, checkinLoading }) {
+function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking }) {
   const [expanded, setExpanded] = useState(false);
   const assigned = ws.toegewezen_werknemers || [];
   const workers = assigned.map(id => werknemerMap.get(id)).filter(Boolean);
@@ -69,18 +50,18 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
       <button onClick={() => { if (navigator.vibrate) navigator.vibrate(5); setExpanded(!expanded); }} className={`w-full px-4 py-3 flex items-center justify-between transition-all duration-150 active:brightness-95 select-none touch-manipulation ${hasActiveWorker ? "bg-green-100/60" : "bg-gray-50"}`}>
         <div className="flex items-center gap-2">
           <ChevronRight className={`w-4 h-4 transition-transform ${expanded ? "rotate-90" : ""} ${hasActiveWorker ? "text-green-600" : "text-gray-400"}`} />
-          <span className="text-lg">{getSpotIcon(ws.naam)}</span>
+          <MapPin className={`w-4 h-4 ${hasActiveWorker ? "text-green-600" : "text-gray-400"}`} />
           <span className="font-semibold text-sm">{ws.naam}</span>
           <span className="text-xs text-gray-400">({workers.length} werknemer{workers.length !== 1 ? "s" : ""})</span>
         </div>
         <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
           {hasActiveWorker ? (
-            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)} disabled={checkinLoading}>
-              {checkinLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />} Check-out
+            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)}>
+              <LogOut className="w-3 h-3" /> Check-out
             </Button>
           ) : (
-            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0 || checkinLoading}>
-              {checkinLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />} Check-in
+            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0}>
+              <LogIn className="w-3 h-3" /> Check-in
             </Button>
           )}
           <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => onAfwijking?.(ws)} disabled={workers.length === 0}>
@@ -101,11 +82,7 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
               const startTijd = reg?.start_tijd || (isTijdelijk ? w.start_tijd : null);
 
               return (
-                <button
-                  key={w.id}
-                  onClick={() => onWerknemerAction?.(w, ws)}
-                  className="w-full px-4 py-2.5 flex items-center justify-between transition-colors duration-100 hover:bg-gray-50 active:bg-gray-100 text-left select-none touch-manipulation"
-                >
+                <div key={w.id} className="px-4 py-2.5 flex items-center justify-between transition-colors duration-100 hover:bg-gray-50 active:bg-gray-100">
                   <div className="flex items-center gap-2.5">
                     <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold ${isActive ? "bg-green-500" : "bg-gray-300"}`}>
                       {(w.naam || "?").charAt(0)}
@@ -115,18 +92,15 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
                       {isTijdelijk && <span className="text-[10px] text-orange-500 font-medium ml-1">(tijdelijk)</span>}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    {isActive && startTijd && (
-                      <WorkTimer startTijd={startTijd} />
-                    )}
-                    {isActive && (
-                      <span className="text-lg">{getSpotIcon(ws.naam)}</span>
-                    )}
-                    {!isActive && (
-                      <span className="text-[10px] text-gray-400">Niet gestart</span>
-                    )}
-                  </div>
-                </button>
+                  {isActive && startTijd && (
+                    <div className="flex items-center gap-1 text-xs text-green-700 font-medium">
+                      <Clock className="w-3 h-3" /> {startTijd}
+                    </div>
+                  )}
+                  {!isActive && (
+                    <span className="text-[10px] text-gray-400">Niet gestart</span>
+                  )}
+                </div>
               );
             })}
           </div>
