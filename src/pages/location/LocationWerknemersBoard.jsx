@@ -11,6 +11,21 @@ import LocationSidebar from "../../components/location/LocationSidebar";
 import EmployeeDetailSheet from "../../components/location/EmployeeDetailSheet";
 import WerknemerAfwijkingSheet from "../../components/location/WerknemerAfwijkingSheet";
 
+const SPOT_ICONS = {
+  "Billen": "🍗",
+  "Inpakken": "📦",
+  "File": "🍖",
+  "Filé": "🍖",
+  "Hele kip": "🐔",
+};
+const getSpotIcon = (name) => {
+  if (!name) return "📍";
+  for (const [key, icon] of Object.entries(SPOT_ICONS)) {
+    if (name.toLowerCase().includes(key.toLowerCase())) return icon;
+  }
+  return "📍";
+};
+
 export default function LocationWerknemersBoard({ klant, werknemers: initialWerknemers = [], onNavigate, onLogout, onRefresh, onWerknemersChange }) {
   const [werknemers, setWerknemers] = useState(initialWerknemers);
   const [werkspots, setWerkspots] = useState([]);
@@ -211,7 +226,11 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
                       <p className="font-medium text-sm truncate">{w.naam}</p>
                       {spots.length > 0 && (
                         <p className="text-xs text-gray-400 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {spots.map(s => s.naam).join(", ")}
+                          {spots.map((s, i) => (
+                            <span key={s.id} className="inline-flex items-center gap-0.5">
+                              {i > 0 && ", "}<span>{getSpotIcon(s.naam)}</span>{s.naam}
+                            </span>
+                          ))}
                         </p>
                       )}
                     </div>
@@ -240,7 +259,9 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
                     </div>
                     <p className="text-sm font-semibold truncate">{w.naam}</p>
                     {spots.length > 0 && (
-                      <p className="text-[10px] text-gray-400 truncate">{spots[0].naam}</p>
+                      <p className="text-[10px] text-gray-400 truncate flex items-center gap-0.5 justify-center">
+                        {spots.map(s => getSpotIcon(s.naam)).join(" ")} {spots.map(s => s.naam).join(", ")}
+                      </p>
                     )}
                     <div className="flex justify-center gap-1 mt-2">
                       <button onClick={(e) => { e.stopPropagation(); openAssignDialog(w); }} className="p-1.5 rounded-lg hover:bg-gray-100"><MapPin className="w-3.5 h-3.5 text-gray-400" /></button>

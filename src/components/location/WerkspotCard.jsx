@@ -2,6 +2,21 @@ import React, { useState, useMemo } from "react";
 import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
+const SPOT_ICONS = {
+  "Billen": "🍗",
+  "Inpakken": "📦",
+  "File": "🍖",
+  "Filé": "🍖",
+  "Hele kip": "🐔",
+};
+const getSpotIcon = (name) => {
+  if (!name) return "📍";
+  for (const [key, icon] of Object.entries(SPOT_ICONS)) {
+    if (name.toLowerCase().includes(key.toLowerCase())) return icon;
+  }
+  return "📍";
+};
+
 const SPOT_COLORS = [
   { border: "border-l-blue-500", dot: "bg-blue-500" },
   { border: "border-l-purple-500", dot: "bg-purple-500" },
@@ -83,7 +98,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
     }`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <div className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? "bg-green-500" : spotColor.dot}`} />
+          <span className="text-lg">{getSpotIcon(werkspot.naam)}</span>
           <span className="font-semibold text-sm">{werkspot.naam}</span>
         </div>
         <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => setDeleteConfirmOpen(true)}>

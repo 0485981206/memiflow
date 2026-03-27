@@ -121,9 +121,9 @@ export default function Afwijkingen() {
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-amber-700">{a.reden}</p>
-                  <Badge variant={a.status === "open" ? "default" : "secondary"} className={a.status === "open" ? "bg-amber-100 text-amber-700" : ""}>
-                    {a.status}
+                  <p className={`text-sm font-medium ${a.reden?.startsWith('Verplaatst') ? 'text-blue-700' : 'text-amber-700'}`}>{a.reden}</p>
+                  <Badge variant={a.status === "open" ? "default" : "secondary"} className={a.status === "open" ? "bg-amber-100 text-amber-700" : a.reden?.startsWith('Verplaatst') ? "bg-blue-100 text-blue-700" : ""}>
+                    {a.reden?.startsWith('Verplaatst') ? 'verplaatsing' : a.status}
                   </Badge>
                 </div>
                 {a.status === "open" && (

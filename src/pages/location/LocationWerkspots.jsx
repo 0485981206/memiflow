@@ -10,6 +10,7 @@ import LocationSidebar from "../../components/location/LocationSidebar";
 import WerkspotCard from "../../components/location/WerkspotCard";
 import WerkspotListView from "../../components/location/WerkspotListView";
 import AfwijkingSheet from "../../components/location/AfwijkingSheet";
+import WerknemerActionSheet from "../../components/location/WerknemerActionSheet";
 
 export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout, onRefresh }) {
   const [werkspots, setWerkspots] = useState([]);
@@ -34,6 +35,11 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [quickAssignOpen, setQuickAssignOpen] = useState(false);
   const [quickAssignWorker, setQuickAssignWorker] = useState(null);
   const [actieveRegistraties, setActieveRegistraties] = useState([]);
+
+  // Werknemer action sheet state
+  const [actionSheetOpen, setActionSheetOpen] = useState(false);
+  const [actionWerknemer, setActionWerknemer] = useState(null);
+  const [actionWerkspot, setActionWerkspot] = useState(null);
 
   const [dagPlanning, setDagPlanning] = useState({});
 
@@ -225,6 +231,18 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     setAfwijkingQueueIndex(0);
   };
 
+  const handleWerknemerAction = (werknemer, werkspot) => {
+    setActionWerknemer(werknemer);
+    setActionWerkspot(werkspot);
+    setActionSheetOpen(true);
+  };
+
+  const handleActionDone = () => {
+    loadWerkspots();
+    loadRegistraties();
+    loadTijdelijkeWerknemers();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LocationSidebar activePage="werkspots" onNavigate={onNavigate} onLogout={onLogout} onRefresh={onRefresh} />
@@ -369,6 +387,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                 onCheckin={handleCheckin}
                 onCheckout={handleCheckout}
                 onAfwijking={handleAfwijking}
+                onWerknemerAction={handleWerknemerAction}
               />
             )}
         </div>
@@ -403,6 +422,17 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           klant={klant}
           werkspot={afwijkingWerkspot}
           onAfwijkingDone={handleAfwijkingDone}
+        />
+
+        {/* Werknemer action sheet */}
+        <WerknemerActionSheet
+          isOpen={actionSheetOpen}
+          onClose={() => { setActionSheetOpen(false); setActionWerknemer(null); setActionWerkspot(null); }}
+          werknemer={actionWerknemer}
+          klant={klant}
+          werkspot={actionWerkspot}
+          werkspots={werkspots}
+          onDone={handleActionDone}
         />
 
         {/* Quick assign dialog */}
