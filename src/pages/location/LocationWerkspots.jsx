@@ -74,7 +74,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LocationSidebar activePage="werkspots" onNavigate={onNavigate} onLogout={onLogout} />
-      <div className="flex-1 ml-16">
+      <div className="flex-1 ml-20">
         <div className="bg-[#0f2744] text-white px-6 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">Werkspots — {klant.naam}</h1>

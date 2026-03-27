@@ -59,7 +59,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LocationSidebar activePage="records" onNavigate={onNavigate} onLogout={onLogout} />
-      <div className="flex-1 ml-16">
+      <div className="flex-1 ml-20">
         <div className="bg-[#0f2744] text-white px-6 py-4">
           <h1 className="text-lg font-bold">Registraties — {klant.naam}</h1>
           <p className="text-xs text-white/60">

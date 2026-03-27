@@ -13,9 +13,9 @@ const items = [
 export default function LocationSidebar({ activePage = "home", onNavigate, onLogout }) {
   return (
     <TooltipProvider>
-      <aside className="fixed top-0 left-0 h-screen w-16 flex flex-col items-center py-4 z-50" style={{ backgroundColor: "#0c1f36" }}>
-        <div className="text-white font-bold text-lg mb-6">H</div>
-        <nav className="flex-1 flex flex-col items-center gap-2">
+      <aside className="fixed top-0 left-0 h-screen w-20 flex flex-col items-center py-5 z-50" style={{ backgroundColor: "#0c1f36" }}>
+        <div className="text-white font-bold text-xl mb-8">H</div>
+        <nav className="flex-1 flex flex-col items-center gap-3">
           {items.map((item) => {
             const isActive = activePage === item.id;
             return (
@@ -23,16 +23,16 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
                 <TooltipTrigger asChild>
                   <button
                     onClick={() => onNavigate?.(item.id)}
-                    className={`w-10 h-10 rounded-lg flex items-center justify-center transition-colors ${
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center transition-colors ${
                       isActive
-                        ? "bg-white/20 text-white"
+                        ? "bg-white/20 text-white shadow-lg"
                         : "text-white/60 hover:text-white hover:bg-white/10"
                     }`}
                   >
-                    <item.icon className="w-5 h-5" />
+                    <item.icon className="w-7 h-7" />
                   </button>
                 </TooltipTrigger>
-                <TooltipContent side="right" className="text-xs">{item.label}</TooltipContent>
+                <TooltipContent side="right" className="text-sm font-medium">{item.label}</TooltipContent>
               </Tooltip>
             );
           })}
@@ -41,12 +41,12 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
           <TooltipTrigger asChild>
             <button
               onClick={onLogout}
-              className="w-10 h-10 rounded-lg flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors mb-2"
+              className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors mb-3"
             >
-              <LogOut className="w-5 h-5" />
+              <LogOut className="w-7 h-7" />
             </button>
           </TooltipTrigger>
-          <TooltipContent side="right" className="text-xs">Afmelden</TooltipContent>
+          <TooltipContent side="right" className="text-sm font-medium">Afmelden</TooltipContent>
         </Tooltip>
       </aside>
     </TooltipProvider>

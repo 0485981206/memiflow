@@ -104,7 +104,7 @@ export default function LocationNfc({ klant, onNavigate, onLogout }) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LocationSidebar activePage="nfc" onNavigate={onNavigate} onLogout={onLogout} />
-      <div className="flex-1 ml-16 flex flex-col">
+      <div className="flex-1 ml-20 flex flex-col">
         <div className="bg-[#0f2744] text-white px-6 py-4">
           <h1 className="text-lg font-bold">NFC Badge Scanner</h1>
           <p className="text-xs text-white/60">{klant.naam}</p>

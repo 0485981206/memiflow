@@ -57,7 +57,7 @@ export default function LocationTijdelijk({ klant, onNavigate, onLogout }) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LocationSidebar activePage="tijdelijk" onNavigate={onNavigate} onLogout={onLogout} />
-      <div className="flex-1 ml-16">
+      <div className="flex-1 ml-20">
         <div className="bg-[#0f2744] text-white px-4 py-4 flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold">{klant.naam}</h1>
