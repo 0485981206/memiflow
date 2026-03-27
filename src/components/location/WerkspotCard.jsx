@@ -35,8 +35,12 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
 
   const isCheckedIn = useMemo(() => {
     if (assigned.length === 0) return false;
-    return assigned.some(id => actieveRegistraties.some(r => r.werknemer_id === id));
-  }, [assigned, actieveRegistraties]);
+    // Check regular registrations
+    const hasActiveReg = assigned.some(id => actieveRegistraties.some(r => r.werknemer_id === id));
+    // Check tijdelijke werknemers with status "ingecheckt"
+    const hasActiveTijdelijk = assigned.some(id => tijdelijkeWerknemers.some(t => t.id === id && t.status === "ingecheckt"));
+    return hasActiveReg || hasActiveTijdelijk;
+  }, [assigned, actieveRegistraties, tijdelijkeWerknemers]);
 
   const filteredAssigned = useMemo(() => {
     if (!assignedSearch.trim()) return assignedWerknemers;

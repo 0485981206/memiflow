@@ -89,34 +89,43 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   // Check-in: all assigned werknemers of the werkspot
   const handleCheckin = async (werkspot) => {
     const ids = werkspot.toegewezen_werknemers || [];
-    console.log("Check-in clicked, werkspot:", werkspot.naam, "ids:", ids);
     if (ids.length === 0) return;
     setCheckinLoading(true);
 
-    const tijdelijkIdSet = new Set(tijdelijkeWerknemers.map(t => t.id));
-    const regularIds = ids.filter(id => !tijdelijkIdSet.has(id));
-    const tijdelijkIds = ids.filter(id => tijdelijkIdSet.has(id));
-    console.log("Regular IDs:", regularIds, "Tijdelijk IDs:", tijdelijkIds);
+    // Build sets for classification
+    const tijdelijkMap = new Map(tijdelijkeWerknemers.map(t => [t.id, t]));
+    const werknemerIdSet = new Set(werknemers.map(w => w.id));
+
+    const regularIds = [];
+    const tijdelijkToStart = [];
+
+    for (const id of ids) {
+      const tijdelijk = tijdelijkMap.get(id);
+      if (tijdelijk) {
+        // Only start if status is "nieuw" (not already ingecheckt)
+        if (tijdelijk.status === "nieuw") {
+          tijdelijkToStart.push(id);
+        }
+      } else if (werknemerIdSet.has(id)) {
+        // Only include if it's a known regular werknemer
+        regularIds.push(id);
+      }
+    }
 
     if (regularIds.length > 0) {
-      console.log("Calling klokRegistratie start for", regularIds.length, "werknemers");
-      const res = await base44.functions.invoke("klokRegistratie", {
+      await base44.functions.invoke("klokRegistratie", {
         action: "start",
         werknemer_ids: regularIds,
         eindklant_id: klant.id,
         eindklant_naam: klant.naam,
       });
-      console.log("klokRegistratie response:", res.data);
     }
 
-    for (const id of tijdelijkIds) {
-      const t = tijdelijkeWerknemers.find(tw => tw.id === id);
-      if (t && t.status === "nieuw") {
-        await base44.functions.invoke("tijdelijkeWerknemer", {
-          action: "start",
-          id,
-        });
-      }
+    for (const id of tijdelijkToStart) {
+      await base44.functions.invoke("tijdelijkeWerknemer", {
+        action: "start",
+        id,
+      });
     }
 
     setCheckinLoading(false);
@@ -130,20 +139,31 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     if (ids.length === 0) return;
     setCheckinLoading(true);
 
-    const tijdelijkIdSet = new Set(tijdelijkeWerknemers.map(t => t.id));
-    const regularIds = ids.filter(id => !tijdelijkIdSet.has(id) && actieveRegistraties.some(r => r.werknemer_id === id));
-    const tijdelijkIds = ids.filter(id => tijdelijkIdSet.has(id) && tijdelijkeWerknemers.some(t => t.id === id && t.status === "ingecheckt"));
+    const tijdelijkMap = new Map(tijdelijkeWerknemers.map(t => [t.id, t]));
+    const regularToStop = [];
+    const tijdelijkToStop = [];
 
-    if (regularIds.length > 0) {
+    for (const id of ids) {
+      const tijdelijk = tijdelijkMap.get(id);
+      if (tijdelijk) {
+        if (tijdelijk.status === "ingecheckt") {
+          tijdelijkToStop.push(id);
+        }
+      } else if (actieveRegistraties.some(r => r.werknemer_id === id)) {
+        regularToStop.push(id);
+      }
+    }
+
+    if (regularToStop.length > 0) {
       await base44.functions.invoke("klokRegistratie", {
         action: "stop",
-        werknemer_ids: regularIds,
+        werknemer_ids: regularToStop,
         eindklant_id: klant.id,
         eindklant_naam: klant.naam,
       });
     }
 
-    for (const id of tijdelijkIds) {
+    for (const id of tijdelijkToStop) {
       await base44.functions.invoke("tijdelijkeWerknemer", {
         action: "stop",
         id,
@@ -151,7 +171,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     }
 
     setCheckinLoading(false);
-    loadRegistraties();
+    await loadRegistraties();
     loadTijdelijkeWerknemers();
   };
 
