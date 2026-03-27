@@ -22,7 +22,8 @@ import {
   Euro,
   Key,
   MapPin,
-  Nfc
+  Nfc,
+  UserPlus
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -307,13 +308,13 @@ export default function Sidebar({ collapsed, onToggleCollapse }) {
           <span>Pincodes</span>
         </Link>
         <Link
-          to="/werkspots"
+          to="/tijdelijke-werknemers"
           className={`flex items-center px-3 py-2 ml-2 rounded-md text-sm transition-all duration-200 ${
-            location.pathname === "/werkspots" ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
+            location.pathname === "/tijdelijke-werknemers" ? "text-[#38bdf8] font-semibold" : "text-white/60 hover:text-white"
           }`}
           onClick={() => setMobileOpen(false)}
         >
-          <span>Werkspots</span>
+          <span>Tijdelijke werknemers</span>
         </Link>
         <Link
           to="/nfc-badges"

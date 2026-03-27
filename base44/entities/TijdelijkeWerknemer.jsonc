@@ -1,0 +1,70 @@
+{
+  "name": "TijdelijkeWerknemer",
+  "type": "object",
+  "properties": {
+    "voornaam": {
+      "type": "string",
+      "description": "Voornaam van de tijdelijke werknemer"
+    },
+    "achternaam": {
+      "type": "string",
+      "description": "Achternaam van de tijdelijke werknemer"
+    },
+    "telefoon": {
+      "type": "string",
+      "description": "Telefoonnummer"
+    },
+    "opmerking": {
+      "type": "string",
+      "description": "Opmerking van de teamleader"
+    },
+    "eindklant_id": {
+      "type": "string",
+      "description": "ID van de eindklant waar ingecheckt"
+    },
+    "eindklant_naam": {
+      "type": "string",
+      "description": "Naam van de eindklant"
+    },
+    "datum": {
+      "type": "string",
+      "format": "date",
+      "description": "Datum van check-in"
+    },
+    "start_tijd": {
+      "type": "string",
+      "description": "Starttijd (HH:mm)"
+    },
+    "stop_tijd": {
+      "type": "string",
+      "description": "Stoptijd (HH:mm)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "ingecheckt",
+        "uitgecheckt",
+        "gekoppeld"
+      ],
+      "default": "ingecheckt",
+      "description": "Status: ingecheckt, uitgecheckt, of gekoppeld aan bestaande werknemer"
+    },
+    "gekoppeld_werknemer_id": {
+      "type": "string",
+      "description": "ID van de bestaande werknemer waaraan gekoppeld"
+    },
+    "gekoppeld_werknemer_naam": {
+      "type": "string",
+      "description": "Naam van de gekoppelde werknemer"
+    },
+    "aangemaakt_door": {
+      "type": "string",
+      "description": "Naam/ID van de teamleader die dit heeft aangemaakt"
+    }
+  },
+  "required": [
+    "voornaam",
+    "achternaam",
+    "eindklant_id"
+  ]
+}

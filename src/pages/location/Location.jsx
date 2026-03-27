@@ -5,6 +5,7 @@ import EmployeeBoard from "./EmployeeBoard";
 import LocationSelector from "../../components/location/LocationSelector";
 import LocationWerkspots from "./LocationWerkspots";
 import LocationRecords from "./LocationRecords";
+import LocationTijdelijk from "./LocationTijdelijk";
 
 export default function Location() {
   const [loggedIn, setLoggedIn] = useState(false);
@@ -127,6 +128,10 @@ export default function Location() {
 
   if (activePage === "records") {
     return <LocationRecords klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
+  }
+
+  if (activePage === "tijdelijk") {
+    return <LocationTijdelijk klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
   }
 
   return (

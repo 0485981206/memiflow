@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
-import { Grid } from 'lucide-react';
+import { Grid, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
 
@@ -37,6 +37,16 @@ export default function Workspace() {
         </Card>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+          <Link to="/werkspots">
+            <Card className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all cursor-pointer">
+              <div className="p-3 bg-muted rounded-lg">
+                <MapPin className="w-8 h-8 text-accent" />
+              </div>
+              <div className="text-center flex-1">
+                <p className="font-medium text-sm">Werkspots</p>
+              </div>
+            </Card>
+          </Link>
           {workspaces.map(ws => {
             const iconDef = AVAILABLE_ICONS.find(i => i.id === ws.icon);
             const IconComponent = iconDef?.component;

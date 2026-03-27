@@ -1,11 +1,12 @@
 import React from "react";
-import { Home, MapPin, ClipboardList, LogOut } from "lucide-react";
+import { Home, MapPin, ClipboardList, LogOut, UserPlus } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 const items = [
   { icon: Home, label: "Werknemers", id: "home" },
   { icon: MapPin, label: "Werkspots", id: "werkspots" },
   { icon: ClipboardList, label: "Registraties", id: "records" },
+  { icon: UserPlus, label: "Tijdelijk", id: "tijdelijk" },
 ];
 
 export default function LocationSidebar({ activePage = "home", onNavigate, onLogout }) {

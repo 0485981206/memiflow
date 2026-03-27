@@ -29,6 +29,7 @@ import KlantPincodes from './pages/KlantPincodes';
 import Werkspots from './pages/Werkspots';
 import NfcBadges from './pages/NfcBadges';
 import NfcCheckin from './pages/NfcCheckin';
+import TijdelijkeWerknemers from './pages/TijdelijkeWerknemers';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -81,6 +82,7 @@ const AuthenticatedApp = () => {
           <Route path="/klant-pincodes" element={<KlantPincodes />} />
           <Route path="/werkspots" element={<Werkspots />} />
           <Route path="/nfc-badges" element={<NfcBadges />} />
+          <Route path="/tijdelijke-werknemers" element={<TijdelijkeWerknemers />} />
           <Route path="/acerta/kalender" element={<AcertaKalender />} />
         </Route>
       </Route>
