@@ -1,11 +1,16 @@
-import React, { useState } from "react";
-import { MapPin, ChevronDown, ChevronUp, Check, Users } from "lucide-react";
+import React, { useState, useMemo } from "react";
+import { MapPin, ChevronDown, ChevronUp, Check, Users, ShieldCheck, UserRoundX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknemers = [], beschikbareWerknemers = [], onChangeAantal, onChangeWerknemers, disabled }) {
   const [expanded, setExpanded] = useState(false);
+  const [showReserve, setShowReserve] = useState(false);
   const aantalNum = Number(aantal) || 0;
   const selectedCount = geselecteerdeWerknemers.length;
+
+  const reserveWerknemers = useMemo(() => {
+    return beschikbareWerknemers.filter(w => !geselecteerdeWerknemers.includes(w.id));
+  }, [beschikbareWerknemers, geselecteerdeWerknemers]);
 
   const toggleWerknemer = (id) => {
     const next = geselecteerdeWerknemers.includes(id)
@@ -29,20 +34,32 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
             className="w-20 h-9 text-center"
           />
           {aantalNum > 0 && (
-            <button
-              onClick={() => setExpanded(!expanded)}
-              className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
-                selectedCount > 0 && selectedCount >= aantalNum
-                  ? "bg-green-100 text-green-700"
-                  : selectedCount > 0
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-gray-100 text-gray-500"
-              }`}
-            >
-              <Users className="w-3 h-3" />
-              {selectedCount}/{aantalNum}
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => { setExpanded(!expanded); setShowReserve(false); }}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  selectedCount > 0 && selectedCount >= aantalNum
+                    ? "bg-green-100 text-green-700"
+                    : selectedCount > 0
+                    ? "bg-amber-100 text-amber-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}
+              >
+                <ShieldCheck className="w-3 h-3" />
+                {selectedCount}
+                {expanded && !showReserve ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+              <button
+                onClick={() => { setShowReserve(!showReserve); setExpanded(false); }}
+                className={`flex items-center gap-1 px-2 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                  showReserve ? "bg-blue-100 text-blue-700" : "bg-orange-50 text-orange-600"
+                }`}
+              >
+                <UserRoundX className="w-3 h-3" />
+                {reserveWerknemers.length} reserve
+                {showReserve ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -50,7 +67,7 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
       {expanded && aantalNum > 0 && (
         <div className="border-t px-3 py-2 bg-muted/30">
           <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-muted-foreground">Selecteer werknemers ({selectedCount}/{aantalNum}):</p>
+            <p className="text-xs text-muted-foreground">Geselecteerd ({selectedCount}/{aantalNum}):</p>
             <div className="flex gap-2">
               {selectedCount > 0 && (
                 <button
@@ -101,6 +118,33 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
                   </button>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {showReserve && aantalNum > 0 && (
+        <div className="border-t px-3 py-2 bg-orange-50/50">
+          <p className="text-xs text-orange-600 font-medium mb-2">Reserve — niet in planning ({reserveWerknemers.length}):</p>
+          {reserveWerknemers.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic py-2">Alle werknemers zijn geselecteerd</p>
+          ) : (
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {reserveWerknemers.map(w => (
+                <div key={w.id} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm bg-white border">
+                  <div className="w-7 h-7 rounded-full bg-orange-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    {(w.naam || w.voornaam || "?").charAt(0)}
+                  </div>
+                  <span className="truncate flex-1">{w.naam || `${w.voornaam} ${w.achternaam}`}</span>
+                  <button
+                    onClick={() => !disabled && onChangeWerknemers([...geselecteerdeWerknemers, w.id])}
+                    disabled={disabled}
+                    className="text-xs text-primary hover:text-primary/80 font-medium px-2 py-1 rounded hover:bg-primary/10"
+                  >
+                    + Toevoegen
+                  </button>
+                </div>
+              ))}
             </div>
           )}
         </div>
