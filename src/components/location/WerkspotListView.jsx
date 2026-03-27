@@ -57,12 +57,7 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
           <span className="text-xs text-gray-400">({workers.length} werknemer{workers.length !== 1 ? "s" : ""})</span>
         </div>
         <div className={`flex gap-1.5 ${isAnyLoading ? "pointer-events-none" : ""}`} onClick={(e) => e.stopPropagation()}>
-          {hasActiveWorker ? (
-            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)} disabled={isAnyLoading}>
-              {isActionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
-              {isActionLoading ? "Bezig..." : "Check-out"}
-            </Button>
-          ) : (
+          {!hasActiveWorker && (
             <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0 || isAnyLoading}>
               {isActionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />}
               {isActionLoading ? "Bezig..." : "Check-in"}
