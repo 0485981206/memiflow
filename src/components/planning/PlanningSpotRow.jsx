@@ -49,7 +49,31 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
 
       {expanded && aantalNum > 0 && (
         <div className="border-t px-3 py-2 bg-muted/30">
-          <p className="text-xs text-muted-foreground mb-2">Selecteer werknemers ({selectedCount}/{aantalNum}):</p>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs text-muted-foreground">Selecteer werknemers ({selectedCount}/{aantalNum}):</p>
+            <div className="flex gap-2">
+              {selectedCount > 0 && (
+                <button
+                  onClick={() => !disabled && onChangeWerknemers([])}
+                  disabled={disabled}
+                  className="text-xs text-red-500 hover:text-red-700 font-medium"
+                >
+                  Wis alles
+                </button>
+              )}
+              <button
+                onClick={() => {
+                  if (disabled) return;
+                  const allIds = beschikbareWerknemers.map(w => w.id);
+                  onChangeWerknemers(allIds);
+                }}
+                disabled={disabled}
+                className="text-xs text-primary hover:text-primary/80 font-medium"
+              >
+                Selecteer alle
+              </button>
+            </div>
+          </div>
           {beschikbareWerknemers.length === 0 ? (
             <p className="text-xs text-muted-foreground italic py-2">Geen werknemers beschikbaar</p>
           ) : (
