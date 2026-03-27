@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { format } from "date-fns";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,18 +42,6 @@ export default function Werkspots() {
     queryKey: ["plaatsingen"],
     queryFn: () => base44.entities.Plaatsing.filter({ status: "actief" }),
   });
-
-  const vandaag = format(new Date(), "yyyy-MM-dd");
-  const { data: dagPlanning = [] } = useQuery({
-    queryKey: ["werkspot-planning-vandaag", vandaag],
-    queryFn: () => base44.entities.WerkspotPlanning.filter({ datum: vandaag }),
-  });
-
-  const planningMap = useMemo(() => {
-    const map = {};
-    dagPlanning.forEach(p => { map[p.werkspot_id] = p.gepland_aantal; });
-    return map;
-  }, [dagPlanning]);
 
   const createMut = useMutation({
     mutationFn: (data) => base44.entities.Werkspot.create(data),
@@ -157,16 +144,11 @@ export default function Werkspots() {
                 </div>
               </div>
               {ws.beschrijving && <p className="text-sm text-muted-foreground">{ws.beschrijving}</p>}
-              <div className="flex items-center gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
                 <Users className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
                   {(ws.toegewezen_werknemers || []).length} werknemers
                 </span>
-                {planningMap[ws.id] != null && planningMap[ws.id] > 0 && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    Gepland: {planningMap[ws.id]}
-                  </Badge>
-                )}
                 <Badge variant="secondary" className={ws.status === "actief" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}>
                   {ws.status}
                 </Badge>

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { format } from "date-fns";
 import { Plus, MapPin, Loader2, Search, X, User, AlertCircle, UserPlus, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,8 +34,6 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [quickAssignWorker, setQuickAssignWorker] = useState(null);
   const [actieveRegistraties, setActieveRegistraties] = useState([]);
 
-  const [dagPlanning, setDagPlanning] = useState({});
-
   const loadWerkspots = async () => {
     setLoading(true);
     const res = await base44.functions.invoke("locationWerkspots", {
@@ -47,15 +44,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     setLoading(false);
   };
 
-  const loadDagPlanning = async () => {
-    const vandaag = format(new Date(), "yyyy-MM-dd");
-    const planning = await base44.entities.WerkspotPlanning.filter({ eindklant_id: klant.id, datum: vandaag });
-    const map = {};
-    planning.forEach(p => { map[p.werkspot_id] = p.gepland_aantal; });
-    setDagPlanning(map);
-  };
-
-  useEffect(() => { loadWerkspots(); loadTijdelijkeWerknemers(); loadRegistraties(); loadDagPlanning(); }, [klant.id]);
+  useEffect(() => { loadWerkspots(); loadTijdelijkeWerknemers(); loadRegistraties(); }, [klant.id]);
 
   const loadRegistraties = async () => {
     const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
@@ -350,7 +339,6 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                     werknemers={werknemers}
                     tijdelijkeWerknemers={tijdelijkeWerknemers}
                     actieveRegistraties={actieveRegistraties}
-                    geplandAantal={dagPlanning[ws.id] || 0}
                     onDelete={handleDelete}
                     onAssign={handleAssign}
                     onRemoveWorker={handleRemoveWorker}
