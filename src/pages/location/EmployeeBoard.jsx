@@ -1,12 +1,14 @@
 import React, { useState, useMemo } from "react";
-import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X } from "lucide-react";
+import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus } from "lucide-react";
+import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
-export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], onAction, onLogout, onNavigate, actionLoading }) {
+export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], tijdelijkeWerknemers = [], onAction, onLogout, onNavigate, actionLoading, onTijdelijkAdded }) {
   if (!klant) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -21,6 +23,32 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   const [selected, setSelected] = useState([]);
   const [mode, setMode] = useState(null);
   const [search, setSearch] = useState("");
+  const [showTijdelijkForm, setShowTijdelijkForm] = useState(false);
+  const [tijdelijkForm, setTijdelijkForm] = useState({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
+  const [savingTijdelijk, setSavingTijdelijk] = useState(false);
+
+  const handleAddTijdelijk = async () => {
+    if (!tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()) return;
+    setSavingTijdelijk(true);
+    await base44.functions.invoke("tijdelijkeWerknemer", {
+      action: "create",
+      voornaam: tijdelijkForm.voornaam.trim(),
+      achternaam: tijdelijkForm.achternaam.trim(),
+      telefoon: tijdelijkForm.telefoon.trim(),
+      opmerking: tijdelijkForm.opmerking.trim(),
+      eindklant_id: klant.id,
+      eindklant_naam: klant.naam,
+    });
+    setTijdelijkForm({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
+    setShowTijdelijkForm(false);
+    setSavingTijdelijk(false);
+    onTijdelijkAdded?.();
+  };
+
+  const handleStopTijdelijk = async (id) => {
+    await base44.functions.invoke("tijdelijkeWerknemer", { action: "stop", id });
+    onTijdelijkAdded?.();
+  };
 
   const filteredWerknemers = useMemo(() => {
     if (!search.trim()) return werknemers;
@@ -130,6 +158,41 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
 
       {/* Employee grid */}
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        {/* Tijdelijke werknemers */}
+        {tijdelijkeWerknemers.filter(t => t.status === "ingecheckt").map((t) => (
+          <div
+            key={`tmp-${t.id}`}
+            className="rounded-xl border-2 border-orange-300 bg-orange-50 p-4 text-center relative"
+          >
+            <div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg bg-orange-500">
+              {(t.voornaam || "?").charAt(0)}
+            </div>
+            <p className="text-sm font-semibold text-gray-800 truncate">{t.voornaam} {t.achternaam}</p>
+            <p className="text-[10px] text-orange-600 font-medium">(tijdelijk)</p>
+            <div className="mt-2 flex items-center justify-center gap-1 text-xs text-green-700 font-medium">
+              <Clock className="w-3 h-3" /> {t.start_tijd}
+            </div>
+            <button
+              onClick={() => handleStopTijdelijk(t.id)}
+              className="mt-2 text-[10px] bg-red-500 text-white px-2 py-0.5 rounded-full hover:bg-red-600"
+            >
+              Stop
+            </button>
+          </div>
+        ))}
+
+        {/* Add tijdelijk button */}
+        <div
+          onClick={() => setShowTijdelijkForm(true)}
+          className="rounded-xl border-2 border-dashed border-orange-300 p-4 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors flex flex-col items-center justify-center gap-2"
+        >
+          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-orange-100 text-orange-500">
+            <UserPlus className="w-6 h-6" />
+          </div>
+          <p className="text-xs font-semibold text-orange-600">Tijdelijk toevoegen</p>
+        </div>
+
+        {/* Regular employees */}
         {filteredWerknemers.map((w) => {
           const isActive = !!actieveMap[w.id];
           const reg = actieveMap[w.id];
@@ -170,6 +233,27 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           );
         })}
       </div>
+
+      {/* Tijdelijk toevoegen dialog */}
+      <Dialog open={showTijdelijkForm} onOpenChange={setShowTijdelijkForm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader><DialogTitle>Tijdelijke werknemer inchecken</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="grid grid-cols-2 gap-3">
+              <Input placeholder="Voornaam *" value={tijdelijkForm.voornaam} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, voornaam: e.target.value })} />
+              <Input placeholder="Achternaam *" value={tijdelijkForm.achternaam} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, achternaam: e.target.value })} />
+            </div>
+            <Input placeholder="Telefoonnummer" value={tijdelijkForm.telefoon} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, telefoon: e.target.value })} />
+            <Input placeholder="Opmerking" value={tijdelijkForm.opmerking} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, opmerking: e.target.value })} />
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setShowTijdelijkForm(false)}>Annuleren</Button>
+              <Button className="bg-orange-500 hover:bg-orange-600" onClick={handleAddTijdelijk} disabled={savingTijdelijk || !tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()}>
+                {savingTijdelijk ? <Loader2 className="w-4 h-4 animate-spin" /> : "Inchecken"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
       </div>
     </div>
   );

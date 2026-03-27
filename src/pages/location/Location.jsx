@@ -18,6 +18,7 @@ export default function Location() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [activePage, setActivePage] = useState("home");
+  const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
 
   const callFunction = async (name, payload) => {
     const response = await base44.functions.invoke(name, payload);
@@ -52,6 +53,8 @@ export default function Location() {
       setWerknemers(data.werknemers || []);
       setActieveRegistraties(data.actieveRegistraties || []);
       setLoggedIn(true);
+      // Load tijdelijke werknemers
+      loadTijdelijkeWerknemers(data.klant.id);
     } catch (err) {
       setLoginLoading(false);
       setError("Er ging iets mis. Probeer opnieuw.");
@@ -97,6 +100,12 @@ export default function Location() {
     setActieveRegistraties(data.actieveRegistraties || []);
     setIsSuperuser(false);
     setLoggedIn(true);
+    loadTijdelijkeWerknemers(selectedKlant.id);
+  }, []);
+
+  const loadTijdelijkeWerknemers = useCallback(async (klantId) => {
+    const res = await callFunction("tijdelijkeWerknemer", { action: "list", eindklant_id: klantId });
+    setTijdelijkeWerknemers(res.records || []);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -104,6 +113,7 @@ export default function Location() {
     setKlant(null);
     setWerknemers([]);
     setActieveRegistraties([]);
+    setTijdelijkeWerknemers([]);
     setIsSuperuser(false);
     setSuperuserKlanten([]);
     setError("");
@@ -139,10 +149,12 @@ export default function Location() {
       klant={klant}
       werknemers={werknemers}
       actieveRegistraties={actieveRegistraties}
+      tijdelijkeWerknemers={tijdelijkeWerknemers}
       onAction={handleAction}
       onLogout={handleLogout}
       onNavigate={handleNavigate}
       actionLoading={actionLoading}
+      onTijdelijkAdded={() => loadTijdelijkeWerknemers(klant.id)}
     />
   );
 }
