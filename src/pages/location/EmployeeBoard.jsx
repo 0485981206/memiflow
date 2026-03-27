@@ -182,6 +182,17 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
 
       {/* Employee grid */}
       <div className="p-4 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+        {/* Add tijdelijk button - always first */}
+        <div
+          onClick={() => setShowTijdelijkForm(true)}
+          className="rounded-xl border-2 border-dashed border-orange-300 p-4 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors flex flex-col items-center justify-center gap-2"
+        >
+          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-orange-100 text-orange-500">
+            <UserPlus className="w-6 h-6" />
+          </div>
+          <p className="text-xs font-semibold text-orange-600">Tijdelijk toevoegen</p>
+        </div>
+
         {/* Tijdelijke werknemers (nieuw, ingecheckt of uitgecheckt, niet gekoppeld) */}
         {tijdelijkeWerknemers.filter(t => t.status !== "gekoppeld").map((t) => {
           const isNieuw = t.status === "nieuw";
@@ -236,17 +247,6 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           </div>
         );
         })}
-
-        {/* Add tijdelijk button */}
-        <div
-          onClick={() => setShowTijdelijkForm(true)}
-          className="rounded-xl border-2 border-dashed border-orange-300 p-4 text-center cursor-pointer hover:border-orange-400 hover:bg-orange-50/50 transition-colors flex flex-col items-center justify-center gap-2"
-        >
-          <div className="w-12 h-12 rounded-full mx-auto flex items-center justify-center bg-orange-100 text-orange-500">
-            <UserPlus className="w-6 h-6" />
-          </div>
-          <p className="text-xs font-semibold text-orange-600">Tijdelijk toevoegen</p>
-        </div>
 
         {/* Actieve werknemers */}
         {actieveWerknemers.map((w) => {

@@ -25,6 +25,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [afwijkingWerknemer, setAfwijkingWerknemer] = useState(null);
   const [afwijkingQueue, setAfwijkingQueue] = useState([]);
   const [afwijkingQueueIndex, setAfwijkingQueueIndex] = useState(0);
+  const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
 
   const loadWerkspots = async () => {
     setLoading(true);
@@ -36,7 +37,12 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     setLoading(false);
   };
 
-  useEffect(() => { loadWerkspots(); }, [klant.id]);
+  useEffect(() => { loadWerkspots(); loadTijdelijkeWerknemers(); }, [klant.id]);
+
+  const loadTijdelijkeWerknemers = async () => {
+    const res = await base44.functions.invoke("tijdelijkeWerknemer", { action: "list", eindklant_id: klant.id });
+    setTijdelijkeWerknemers((res.data.records || []).filter(t => t.status === "nieuw"));
+  };
 
   const handleCreate = async () => {
     if (!naam.trim()) return;
@@ -199,6 +205,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                   key={ws.id}
                   werkspot={ws}
                   werknemers={werknemers}
+                  tijdelijkeWerknemers={tijdelijkeWerknemers}
                   onDelete={handleDelete}
                   onAssign={handleAssign}
                   onRemoveWorker={handleRemoveWorker}

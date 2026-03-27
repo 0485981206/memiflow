@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -13,15 +13,26 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
   const assigned = werkspot.toegewezen_werknemers || [];
 
   const assignedWerknemers = useMemo(() => {
-    return werknemers.filter((w) => assigned.includes(w.id));
+    const regular = werknemers.filter((w) => assigned.includes(w.id));
+    return regular;
   }, [werknemers, assigned]);
+
+  const filteredAssigned = useMemo(() => {
+    if (!assignedSearch.trim()) return assignedWerknemers;
+    const q = assignedSearch.toLowerCase();
+    return assignedWerknemers.filter((w) => (w.naam || "").toLowerCase().includes(q));
+  }, [assignedWerknemers, assignedSearch]);
 
   const available = useMemo(() => {
     const q = search.toLowerCase();
-    return werknemers
+    const regularAvailable = werknemers
       .filter((w) => !assigned.includes(w.id))
       .filter((w) => !q || (w.naam || "").toLowerCase().includes(q));
-  }, [werknemers, assigned, search]);
+    const tijdelijkAvailable = tijdelijkeWerknemers
+      .filter((t) => !q || `${t.voornaam} ${t.achternaam}`.toLowerCase().includes(q))
+      .map((t) => ({ id: t.id, naam: `${t.voornaam} ${t.achternaam}`, isTijdelijk: true }));
+    return [...tijdelijkAvailable, ...regularAvailable];
+  }, [werknemers, tijdelijkeWerknemers, assigned, search]);
 
   const handleConfirm = () => {
     if (selected.length > 0) {
@@ -87,9 +98,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
                   <div>
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2">Toegewezen ({assignedWerknemers.length})</p>
                     <div className="space-y-1">
-                      {assignedWerknemers
-                        .filter((w) => !assignedSearch.trim() || (w.naam || "").toLowerCase().includes(assignedSearch.toLowerCase()))
-                        .map((w) => (
+                      {filteredAssigned.map((w) => (
                         <div key={w.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
                           <span className="text-sm">{w.naam}</span>
                           <button onClick={() => onRemoveWorker(werkspot.id, w.id)} className="text-gray-400 hover:text-red-500 transition-colors">
@@ -120,6 +129,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], onDelete, onAs
                               {isChecked && <Check className="w-3 h-3 text-white" />}
                             </div>
                             <span>{w.naam}</span>
+                            {w.isTijdelijk && <span className="text-[10px] text-orange-500 font-medium">(tijdelijk)</span>}
                           </button>
                         );
                       })
