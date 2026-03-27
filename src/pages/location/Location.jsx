@@ -63,7 +63,7 @@ export default function Location() {
     return response.data;
   };
 
-  const handleLogin = useCallback(async (pincode, stayLoggedIn) => {
+  const handleLogin = useCallback(async (pincode) => {
     setError("");
     setLoginLoading(true);
     try {
@@ -92,13 +92,11 @@ export default function Location() {
       setActieveRegistraties(data.actieveRegistraties || []);
       setLoggedIn(true);
 
-      if (stayLoggedIn) {
-        localStorage.setItem(SESSION_KEY, JSON.stringify({
-          klant_id: data.klant.id,
-          klant_naam: data.klant.naam,
-          timestamp: Date.now(),
-        }));
-      }
+      localStorage.setItem(SESSION_KEY, JSON.stringify({
+        klant_id: data.klant.id,
+        klant_naam: data.klant.naam,
+        timestamp: Date.now(),
+      }));
 
       loadTijdelijkeWerknemers(data.klant.id);
     } catch (err) {
