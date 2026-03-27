@@ -2,12 +2,15 @@ import React, { useState, useCallback } from "react";
 import { appParams } from "@/lib/app-params";
 import PincodeLogin from "./PincodeLogin";
 import EmployeeBoard from "./EmployeeBoard";
+import LocationSelector from "../../components/location/LocationSelector";
 
 export default function Location() {
   const [loggedIn, setLoggedIn] = useState(false);
   const [klant, setKlant] = useState(null);
   const [werknemers, setWerknemers] = useState([]);
   const [actieveRegistraties, setActieveRegistraties] = useState([]);
+  const [isSuperuser, setIsSuperuser] = useState(false);
+  const [superuserKlanten, setSuperuserKlanten] = useState([]);
   const [error, setError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -31,6 +34,13 @@ export default function Location() {
 
       if (data.error) {
         setError(data.error);
+        return;
+      }
+
+      // Superuser flow
+      if (data.superuser) {
+        setIsSuperuser(true);
+        setSuperuserKlanten(data.klanten || []);
         return;
       }
 
@@ -79,13 +89,30 @@ export default function Location() {
     }
   }, [klant]);
 
+  const handleSelectKlant = useCallback(async (selectedKlant) => {
+    setLoginLoading(true);
+    const data = await callFunction("klokLogin", { pincode: "000000", klant_id: selectedKlant.id });
+    setLoginLoading(false);
+    setKlant(selectedKlant);
+    setWerknemers(data.werknemers || []);
+    setActieveRegistraties(data.actieveRegistraties || []);
+    setIsSuperuser(false);
+    setLoggedIn(true);
+  }, []);
+
   const handleLogout = useCallback(() => {
     setLoggedIn(false);
     setKlant(null);
     setWerknemers([]);
     setActieveRegistraties([]);
+    setIsSuperuser(false);
+    setSuperuserKlanten([]);
     setError("");
   }, []);
+
+  if (isSuperuser && !loggedIn) {
+    return <LocationSelector klanten={superuserKlanten} onSelect={handleSelectKlant} onLogout={handleLogout} />;
+  }
 
   if (!loggedIn) {
     return <PincodeLogin onLogin={handleLogin} error={error} loading={loginLoading} />;
