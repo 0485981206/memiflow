@@ -37,7 +37,9 @@ Deno.serve(async (req) => {
         const [startH, startM] = klok.start_tijd.split(':').map(Number);
         const [stopH, stopM] = currentTime.split(':').map(Number);
         const totalMinutes = (stopH * 60 + stopM) - (startH * 60 + startM);
-        const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+        // Subtract 30 minutes for lunch break
+        const nettoMinutes = Math.max(0, totalMinutes - 30);
+        const totalHours = Math.round((nettoMinutes / 60) * 100) / 100;
 
         const prestatie = await base44.asServiceRole.entities.Prestatie.create({
           werknemer_id,

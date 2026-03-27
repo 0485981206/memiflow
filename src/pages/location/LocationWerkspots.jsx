@@ -388,6 +388,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                 onCheckout={handleCheckout}
                 onAfwijking={handleAfwijking}
                 onWerknemerAction={handleWerknemerAction}
+                checkinLoading={checkinLoading}
               />
             )}
         </div>

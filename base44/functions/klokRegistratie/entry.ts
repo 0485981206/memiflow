@@ -44,17 +44,19 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Always start at 08:00
+        const startTijd = '08:00';
         const klok = await base44.asServiceRole.entities.Klokregistratie.create({
           werknemer_id: wId,
           werknemer_naam: naam,
           eindklant_id,
           eindklant_naam: eindklant_naam || '',
           datum: today,
-          start_tijd: currentTime,
+          start_tijd: startTijd,
           status: 'gestart',
         });
 
-        results.push({ werknemer_id: wId, naam, status: 'gestart', klok_id: klok.id, start_tijd: currentTime });
+        results.push({ werknemer_id: wId, naam, status: 'gestart', klok_id: klok.id, start_tijd: startTijd });
       }
     } else if (action === 'stop') {
       for (const wId of werknemer_ids) {
@@ -80,7 +82,9 @@ Deno.serve(async (req) => {
         const [startH, startM] = klok.start_tijd.split(':').map(Number);
         const [stopH, stopM] = currentTime.split(':').map(Number);
         const totalMinutes = (stopH * 60 + stopM) - (startH * 60 + startM);
-        const totalHours = Math.round((totalMinutes / 60) * 100) / 100;
+        // Subtract 30 minutes for lunch break
+        const nettoMinutes = Math.max(0, totalMinutes - 30);
+        const totalHours = Math.round((nettoMinutes / 60) * 100) / 100;
 
         const prestatie = await base44.asServiceRole.entities.Prestatie.create({
           werknemer_id: wId,

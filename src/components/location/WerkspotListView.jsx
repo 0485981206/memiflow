@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { MapPin, Clock, LogIn, LogOut, AlertTriangle, ChevronRight } from "lucide-react";
+import { LogIn, LogOut, AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import WorkTimer from "./WorkTimer";
 
 const SPOT_ICONS = {
   "Billen": "🍗",
@@ -18,7 +19,7 @@ const getSpotIcon = (name) => {
   return "📍";
 };
 
-export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, onWerknemerAction }) {
+export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, onWerknemerAction, checkinLoading }) {
   const werknemerMap = useMemo(() => {
     const map = new Map();
     werknemers.forEach(w => map.set(w.id, w));
@@ -45,13 +46,14 @@ export default function WerkspotListView({ werkspots = [], werknemers = [], tijd
           onCheckout={onCheckout}
           onAfwijking={onAfwijking}
           onWerknemerAction={onWerknemerAction}
+          checkinLoading={checkinLoading}
         />
       ))}
     </div>
   );
 }
 
-function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking, onWerknemerAction }) {
+function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking, onWerknemerAction, checkinLoading }) {
   const [expanded, setExpanded] = useState(false);
   const assigned = ws.toegewezen_werknemers || [];
   const workers = assigned.map(id => werknemerMap.get(id)).filter(Boolean);
@@ -73,12 +75,12 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
         </div>
         <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
           {hasActiveWorker ? (
-            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)}>
-              <LogOut className="w-3 h-3" /> Check-out
+            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)} disabled={checkinLoading}>
+              {checkinLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />} Check-out
             </Button>
           ) : (
-            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0}>
-              <LogIn className="w-3 h-3" /> Check-in
+            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0 || checkinLoading}>
+              {checkinLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />} Check-in
             </Button>
           )}
           <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => onAfwijking?.(ws)} disabled={workers.length === 0}>
@@ -115,9 +117,7 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
                   </div>
                   <div className="flex items-center gap-2">
                     {isActive && startTijd && (
-                      <div className="flex items-center gap-1 text-xs text-green-700 font-medium bg-green-100 px-2 py-0.5 rounded-full">
-                        <Clock className="w-3 h-3" /> {startTijd}
-                      </div>
+                      <WorkTimer startTijd={startTijd} />
                     )}
                     {isActive && (
                       <span className="text-lg">{getSpotIcon(ws.naam)}</span>
