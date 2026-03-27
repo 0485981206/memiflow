@@ -1,6 +1,9 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { Globe, Settings, LayoutGrid, Bell, Bot } from "lucide-react";
+import { Globe, Settings, LayoutGrid, Bell, Bot, LogOut, User } from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -66,10 +69,33 @@ export default function QuickBar() {
         <Bot className="w-[18px] h-[18px]" />
       </Button>
 
-      <div className="ml-1 w-9 h-9 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center text-xs font-semibold text-accent relative">
-        {initials}
-        <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className="ml-1 w-9 h-9 rounded-full bg-accent/10 border-2 border-accent/30 flex items-center justify-center text-xs font-semibold text-accent relative cursor-pointer hover:border-accent/50 transition-colors">
+            {initials}
+            <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-background" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <div className="px-2 py-1.5">
+            <p className="text-sm font-medium">{user?.full_name || "Gebruiker"}</p>
+            <p className="text-xs text-muted-foreground">{user?.email}</p>
+          </div>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link to="/instellingen" className="cursor-pointer">
+              <User className="w-4 h-4 mr-2" /> Profiel
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-destructive cursor-pointer"
+            onClick={() => base44.auth.logout()}
+          >
+            <LogOut className="w-4 h-4 mr-2" /> Uitloggen
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <BaciChatPanel open={baciOpen} onClose={() => setBaciOpen(false)} />
     </div>
