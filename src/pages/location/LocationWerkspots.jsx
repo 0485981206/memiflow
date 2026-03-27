@@ -92,14 +92,6 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     loadWerkspots();
   };
 
-  const handleTransferWorker = async (fromWerkspotId, toWerkspotId, werknemerId) => {
-    // Remove from source
-    await base44.functions.invoke("locationWerkspots", { action: "remove_worker", werkspot_id: fromWerkspotId, werknemer_id: werknemerId });
-    // Assign to target
-    await base44.functions.invoke("locationWerkspots", { action: "assign", werkspot_id: toWerkspotId, werknemer_ids: [werknemerId] });
-    await loadWerkspots();
-  };
-
   // Check-in: all assigned werknemers of the werkspot
   const handleCheckin = async (werkspot) => {
     const ids = werkspot.toegewezen_werknemers || [];
@@ -358,8 +350,6 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                     onDelete={handleDelete}
                     onAssign={handleAssign}
                     onRemoveWorker={handleRemoveWorker}
-                    onTransferWorker={handleTransferWorker}
-                    allWerkspots={werkspots}
                     onCheckin={handleCheckin}
                     onCheckout={handleCheckout}
                     onAfwijking={handleAfwijking}
