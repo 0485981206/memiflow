@@ -52,6 +52,15 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
 
   const totaal = useMemo(() => Object.values(aantallen).reduce((sum, v) => sum + (Number(v) || 0), 0), [aantallen]);
 
+  // Build andereSelecties map for cross-werkspot awareness
+  const andereSelecties = useMemo(() => {
+    const map = {};
+    werkspots.forEach(ws => {
+      map[ws.id] = { naam: ws.naam, ids: werknemerSelecties[ws.id] || [] };
+    });
+    return map;
+  }, [werkspots, werknemerSelecties]);
+
   // Get werknemers assigned to this specific werkspot
   const getAvailableWerknemers = (currentWsId) => {
     const ws = werkspots.find(w => w.id === currentWsId);
@@ -148,6 +157,7 @@ export default function PlanningDayEditor({ datum, werkspots, eindklantId, eindk
               aantal={aantallen[ws.id] ?? 0}
               geselecteerdeWerknemers={werknemerSelecties[ws.id] || []}
               beschikbareWerknemers={getAvailableWerknemers(ws.id)}
+              andereSelecties={andereSelecties}
               onChangeAantal={(v) => setAantallen(prev => ({ ...prev, [ws.id]: v === "" ? "" : Number(v) }))}
               onChangeWerknemers={(ids) => setWerknemerSelecties(prev => ({ ...prev, [ws.id]: ids }))}
             />

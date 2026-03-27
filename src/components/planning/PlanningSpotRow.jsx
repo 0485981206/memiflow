@@ -2,7 +2,7 @@ import React, { useState, useMemo } from "react";
 import { MapPin, ChevronDown, ChevronUp, Check, Users, ShieldCheck, UserRoundX } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
-export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknemers = [], beschikbareWerknemers = [], onChangeAantal, onChangeWerknemers, disabled }) {
+export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknemers = [], beschikbareWerknemers = [], andereSelecties = {}, onChangeAantal, onChangeWerknemers, disabled }) {
   const [expanded, setExpanded] = useState(false);
   const [showReserve, setShowReserve] = useState(false);
   const aantalNum = Number(aantal) || 0;
@@ -11,6 +11,19 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
   const reserveWerknemers = useMemo(() => {
     return beschikbareWerknemers.filter(w => !geselecteerdeWerknemers.includes(w.id));
   }, [beschikbareWerknemers, geselecteerdeWerknemers]);
+
+  // Build a map: werknemerId -> werkspot naam where already planned (excluding current)
+  const geplandElders = useMemo(() => {
+    const map = {};
+    Object.entries(andereSelecties).forEach(([wsId, info]) => {
+      if (wsId === werkspot.id) return;
+      (info.ids || []).forEach(id => {
+        if (!map[id]) map[id] = [];
+        map[id].push(info.naam);
+      });
+    });
+    return map;
+  }, [andereSelecties, werkspot.id]);
 
   const toggleWerknemer = (id) => {
     const next = geselecteerdeWerknemers.includes(id)
@@ -97,13 +110,15 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
             <div className="space-y-1 max-h-48 overflow-y-auto">
               {beschikbareWerknemers.map(w => {
                 const isSelected = geselecteerdeWerknemers.includes(w.id);
+                const eldersIn = geplandElders[w.id];
+                const isElders = !!eldersIn && !isSelected;
                 return (
                   <button
                     key={w.id}
                     onClick={() => !disabled && toggleWerknemer(w.id)}
                     disabled={disabled}
                     className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm transition-colors text-left select-none touch-manipulation active:scale-[0.98] ${
-                      isSelected ? "bg-primary/10 text-primary font-medium" : "hover:bg-muted"
+                      isSelected ? "bg-primary/10 text-primary font-medium" : isElders ? "opacity-40" : "hover:bg-muted"
                     }`}
                   >
                     <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
@@ -111,10 +126,15 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
                     }`}>
                       {isSelected && <Check className="w-3 h-3 text-white" />}
                     </div>
-                    <div className="w-7 h-7 rounded-full bg-blue-500 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${isElders ? "bg-gray-400" : "bg-blue-500"}`}>
                       {(w.naam || w.voornaam || "?").charAt(0)}
                     </div>
-                    <span className="truncate">{w.naam || `${w.voornaam} ${w.achternaam}`}</span>
+                    <span className="truncate flex-1">{w.naam || `${w.voornaam} ${w.achternaam}`}</span>
+                    {eldersIn && (
+                      <span className="text-[10px] text-orange-500 font-medium shrink-0 ml-1">
+                        {eldersIn.join(", ")}
+                      </span>
+                    )}
                   </button>
                 );
               })}
@@ -130,21 +150,29 @@ export default function PlanningSpotRow({ werkspot, aantal, geselecteerdeWerknem
             <p className="text-xs text-muted-foreground italic py-2">Alle werknemers zijn geselecteerd</p>
           ) : (
             <div className="space-y-1 max-h-48 overflow-y-auto">
-              {reserveWerknemers.map(w => (
-                <div key={w.id} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm bg-white border">
-                  <div className="w-7 h-7 rounded-full bg-orange-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
-                    {(w.naam || w.voornaam || "?").charAt(0)}
+              {reserveWerknemers.map(w => {
+                const eldersIn = geplandElders[w.id];
+                return (
+                  <div key={w.id} className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm bg-white border ${eldersIn ? "opacity-40" : ""}`}>
+                    <div className={`w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 ${eldersIn ? "bg-gray-400" : "bg-orange-400"}`}>
+                      {(w.naam || w.voornaam || "?").charAt(0)}
+                    </div>
+                    <span className="truncate flex-1">{w.naam || `${w.voornaam} ${w.achternaam}`}</span>
+                    {eldersIn && (
+                      <span className="text-[10px] text-orange-500 font-medium shrink-0">
+                        {eldersIn.join(", ")}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => !disabled && onChangeWerknemers([...geselecteerdeWerknemers, w.id])}
+                      disabled={disabled}
+                      className="text-xs text-primary hover:text-primary/80 font-medium px-2 py-1 rounded hover:bg-primary/10"
+                    >
+                      + Toevoegen
+                    </button>
                   </div>
-                  <span className="truncate flex-1">{w.naam || `${w.voornaam} ${w.achternaam}`}</span>
-                  <button
-                    onClick={() => !disabled && onChangeWerknemers([...geselecteerdeWerknemers, w.id])}
-                    disabled={disabled}
-                    className="text-xs text-primary hover:text-primary/80 font-medium px-2 py-1 rounded hover:bg-primary/10"
-                  >
-                    + Toevoegen
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>

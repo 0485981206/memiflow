@@ -61,6 +61,15 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
     setLoading(false);
   };
 
+  // Build andereSelecties map for cross-werkspot awareness
+  const andereSelecties = useMemo(() => {
+    const map = {};
+    werkspots.forEach(ws => {
+      map[ws.id] = { naam: ws.naam, ids: werknemerSelecties[ws.id] || [] };
+    });
+    return map;
+  }, [werkspots, werknemerSelecties]);
+
   const getAvailableWerknemers = (currentWsId) => {
     const ws = werkspots.find(w => w.id === currentWsId);
     const toegewezen = ws?.toegewezen_werknemers || [];
@@ -226,6 +235,7 @@ export default function LocationPlanning({ klant, onNavigate, onLogout, onRefres
                     aantal={aantallen[ws.id] ?? 0}
                     geselecteerdeWerknemers={werknemerSelecties[ws.id] || []}
                     beschikbareWerknemers={getAvailableWerknemers(ws.id)}
+                    andereSelecties={andereSelecties}
                     onChangeAantal={(v) => setAantallen(prev => ({ ...prev, [ws.id]: v === "" ? "" : Number(v) }))}
                     onChangeWerknemers={(ids) => setWerknemerSelecties(prev => ({ ...prev, [ws.id]: ids }))}
                     disabled={isPast}
