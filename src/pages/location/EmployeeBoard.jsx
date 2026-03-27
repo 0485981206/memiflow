@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import LocationSidebar from "../../components/location/LocationSidebar";
 import EmployeeDetailSheet from "../../components/location/EmployeeDetailSheet";
+import TijdelijkDetailSheet from "../../components/location/TijdelijkDetailSheet";
 
 export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], tijdelijkeWerknemers = [], onAction, onLogout, onNavigate, actionLoading, onTijdelijkAdded }) {
   if (!klant) {
@@ -28,6 +29,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   const [tijdelijkForm, setTijdelijkForm] = useState({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
   const [savingTijdelijk, setSavingTijdelijk] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedTijdelijk, setSelectedTijdelijk] = useState(null);
   const [localWerknemers, setLocalWerknemers] = useState(werknemers);
 
   // Sync werknemers when props change
@@ -201,7 +203,8 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           return (
           <div
             key={`tmp-${t.id}`}
-            className={`rounded-xl border-2 p-4 text-center relative ${
+            onClick={() => setSelectedTijdelijk(t)}
+            className={`rounded-xl border-2 p-4 text-center relative cursor-pointer ${
               isNieuw ? "border-orange-200 bg-orange-50/50" :
               isUitgecheckt ? "border-gray-300 bg-gray-50 opacity-70" : "border-orange-300 bg-orange-50"
             }`}
@@ -325,6 +328,15 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
         isOpen={!!selectedEmployee}
         onClose={() => setSelectedEmployee(null)}
         onStatusChange={handleStatusChange}
+      />
+
+      {/* Tijdelijk detail sheet */}
+      <TijdelijkDetailSheet
+        tijdelijk={selectedTijdelijk}
+        klant={klant}
+        isOpen={!!selectedTijdelijk}
+        onClose={() => setSelectedTijdelijk(null)}
+        onStopTijdelijk={handleStopTijdelijk}
       />
 
       {/* Tijdelijk toevoegen dialog */}
