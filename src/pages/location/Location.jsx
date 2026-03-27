@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import { base44 } from "@/api/base44Client";
 import PincodeLogin from "./PincodeLogin";
 import EmployeeBoard from "./EmployeeBoard";
 import LocationSelector from "../../components/location/LocationSelector";
@@ -15,15 +16,8 @@ export default function Location() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const callFunction = async (name, payload) => {
-    // Try server_url from URL params first, then current origin
-    const urlParams = new URLSearchParams(window.location.search);
-    const serverUrl = urlParams.get('server_url') || localStorage.getItem('base44_app_base_url') || window.location.origin;
-    const res = await fetch(`${serverUrl}/api/functions/${name}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-    return res.json();
+    const response = await base44.functions.invoke(name, payload);
+    return response.data;
   };
 
   const handleLogin = useCallback(async (pincode) => {
