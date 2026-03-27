@@ -24,10 +24,25 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true, record });
     }
 
+    if (action === 'start') {
+      const now = new Date();
+      const brusselsTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Brussels' }));
+      const hours = String(brusselsTime.getHours()).padStart(2, '0');
+      const minutes = String(brusselsTime.getMinutes()).padStart(2, '0');
+      const currentTime = `${hours}:${minutes}`;
+
+      await base44.asServiceRole.entities.TijdelijkeWerknemer.update(params.id, {
+        start_tijd: currentTime,
+        status: 'ingecheckt',
+      });
+      return Response.json({ ok: true });
+    }
+
     if (action === 'stop') {
       const now = new Date();
-      const hours = String(now.getUTCHours() + 1).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
+      const brusselsTime = new Date(now.toLocaleString('en-US', { timeZone: 'Europe/Brussels' }));
+      const hours = String(brusselsTime.getHours()).padStart(2, '0');
+      const minutes = String(brusselsTime.getMinutes()).padStart(2, '0');
       const currentTime = `${hours}:${minutes}`;
 
       await base44.asServiceRole.entities.TijdelijkeWerknemer.update(params.id, {

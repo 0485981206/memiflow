@@ -97,14 +97,42 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   };
 
   const handleAction = async (action) => {
-    const ids = action === "start"
-      ? selected.filter((id) => !actieveMap[id])
-      : selected.filter((id) => !!actieveMap[id]);
-    if (ids.length === 0) return;
-    setMode(action);
-    await onAction(action, ids);
+    // Separate regular employees from tijdelijke
+    const regularIds = selected.filter(id => !id.startsWith('tmp-'));
+    const tijdelijkIds = selected.filter(id => id.startsWith('tmp-')).map(id => id.replace('tmp-', ''));
+    
+    if (action === "start") {
+      const regularToStart = regularIds.filter((id) => !actieveMap[id]);
+      if (regularToStart.length > 0) {
+        await onAction("start", regularToStart);
+      }
+      // Start tijdelijke werknemers
+      for (const id of tijdelijkIds) {
+        const t = tijdelijkeWerknemers.find(tw => tw.id === id);
+        if (t && t.status === "nieuw") {
+          await base44.functions.invoke("tijdelijkeWerknemer", {
+            action: "start",
+            id: id,
+          });
+        }
+      }
+    } else {
+      const regularToStop = regularIds.filter((id) => !!actieveMap[id]);
+      if (regularToStop.length > 0) {
+        await onAction("stop", regularToStop);
+      }
+      // Stop tijdelijke werknemers
+      for (const id of tijdelijkIds) {
+        const t = tijdelijkeWerknemers.find(tw => tw.id === id);
+        if (t && t.status === "ingecheckt") {
+          await handleStopTijdelijk(id);
+        }
+      }
+    }
+    
     setSelected([]);
     setMode(null);
+    onTijdelijkAdded?.();
   };
 
   const gestartCount = Object.keys(actieveMap).length;
@@ -157,20 +185,44 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
                 size="sm"
                 className="bg-green-600 hover:bg-green-700 gap-1"
                 onClick={() => handleAction("start")}
-                disabled={actionLoading || selected.every((id) => !!actieveMap[id])}
+                disabled={actionLoading || selected.filter(id => {
+                  if (id.startsWith('tmp-')) {
+                    const t = tijdelijkeWerknemers.find(tw => tw.id === id.replace('tmp-', ''));
+                    return t && t.status === "nieuw";
+                  }
+                  return !actieveMap[id];
+                }).length === 0}
               >
                 {actionLoading && mode === "start" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Play className="w-4 h-4" />}
-                Start ({selected.filter((id) => !actieveMap[id]).length})
+                Start ({selected.filter(id => {
+                  if (id.startsWith('tmp-')) {
+                    const t = tijdelijkeWerknemers.find(tw => tw.id === id.replace('tmp-', ''));
+                    return t && t.status === "nieuw";
+                  }
+                  return !actieveMap[id];
+                }).length})
               </Button>
               <Button
                 size="sm"
                 variant="destructive"
                 className="gap-1"
                 onClick={() => handleAction("stop")}
-                disabled={actionLoading || selected.every((id) => !actieveMap[id])}
+                disabled={actionLoading || selected.filter(id => {
+                  if (id.startsWith('tmp-')) {
+                    const t = tijdelijkeWerknemers.find(tw => tw.id === id.replace('tmp-', ''));
+                    return t && t.status === "ingecheckt";
+                  }
+                  return !!actieveMap[id];
+                }).length === 0}
               >
                 {actionLoading && mode === "stop" ? <Loader2 className="w-4 h-4 animate-spin" /> : <Square className="w-4 h-4" />}
-                Stop ({selected.filter((id) => !!actieveMap[id]).length})
+                Stop ({selected.filter(id => {
+                  if (id.startsWith('tmp-')) {
+                    const t = tijdelijkeWerknemers.find(tw => tw.id === id.replace('tmp-', ''));
+                    return t && t.status === "ingecheckt";
+                  }
+                  return !!actieveMap[id];
+                }).length})
               </Button>
               <Button size="sm" variant="outline" onClick={() => setSelected([])}>
                 Deselecteer ({selected.length})
@@ -200,15 +252,26 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           const isNieuw = t.status === "nieuw";
           const isUitgecheckt = t.status === "uitgecheckt";
           const isIngecheckt = t.status === "ingecheckt";
+          const isSelected = selected.includes(`tmp-${t.id}`);
           return (
           <div
             key={`tmp-${t.id}`}
             onClick={() => setSelectedTijdelijk(t)}
             className={`rounded-xl border-2 p-4 text-center relative cursor-pointer ${
+              isSelected ? "border-blue-500 bg-blue-50 shadow-md" :
               isNieuw ? "border-orange-200 bg-orange-50/50" :
               isUitgecheckt ? "border-gray-300 bg-gray-50 opacity-70" : "border-orange-300 bg-orange-50"
             }`}
           >
+            {/* Checkbox for selection */}
+            {(isNieuw || isIngecheckt) && (
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={(e) => { e.stopPropagation(); toggleSelect(`tmp-${t.id}`); }}
+                className="absolute top-2 left-2 w-4 h-4 accent-blue-500 cursor-pointer"
+              />
+            )}
             <div className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg ${
               isNieuw ? "bg-orange-400" :
               isUitgecheckt ? "bg-gray-400" : "bg-orange-500"
@@ -221,7 +284,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
               isUitgecheckt ? "text-gray-500" : "text-orange-600"
             }`}>(tijdelijk)</p>
             {isNieuw && (
-              <p className="mt-2 text-[10px] text-orange-500">Nog niet toegewezen</p>
+              <p className="mt-2 text-[10px] text-orange-500">Wacht op check-in</p>
             )}
             {isIngecheckt && t.start_tijd && (
               <>
