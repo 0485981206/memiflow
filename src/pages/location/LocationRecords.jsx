@@ -115,6 +115,11 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
                 </button>
               )}
             </div>
+            {!isToday(selectedDate) && (
+              <Button variant="outline" size="sm" className="h-10 text-xs" onClick={() => setSelectedDate(new Date())}>
+                Vandaag
+              </Button>
+            )}
             <Popover open={calOpen} onOpenChange={setCalOpen}>
               <PopoverTrigger asChild>
                 <Button variant="outline" size="sm" className="gap-1.5 h-10 text-xs">
