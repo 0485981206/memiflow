@@ -17,24 +17,20 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [calOpen, setCalOpen] = useState(false);
 
-  // Calculate numDays from selectedDate to today
-  const numDays = useMemo(() => {
-    const diff = differenceInCalendarDays(new Date(), selectedDate);
-    return Math.max(1, diff + 1);
-  }, [selectedDate]);
+  const selectedDateStr = useMemo(() => format(selectedDate, "yyyy-MM-dd"), [selectedDate]);
 
-  const loadAll = async (days) => {
+  const loadAll = async () => {
     setLoading(true);
-    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id, days: days || numDays });
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id, start_date: selectedDateStr });
     setRecords(res.data.records || []);
     setLoading(false);
   };
 
   useEffect(() => {
-    loadAll(numDays);
-    const interval = setInterval(() => loadAll(numDays), 30000);
+    loadAll();
+    const interval = setInterval(() => loadAll(), 30000);
     return () => clearInterval(interval);
-  }, [klant.id, numDays]);
+  }, [klant.id, selectedDateStr]);
 
   const now = new Date();
   const [tick, setTick] = useState(0);
@@ -69,7 +65,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
   const gestopt = records.filter((r) => r.status === "gestopt");
 
   const reloadRecords = async () => {
-    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id, days: numDays });
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id, start_date: selectedDateStr });
     setRecords(res.data.records || []);
   };
 

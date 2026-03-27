@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { eindklant_id, action, record_id, field, value, days } = await req.json();
+    const { eindklant_id, action, record_id, field, value, days, start_date } = await req.json();
 
     // Update time action
     if (action === 'update_time' && record_id && field && value) {
@@ -23,18 +23,27 @@ Deno.serve(async (req) => {
       return Response.json({ error: 'Missende eindklant_id' }, { status: 400 });
     }
 
-    // Fetch multiple days if requested, otherwise just today
-    const numDays = Math.min(days || 1, 14);
+    // If start_date is provided, fetch only that single date
+    // Otherwise fall back to days-based logic
     const allRecords = [];
-    for (let i = 0; i < numDays; i++) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+    if (start_date) {
       const dayRecords = await base44.asServiceRole.entities.Klokregistratie.filter({
         eindklant_id,
-        datum: dateStr,
+        datum: start_date,
       });
       allRecords.push(...dayRecords);
+    } else {
+      const numDays = Math.min(days || 1, 14);
+      for (let i = 0; i < numDays; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().split('T')[0];
+        const dayRecords = await base44.asServiceRole.entities.Klokregistratie.filter({
+          eindklant_id,
+          datum: dateStr,
+        });
+        allRecords.push(...dayRecords);
+      }
     }
 
     // Sort: by datum desc, then active first, then by start_tijd desc
