@@ -12,20 +12,22 @@ export default function WorkTimer({ startTijd }) {
       const now = new Date();
       const currentH = now.getHours();
       const currentM = now.getMinutes();
+      const currentS = now.getSeconds();
       
-      let diffMinutes = (currentH * 60 + currentM) - (startH * 60 + startM);
-      if (diffMinutes < 0) diffMinutes = 0;
+      let diffSeconds = (currentH * 3600 + currentM * 60 + currentS) - (startH * 3600 + startM * 60);
+      if (diffSeconds < 0) diffSeconds = 0;
       
-      const hours = Math.floor(diffMinutes / 60);
-      const mins = diffMinutes % 60;
+      const hours = Math.floor(diffSeconds / 3600);
+      const mins = Math.floor((diffSeconds % 3600) / 60);
+      const secs = diffSeconds % 60;
       
-      return `${hours}u${mins.toString().padStart(2, "0")}m`;
+      return `${hours}u${mins.toString().padStart(2, "0")}m${secs.toString().padStart(2, "0")}s`;
     };
 
     setElapsed(calculateElapsed());
     const interval = setInterval(() => {
       setElapsed(calculateElapsed());
-    }, 60000); // Update every minute
+    }, 1000); // Update every second
 
     return () => clearInterval(interval);
   }, [startTijd]);
