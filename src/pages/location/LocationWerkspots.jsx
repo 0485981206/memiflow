@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, MapPin, Loader2 } from "lucide-react";
+import { Plus, MapPin, Loader2, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -17,6 +17,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [beschrijving, setBeschrijving] = useState("");
   const [saving, setSaving] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
+  const [search, setSearch] = useState("");
 
   // Afwijking state
   const [afwijkingOpen, setAfwijkingOpen] = useState(false);
@@ -134,19 +135,33 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           </Button>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 space-y-4">
+          {/* Search bar */}
+          <div className="relative max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Zoek werkspot op naam..."
+              className="pl-9 pr-9 h-10"
+            />
+            {search && (
+              <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+
           {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
-            </div>
-          ) : werkspots.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <MapPin className="w-10 h-10 mx-auto mb-2 opacity-40" />
               <p>Nog geen werkspots aangemaakt</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {werkspots.map((ws) => (
+              {werkspots
+                .filter((ws) => !search.trim() || ws.naam.toLowerCase().includes(search.toLowerCase()))
+                .map((ws) => (
                 <WerkspotCard
                   key={ws.id}
                   werkspot={ws}
