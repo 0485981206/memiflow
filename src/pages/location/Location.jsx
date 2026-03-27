@@ -18,7 +18,7 @@ export default function Location() {
   const [error, setError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
-  const [activePage, setActivePage] = useState("home");
+  const [activePage, setActivePage] = useState("werkspots");
   const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
 
   const callFunction = async (name, payload) => {
