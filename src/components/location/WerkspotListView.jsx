@@ -1,8 +1,8 @@
 import React, { useMemo, useState } from "react";
-import { MapPin, Clock, User, LogIn, LogOut, AlertTriangle, ChevronRight } from "lucide-react";
+import { MapPin, Clock, User, LogIn, LogOut, AlertTriangle, ChevronRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking }) {
+export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, loadingWerkspotId = null, isAnyLoading = false }) {
   const werknemerMap = useMemo(() => {
     const map = new Map();
     werknemers.forEach(w => map.set(w.id, w));
@@ -28,13 +28,15 @@ export default function WerkspotListView({ werkspots = [], werknemers = [], tijd
           onCheckin={onCheckin}
           onCheckout={onCheckout}
           onAfwijking={onAfwijking}
+          isActionLoading={loadingWerkspotId === ws.id}
+          isAnyLoading={isAnyLoading}
         />
       ))}
     </div>
   );
 }
 
-function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking }) {
+function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
   const [expanded, setExpanded] = useState(false);
   const assigned = ws.toegewezen_werknemers || [];
   const workers = assigned.map(id => werknemerMap.get(id)).filter(Boolean);
@@ -54,17 +56,19 @@ function WerkspotListItem({ ws, werknemerMap, actieveMap, tijdelijkeWerknemers, 
           <span className="font-semibold text-sm">{ws.naam}</span>
           <span className="text-xs text-gray-400">({workers.length} werknemer{workers.length !== 1 ? "s" : ""})</span>
         </div>
-        <div className="flex gap-1.5" onClick={(e) => e.stopPropagation()}>
+        <div className={`flex gap-1.5 ${isAnyLoading ? "pointer-events-none" : ""}`} onClick={(e) => e.stopPropagation()}>
           {hasActiveWorker ? (
-            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)}>
-              <LogOut className="w-3 h-3" /> Check-out
+            <Button variant="destructive" size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckout?.(ws)} disabled={isAnyLoading}>
+              {isActionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogOut className="w-3 h-3" />}
+              {isActionLoading ? "Bezig..." : "Check-out"}
             </Button>
           ) : (
-            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0}>
-              <LogIn className="w-3 h-3" /> Check-in
+            <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0 || isAnyLoading}>
+              {isActionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />}
+              {isActionLoading ? "Bezig..." : "Check-in"}
             </Button>
           )}
-          <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => onAfwijking?.(ws)} disabled={workers.length === 0}>
+          <Button variant="outline" size="sm" className="h-7 w-7 p-0 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => onAfwijking?.(ws)} disabled={workers.length === 0 || isAnyLoading}>
             <AlertTriangle className="w-3 h-3" />
           </Button>
         </div>

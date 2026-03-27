@@ -18,6 +18,8 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [beschrijving, setBeschrijving] = useState("");
   const [saving, setSaving] = useState(false);
   const [checkinLoading, setCheckinLoading] = useState(false);
+  const [loadingWerkspotId, setLoadingWerkspotId] = useState(null);
+  const [assignLoading, setAssignLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState("grid");
 
@@ -79,8 +81,10 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   };
 
   const handleAssign = async (werkspotId, werknemer_ids) => {
+    setAssignLoading(true);
     await base44.functions.invoke("locationWerkspots", { action: "assign", werkspot_id: werkspotId, werknemer_ids });
-    loadWerkspots();
+    await loadWerkspots();
+    setAssignLoading(false);
   };
 
   const handleRemoveWorker = async (werkspotId, werknemerId) => {
@@ -93,6 +97,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     const ids = werkspot.toegewezen_werknemers || [];
     if (ids.length === 0) return;
     setCheckinLoading(true);
+    setLoadingWerkspotId(werkspot.id);
 
     // Build sets for classification
     const tijdelijkMap = new Map(tijdelijkeWerknemers.map(t => [t.id, t]));
@@ -131,6 +136,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     }
 
     setCheckinLoading(false);
+    setLoadingWerkspotId(null);
     await loadRegistraties();
     loadTijdelijkeWerknemers();
   };
@@ -140,6 +146,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     const ids = werkspot.toegewezen_werknemers || [];
     if (ids.length === 0) return;
     setCheckinLoading(true);
+    setLoadingWerkspotId(werkspot.id);
 
     const tijdelijkMap = new Map(tijdelijkeWerknemers.map(t => [t.id, t]));
     const regularToStop = [];
@@ -173,6 +180,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     }
 
     setCheckinLoading(false);
+    setLoadingWerkspotId(null);
     await loadRegistraties();
     loadTijdelijkeWerknemers();
   };
@@ -345,6 +353,8 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                     onCheckin={handleCheckin}
                     onCheckout={handleCheckout}
                     onAfwijking={handleAfwijking}
+                    isActionLoading={loadingWerkspotId === ws.id}
+                    isAnyLoading={!!loadingWerkspotId || assignLoading}
                   />
                 ))}
               </div>
@@ -357,6 +367,8 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                 onCheckin={handleCheckin}
                 onCheckout={handleCheckout}
                 onAfwijking={handleAfwijking}
+                loadingWerkspotId={loadingWerkspotId}
+                isAnyLoading={!!loadingWerkspotId || assignLoading}
               />
             )}
         </div>
