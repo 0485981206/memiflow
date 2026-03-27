@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Trash2, MapPin, Loader2, Users } from "lucide-react";
+import { Plus, Trash2, MapPin, Loader2, Users, UserPlus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import LocationSidebar from "../../components/location/LocationSidebar";
+import WerkspotCard from "../../components/location/WerkspotCard";
 
 export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout }) {
   const [werkspots, setWerkspots] = useState([]);
@@ -52,6 +53,24 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     loadWerkspots();
   };
 
+  const handleAssign = async (werkspotId, werknemer_ids) => {
+    await base44.functions.invoke("locationWerkspots", {
+      action: "assign",
+      werkspot_id: werkspotId,
+      werknemer_ids,
+    });
+    loadWerkspots();
+  };
+
+  const handleRemoveWorker = async (werkspotId, werknemerId) => {
+    await base44.functions.invoke("locationWerkspots", {
+      action: "remove_worker",
+      werkspot_id: werkspotId,
+      werknemer_id: werknemerId,
+    });
+    loadWerkspots();
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <LocationSidebar activePage="werkspots" onNavigate={onNavigate} onLogout={onLogout} />
@@ -79,24 +98,14 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {werkspots.map((ws) => (
-                <div key={ws.id} className="bg-white rounded-xl border p-4 flex flex-col gap-2">
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-blue-500" />
-                      <span className="font-semibold text-sm">{ws.naam}</span>
-                    </div>
-                    <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => handleDelete(ws.id)}>
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </Button>
-                  </div>
-                  {ws.beschrijving && <p className="text-xs text-gray-500">{ws.beschrijving}</p>}
-                  {ws.toegewezen_werknemers?.length > 0 && (
-                    <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                      <Users className="w-3 h-3" />
-                      <span>{ws.toegewezen_werknemers.length} werknemers</span>
-                    </div>
-                  )}
-                </div>
+                <WerkspotCard
+                  key={ws.id}
+                  werkspot={ws}
+                  werknemers={werknemers}
+                  onDelete={handleDelete}
+                  onAssign={handleAssign}
+                  onRemoveWorker={handleRemoveWorker}
+                />
               ))}
             </div>
           )}

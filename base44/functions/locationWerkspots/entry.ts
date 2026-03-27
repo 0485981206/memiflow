@@ -3,7 +3,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const { action, eindklant_id, eindklant_naam, naam, beschrijving, werkspot_id } = await req.json();
+    const { action, eindklant_id, eindklant_naam, naam, beschrijving, werkspot_id, werknemer_ids, werknemer_id } = await req.json();
 
     if (action === 'list') {
       const werkspots = await base44.asServiceRole.entities.Werkspot.filter({ eindklant_id });
@@ -23,6 +23,24 @@ Deno.serve(async (req) => {
 
     if (action === 'delete') {
       await base44.asServiceRole.entities.Werkspot.delete(werkspot_id);
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'assign') {
+      const ws = await base44.asServiceRole.entities.Werkspot.filter({ id: werkspot_id });
+      if (!ws.length) return Response.json({ error: 'Werkspot niet gevonden' }, { status: 404 });
+      const current = ws[0].toegewezen_werknemers || [];
+      const merged = [...new Set([...current, ...(werknemer_ids || [])])];
+      await base44.asServiceRole.entities.Werkspot.update(werkspot_id, { toegewezen_werknemers: merged });
+      return Response.json({ ok: true });
+    }
+
+    if (action === 'remove_worker') {
+      const ws = await base44.asServiceRole.entities.Werkspot.filter({ id: werkspot_id });
+      if (!ws.length) return Response.json({ error: 'Werkspot niet gevonden' }, { status: 404 });
+      const current = ws[0].toegewezen_werknemers || [];
+      const updated = current.filter(id => id !== werknemer_id);
+      await base44.asServiceRole.entities.Werkspot.update(werkspot_id, { toegewezen_werknemers: updated });
       return Response.json({ ok: true });
     }
 
