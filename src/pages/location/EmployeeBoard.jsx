@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
+import LocationSidebar from "../../components/location/LocationSidebar";
 
 export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], onAction, onLogout, actionLoading }) {
   if (!klant) {
@@ -56,7 +57,9 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   const now = new Date();
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 flex">
+      <LocationSidebar onLogout={onLogout} />
+      <div className="flex-1 ml-16">
       {/* Header */}
       <div className="bg-[#0f2744] text-white px-4 py-4 flex items-center justify-between">
         <div>
@@ -166,6 +169,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
             </div>
           );
         })}
+      </div>
       </div>
     </div>
   );
