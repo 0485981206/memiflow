@@ -7,6 +7,8 @@ import LocationWerkspots from "./LocationWerkspots";
 import LocationRecords from "./LocationRecords";
 import LocationTijdelijk from "./LocationTijdelijk";
 import LocationNfc from "./LocationNfc";
+import LocationPlanning from "./LocationPlanning";
+import LocationWerknemersBoard from "./LocationWerknemersBoard";
 
 const SESSION_KEY = "hriq_location_session";
 const SESSION_TTL = 12 * 60 * 60 * 1000; // 12 hours
@@ -209,17 +211,16 @@ export default function Location() {
     return <LocationNfc klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={handleRefresh} />;
   }
 
+  if (activePage === "planning") {
+    return <LocationPlanning klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={handleRefresh} />;
+  }
+
   return (
-    <EmployeeBoard
+    <LocationWerknemersBoard
       klant={klant}
       werknemers={werknemers}
-      actieveRegistraties={actieveRegistraties}
-      tijdelijkeWerknemers={tijdelijkeWerknemers}
-      onAction={handleAction}
-      onLogout={handleLogout}
       onNavigate={handleNavigate}
-      actionLoading={actionLoading}
-      onTijdelijkAdded={() => loadTijdelijkeWerknemers(klant.id)}
+      onLogout={handleLogout}
       onRefresh={handleRefresh}
     />
   );

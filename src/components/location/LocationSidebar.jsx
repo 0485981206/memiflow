@@ -1,11 +1,12 @@
 import React, { useState } from "react";
 import { useToast } from "@/components/ui/use-toast";
-import { CircleUserRound, MapPin, ClipboardList, LogOut, UserPlus, Nfc, RefreshCw } from "lucide-react";
+import { CircleUserRound, MapPin, ClipboardList, LogOut, UserPlus, Nfc, RefreshCw, Calendar } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 const items = [
   { icon: CircleUserRound, label: "Werknemers", id: "home" },
   { icon: MapPin, label: "Werkspots", id: "werkspots" },
+  { icon: Calendar, label: "Planning", id: "planning" },
   { icon: ClipboardList, label: "Registraties", id: "records" },
   { icon: UserPlus, label: "Tijdelijk", id: "tijdelijk" },
   { icon: Nfc, label: "NFC Badge", id: "nfc" },
