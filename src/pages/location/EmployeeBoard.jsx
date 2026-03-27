@@ -320,7 +320,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setShowTijdelijkForm(false)}>Annuleren</Button>
               <Button className="bg-orange-500 hover:bg-orange-600" onClick={handleAddTijdelijk} disabled={savingTijdelijk || !tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()}>
-                {savingTijdelijk ? <Loader2 className="w-4 h-4 animate-spin" /> : "Inchecken"}
+                {savingTijdelijk ? <Loader2 className="w-4 h-4 animate-spin" /> : "Opslaan"}
               </Button>
             </div>
           </div>
