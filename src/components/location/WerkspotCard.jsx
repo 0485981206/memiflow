@@ -1,10 +1,21 @@
 import React, { useState, useMemo } from "react";
 import { MapPin, Trash2, Users, UserPlus, X, Check, Search, LogIn, AlertTriangle } from "lucide-react";
+
+const SPOT_COLORS = [
+  { border: "border-l-blue-500", dot: "bg-blue-500" },
+  { border: "border-l-purple-500", dot: "bg-purple-500" },
+  { border: "border-l-amber-500", dot: "bg-amber-500" },
+  { border: "border-l-rose-500", dot: "bg-rose-500" },
+  { border: "border-l-teal-500", dot: "bg-teal-500" },
+  { border: "border-l-indigo-500", dot: "bg-indigo-500" },
+  { border: "border-l-orange-500", dot: "bg-orange-500" },
+  { border: "border-l-cyan-500", dot: "bg-cyan-500" },
+];
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onAfwijking }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -52,15 +63,17 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
     setSelected((prev) => prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]);
   };
 
+  const spotColor = SPOT_COLORS[colorIndex % SPOT_COLORS.length];
+
   return (
-    <div className={`rounded-xl border-2 p-4 flex flex-col gap-3 transition-colors ${
+    <div className={`rounded-xl border p-4 flex flex-col gap-3 transition-colors border-l-4 ${
       isCheckedIn
-        ? "bg-green-50 border-green-400"
-        : "bg-white border-gray-200"
+        ? "bg-green-50 border-green-300 border-l-green-500"
+        : `bg-white border-gray-200 ${spotColor.border}`
     }`}>
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-2">
-          <MapPin className={`w-4 h-4 ${isCheckedIn ? "text-green-600" : "text-blue-500"}`} />
+          <div className={`w-2.5 h-2.5 rounded-full ${isCheckedIn ? "bg-green-500" : spotColor.dot}`} />
           <span className="font-semibold text-sm">{werkspot.naam}</span>
         </div>
         <Button size="icon" variant="ghost" className="h-7 w-7 text-gray-400 hover:text-red-500" onClick={() => onDelete(werkspot.id)}>

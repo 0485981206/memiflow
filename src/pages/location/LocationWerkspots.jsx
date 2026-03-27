@@ -239,10 +239,11 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {werkspots
                 .filter((ws) => !search.trim() || ws.naam.toLowerCase().includes(search.toLowerCase()))
-                .map((ws) => (
+                .map((ws, idx) => (
                 <WerkspotCard
                   key={ws.id}
                   werkspot={ws}
+                  colorIndex={idx}
                   werknemers={werknemers}
                   tijdelijkeWerknemers={tijdelijkeWerknemers}
                   actieveRegistraties={actieveRegistraties}
