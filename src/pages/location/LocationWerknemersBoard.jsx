@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, Search, X, Users, MapPin, LayoutGrid, List, Trash2, AlertTriangle, Loader2 } from "lucide-react";
+import { Plus, Search, X, Users, MapPin, LayoutGrid, List, Trash2, AlertTriangle, Loader2, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -28,7 +28,7 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
   // Assign werkspot dialog
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignEmployee, setAssignEmployee] = useState(null);
-  const [assignWerkspot, setAssignWerkspot] = useState("");
+  const [assignSelectedSpots, setAssignSelectedSpots] = useState([]);
 
   useEffect(() => {
     loadWerkspots();
@@ -106,19 +106,45 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
     toast.success("Werknemer verwijderd");
   };
 
+  // When opening assign dialog, pre-select currently assigned werkspots
+  const openAssignDialog = (employee) => {
+    setAssignEmployee(employee);
+    const currentSpots = (werknemerWerkspotMap[employee.id] || []).map(ws => ws.id);
+    setAssignSelectedSpots(currentSpots);
+    setAssignDialogOpen(true);
+  };
+
+  const toggleAssignSpot = (wsId) => {
+    setAssignSelectedSpots(prev => prev.includes(wsId) ? prev.filter(id => id !== wsId) : [...prev, wsId]);
+  };
+
   const handleAssignWerkspot = async () => {
-    if (!assignEmployee || !assignWerkspot) return;
+    if (!assignEmployee) return;
     setSaving(true);
-    await base44.functions.invoke("locationWerkspots", {
-      action: "assign",
-      werkspot_id: assignWerkspot,
-      werknemer_ids: [assignEmployee.id],
-    });
+    const currentSpots = (werknemerWerkspotMap[assignEmployee.id] || []).map(ws => ws.id);
+    const toAdd = assignSelectedSpots.filter(id => !currentSpots.includes(id));
+    const toRemove = currentSpots.filter(id => !assignSelectedSpots.includes(id));
+
+    for (const wsId of toAdd) {
+      await base44.functions.invoke("locationWerkspots", {
+        action: "assign",
+        werkspot_id: wsId,
+        werknemer_ids: [assignEmployee.id],
+      });
+    }
+    for (const wsId of toRemove) {
+      await base44.functions.invoke("locationWerkspots", {
+        action: "remove_worker",
+        werkspot_id: wsId,
+        werknemer_id: assignEmployee.id,
+      });
+    }
+
     setSaving(false);
     setAssignDialogOpen(false);
     setAssignEmployee(null);
-    setAssignWerkspot("");
-    toast.success("Werkplaats toegewezen");
+    setAssignSelectedSpots([]);
+    toast.success("Werkplaatsen bijgewerkt");
     loadWerkspots();
   };
 
@@ -190,7 +216,7 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
                       )}
                     </div>
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost" onClick={() => { setAssignEmployee(w); setAssignDialogOpen(true); }}><MapPin className="w-4 h-4" /></Button>
+                      <Button size="sm" variant="ghost" onClick={() => openAssignDialog(w)}><MapPin className="w-4 h-4" /></Button>
                       <Button size="sm" variant="ghost" className="text-amber-500" onClick={() => setAfwijkingEmployee(w)}><AlertTriangle className="w-4 h-4" /></Button>
                       <Button size="sm" variant="ghost" className="text-red-500" onClick={() => handleDeleteEmployee(w)}><Trash2 className="w-4 h-4" /></Button>
                     </div>
@@ -217,7 +243,7 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
                       <p className="text-[10px] text-gray-400 truncate">{spots[0].naam}</p>
                     )}
                     <div className="flex justify-center gap-1 mt-2">
-                      <button onClick={(e) => { e.stopPropagation(); setAssignEmployee(w); setAssignDialogOpen(true); }} className="p-1.5 rounded-lg hover:bg-gray-100"><MapPin className="w-3.5 h-3.5 text-gray-400" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); openAssignDialog(w); }} className="p-1.5 rounded-lg hover:bg-gray-100"><MapPin className="w-3.5 h-3.5 text-gray-400" /></button>
                       <button onClick={(e) => { e.stopPropagation(); setAfwijkingEmployee(w); }} className="p-1.5 rounded-lg hover:bg-amber-50"><AlertTriangle className="w-3.5 h-3.5 text-amber-500" /></button>
                       <button onClick={(e) => { e.stopPropagation(); handleDeleteEmployee(w); }} className="p-1.5 rounded-lg hover:bg-red-50"><Trash2 className="w-3.5 h-3.5 text-red-500" /></button>
                     </div>
@@ -249,24 +275,31 @@ export default function LocationWerknemersBoard({ klant, werknemers: initialWerk
         </Dialog>
 
         {/* Assign werkspot dialog */}
-        <Dialog open={assignDialogOpen} onOpenChange={(o) => { setAssignDialogOpen(o); if (!o) setAssignEmployee(null); }}>
+        <Dialog open={assignDialogOpen} onOpenChange={(o) => { setAssignDialogOpen(o); if (!o) { setAssignEmployee(null); setAssignSelectedSpots([]); } }}>
           <DialogContent className="max-w-sm">
-            <DialogHeader><DialogTitle>Werkplaats toewijzen</DialogTitle></DialogHeader>
-            <p className="text-sm text-gray-600 mb-3">Kies werkplaats voor <strong>{assignEmployee?.naam}</strong>:</p>
+            <DialogHeader><DialogTitle>Werkplaatsen toewijzen</DialogTitle></DialogHeader>
+            <p className="text-sm text-gray-600 mb-3">Kies werkplaatsen voor <strong>{assignEmployee?.naam}</strong>:</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {werkspots.map(ws => (
-                <button
-                  key={ws.id}
-                  onClick={() => setAssignWerkspot(ws.id)}
-                  className={`w-full flex items-center gap-2 px-3 py-2.5 text-sm border rounded-lg transition-colors text-left ${assignWerkspot === ws.id ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50"}`}
-                >
-                  <MapPin className="w-4 h-4 text-blue-500" /> {ws.naam}
-                </button>
-              ))}
+              {werkspots.map(ws => {
+                const isChecked = assignSelectedSpots.includes(ws.id);
+                return (
+                  <button
+                    key={ws.id}
+                    onClick={() => toggleAssignSpot(ws.id)}
+                    className={`w-full flex items-center gap-3 px-3 py-2.5 text-sm border rounded-lg transition-colors text-left ${isChecked ? "bg-blue-50 border-blue-300" : "hover:bg-gray-50"}`}
+                  >
+                    <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${isChecked ? "bg-blue-500 border-blue-500" : "border-gray-300"}`}>
+                      {isChecked && <Check className="w-3 h-3 text-white" />}
+                    </div>
+                    <MapPin className="w-4 h-4 text-blue-500" />
+                    <span>{ws.naam}</span>
+                  </button>
+                );
+              })}
             </div>
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="outline" onClick={() => setAssignDialogOpen(false)}>Annuleren</Button>
-              <Button onClick={handleAssignWerkspot} disabled={saving || !assignWerkspot}>
+              <Button onClick={handleAssignWerkspot} disabled={saving}>
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Toewijzen"}
               </Button>
             </div>
