@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Clock, Loader2, CheckCircle2, ArrowRight, Pencil, Check, X, Trash2 } from "lucide-react";
-import { format } from "date-fns";
+import { Clock, Loader2, CheckCircle2, ArrowRight, Pencil, Check, X, Trash2, Search, Calendar } from "lucide-react";
+import { format, parseISO, isToday } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -11,17 +11,21 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [search, setSearch] = useState("");
+  const [numDays, setNumDays] = useState(3);
+
+  const loadAll = async (days) => {
+    setLoading(true);
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id, days: days || numDays });
+    setRecords(res.data.records || []);
+    setLoading(false);
+  };
+
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
-      setRecords(res.data.records || []);
-      setLoading(false);
-    };
-    load();
-    const interval = setInterval(load, 30000); // refresh elke 30s
+    loadAll(numDays);
+    const interval = setInterval(() => loadAll(numDays), 30000);
     return () => clearInterval(interval);
-  }, [klant.id]);
+  }, [klant.id, numDays]);
 
   const now = new Date();
   const [tick, setTick] = useState(0);
@@ -30,11 +34,29 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
     return () => clearInterval(t);
   }, []);
 
+  const filteredRecords = useMemo(() => {
+    if (!search.trim()) return records;
+    const q = search.toLowerCase();
+    return records.filter(r => (r.werknemer_naam || "").toLowerCase().includes(q));
+  }, [records, search]);
+
+  // Group by datum
+  const groupedByDate = useMemo(() => {
+    const groups = {};
+    for (const r of filteredRecords) {
+      const key = r.datum || "onbekend";
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(r);
+    }
+    // Sort dates descending
+    return Object.entries(groups).sort(([a], [b]) => b.localeCompare(a));
+  }, [filteredRecords]);
+
   const actief = records.filter((r) => r.status === "gestart");
   const gestopt = records.filter((r) => r.status === "gestopt");
 
   const reloadRecords = async () => {
-    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id, days: numDays });
     setRecords(res.data.records || []);
   };
 
@@ -67,41 +89,95 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
           </p>
         </div>
 
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-4">
+          {/* Zoekbalk en filter */}
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Zoek werknemer..."
+                className="pl-9 pr-9 h-10"
+              />
+              {search && (
+                <button onClick={() => setSearch("")} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+            <div className="flex bg-gray-100 rounded-lg p-0.5 gap-0.5">
+              {[1, 3, 7, 14].map(d => (
+                <button
+                  key={d}
+                  onClick={() => setNumDays(d)}
+                  className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                    numDays === d ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {d === 1 ? "Vandaag" : `${d}d`}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {loading ? (
             <div className="flex justify-center py-12">
               <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
             </div>
-          ) : records.length === 0 ? (
+          ) : filteredRecords.length === 0 ? (
             <div className="text-center py-12 text-gray-400">
               <Clock className="w-10 h-10 mx-auto mb-2 opacity-40" />
-              <p>Geen registraties vandaag</p>
+              <p>{search ? "Geen resultaten gevonden" : "Geen registraties"}</p>
             </div>
           ) : (
-            <>
-              {actief.length > 0 && (
-                <div>
-                  <h2 className="text-sm font-semibold text-green-700 mb-3 flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4" /> Actief ({actief.length})
-                  </h2>
-                  <div className="space-y-2">
-                    {actief.map((r) => (
-                      <RecordRow key={r.id} record={r} tick={tick} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
-                    ))}
+            <div className="space-y-6">
+              {groupedByDate.map(([datum, dayRecords]) => {
+                const dateObj = parseISO(datum);
+                const dayActief = dayRecords.filter(r => r.status === "gestart");
+                const dayGestopt = dayRecords.filter(r => r.status === "gestopt");
+                const isVandaag = isToday(dateObj);
+
+                return (
+                  <div key={datum}>
+                    <div className="flex items-center gap-2 mb-3 sticky top-0 bg-gray-50 py-2 z-10">
+                      <Calendar className="w-4 h-4 text-muted-foreground" />
+                      <h2 className="text-sm font-bold text-foreground">
+                        {isVandaag ? "Vandaag" : format(dateObj, "EEEE d MMMM", { locale: nl })}
+                      </h2>
+                      <span className="text-xs text-muted-foreground">
+                        — {dayRecords.length} registratie{dayRecords.length !== 1 ? "s" : ""}
+                        {dayActief.length > 0 && <span className="text-green-600 font-medium"> · {dayActief.length} actief</span>}
+                      </span>
+                    </div>
+
+                    {dayActief.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1.5 pl-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Actief ({dayActief.length})
+                        </p>
+                        <div className="space-y-2">
+                          {dayActief.map(r => (
+                            <RecordRow key={r.id} record={r} tick={tick} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {dayGestopt.length > 0 && (
+                      <div>
+                        <p className="text-xs font-semibold text-gray-400 mb-2 pl-1">Gestopt ({dayGestopt.length})</p>
+                        <div className="space-y-2">
+                          {dayGestopt.map(r => (
+                            <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
-              {gestopt.length > 0 && (
-                <div>
-                  <h2 className="text-sm font-semibold text-gray-500 mb-3">Gestopt ({gestopt.length})</h2>
-                  <div className="space-y-2">
-                    {gestopt.map((r) => (
-                      <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
-                    ))}
-                  </div>
-                </div>
-              )}
-            </>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>
