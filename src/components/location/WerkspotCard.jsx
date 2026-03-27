@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2, Timer } from "lucide-react";
+import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2, Timer, ArrowRightLeft } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -18,8 +18,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onTransferWorker, allWerkspots = [], onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
   const [open, setOpen] = useState(false);
+  const [transferOpen, setTransferOpen] = useState(false);
+  const [transferWorkerId, setTransferWorkerId] = useState(null);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
   const [assignedSearch, setAssignedSearch] = useState("");
@@ -172,16 +174,29 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
                     ) : (
                       <div className="space-y-1">
                         {filteredAssigned.map((w) => (
-                          <div key={w.id} className="flex items-center justify-between bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
+                          <div key={w.id} className="bg-green-50 border border-green-200 rounded-lg px-3 py-2.5">
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-full bg-green-500 flex items-center justify-center text-white text-xs font-bold">
                                 {(w.naam || "?").charAt(0)}
                               </div>
                               <span className="text-sm font-medium text-green-800">{w.naam} {w.isTijdelijk && <span className="text-[10px] text-orange-500 font-medium">(tijdelijk)</span>}</span>
                             </div>
-                            <button onClick={() => onRemoveWorker(werkspot.id, w.id)} className="text-green-400 hover:text-red-500 transition-colors">
-                              <X className="w-4 h-4" />
-                            </button>
+                            {!isCheckedIn && (
+                              <div className="flex gap-2 mt-2 ml-9">
+                                <button
+                                  onClick={() => onRemoveWorker(werkspot.id, w.id)}
+                                  className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition-colors px-2 py-1 rounded-md hover:bg-red-50"
+                                >
+                                  <X className="w-3.5 h-3.5" /> Verwijderen
+                                </button>
+                                <button
+                                  onClick={() => { setTransferWorkerId(w.id); setTransferOpen(true); }}
+                                  className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition-colors px-2 py-1 rounded-md hover:bg-blue-50"
+                                >
+                                  <ArrowRightLeft className="w-3.5 h-3.5" /> Transfer
+                                </button>
+                              </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -253,6 +268,37 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
           <AlertTriangle className="w-3.5 h-3.5" />
         </Button>
       </div>
+
+      {/* Transfer dialog */}
+      <AlertDialog open={transferOpen} onOpenChange={(o) => { setTransferOpen(o); if (!o) setTransferWorkerId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Transfer naar werkspot</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kies de werkspot waarnaar je de werknemer wilt verplaatsen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2 max-h-64 overflow-y-auto py-2">
+            {allWerkspots.filter(ws => ws.id !== werkspot.id).map(ws => (
+              <button
+                key={ws.id}
+                onClick={() => {
+                  onTransferWorker?.(werkspot.id, ws.id, transferWorkerId);
+                  setTransferOpen(false);
+                  setTransferWorkerId(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2.5 text-sm bg-gray-50 hover:bg-blue-50 hover:border-blue-200 border rounded-lg transition-colors text-left"
+              >
+                <ArrowRightLeft className="w-4 h-4 text-blue-500" />
+                {ws.naam}
+              </button>
+            ))}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuleren</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Delete confirmation */}
       <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
