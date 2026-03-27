@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus, Info } from "lucide-react";
+import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -236,7 +236,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           return (
             <div
               key={w.id}
-              onClick={() => toggleSelect(w.id)}
+              onClick={() => setSelectedEmployee(w)}
               className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer relative group ${
                 isSelected
                   ? "border-blue-500 bg-blue-50 shadow-md"
@@ -245,12 +245,12 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
-              <button
-                onClick={(e) => handleEmployeeClick(w, e)}
-                className="absolute top-2 right-2 p-1 rounded-full bg-gray-100 text-gray-400 hover:bg-blue-100 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <Info className="w-3.5 h-3.5" />
-              </button>
+              <input
+                type="checkbox"
+                checked={isSelected}
+                onChange={(e) => { e.stopPropagation(); toggleSelect(w.id); }}
+                className="absolute top-2 left-2 w-4 h-4 accent-blue-500 cursor-pointer"
+              />
               <div
                 className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg ${
                   isCheckedIn ? "bg-green-500" : "bg-gray-300"
@@ -283,7 +283,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
             {inactieveWerknemers.map((w) => (
               <div
                 key={w.id}
-                onClick={(e) => handleEmployeeClick(w, e)}
+                onClick={() => setSelectedEmployee(w)}
                 className="rounded-xl border-2 border-gray-200 bg-gray-100 p-4 text-center cursor-pointer hover:border-gray-300 relative opacity-60"
               >
                 <div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg bg-gray-400">
