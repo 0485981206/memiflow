@@ -2,7 +2,7 @@ import React from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Card } from '@/components/ui/card';
-import { Grid, MapPin } from 'lucide-react';
+import { Grid, MapPin, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { AVAILABLE_ICONS } from '@/lib/workspace-icons';
 
@@ -47,6 +47,7 @@ export default function Workspace() {
               </div>
             </Card>
           </Link>
+          <TijdelijkCard />
           {workspaces.map(ws => {
             const iconDef = AVAILABLE_ICONS.find(i => i.id === ws.icon);
             const IconComponent = iconDef?.component;
@@ -66,5 +67,35 @@ export default function Workspace() {
         </div>
       )}
     </div>
+  );
+}
+
+function TijdelijkCard() {
+  const { data: count = 0 } = useQuery({
+    queryKey: ['tijdelijk-badge'],
+    queryFn: async () => {
+      const res = await base44.functions.invoke('tijdelijkeWerknemer', { action: 'list_all' });
+      const records = res.data.records || [];
+      return records.filter(r => r.status !== 'gekoppeld').length;
+    },
+    refetchInterval: 15000,
+  });
+
+  return (
+    <Link to="/tijdelijke-werknemers">
+      <Card className="p-4 flex flex-col items-center justify-center gap-3 hover:shadow-lg transition-all cursor-pointer relative">
+        {count > 0 && (
+          <span className="absolute top-2 right-2 bg-red-500 text-white text-[10px] font-bold rounded-full w-5 h-5 flex items-center justify-center">
+            {count}
+          </span>
+        )}
+        <div className="p-3 bg-muted rounded-lg">
+          <UserPlus className="w-8 h-8 text-accent" />
+        </div>
+        <div className="text-center flex-1">
+          <p className="font-medium text-sm">Tijdelijke werknemers</p>
+        </div>
+      </Card>
+    </Link>
   );
 }
