@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { Clock, Loader2, CheckCircle2, ArrowRight, Pencil, Check, X } from "lucide-react";
+import { Clock, Loader2, CheckCircle2, ArrowRight, Pencil, Check, X, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,11 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
   const actief = records.filter((r) => r.status === "gestart");
   const gestopt = records.filter((r) => r.status === "gestopt");
 
+  const reloadRecords = async () => {
+    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
+    setRecords(res.data.records || []);
+  };
+
   const handleUpdateTime = async (recordId, field, value) => {
     await base44.functions.invoke("locationRecords", {
       action: "update_time",
@@ -40,9 +45,15 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
       field,
       value,
     });
-    // Reload
-    const res = await base44.functions.invoke("locationRecords", { eindklant_id: klant.id });
-    setRecords(res.data.records || []);
+    await reloadRecords();
+  };
+
+  const handleDelete = async (recordId) => {
+    await base44.functions.invoke("locationRecords", {
+      action: "delete",
+      record_id: recordId,
+    });
+    await reloadRecords();
   };
 
   return (
@@ -75,7 +86,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
                   </h2>
                   <div className="space-y-2">
                     {actief.map((r) => (
-                      <RecordRow key={r.id} record={r} tick={tick} onUpdateTime={handleUpdateTime} />
+                      <RecordRow key={r.id} record={r} tick={tick} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
                     ))}
                   </div>
                 </div>
@@ -85,7 +96,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
                   <h2 className="text-sm font-semibold text-gray-500 mb-3">Gestopt ({gestopt.length})</h2>
                   <div className="space-y-2">
                     {gestopt.map((r) => (
-                      <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} />
+                      <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
                     ))}
                   </div>
                 </div>
@@ -98,7 +109,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
   );
 }
 
-function RecordRow({ record, tick, onUpdateTime }) {
+function RecordRow({ record, tick, onUpdateTime, onDelete }) {
   const isActive = record.status === "gestart";
   const [editField, setEditField] = useState(null);
   const [editValue, setEditValue] = useState("");
@@ -118,20 +129,20 @@ function RecordRow({ record, tick, onUpdateTime }) {
   const handleCancel = () => setEditField(null);
 
   return (
-    <div className={`bg-white rounded-lg border p-3 flex items-center justify-between ${isActive ? "border-green-200" : "border-gray-200"}`}>
+    <div className={`bg-white rounded-lg border p-3 flex items-center justify-between group ${isActive ? "border-green-200" : "border-gray-200"}`}>
       <div className="flex items-center gap-3">
         <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-bold ${isActive ? "bg-green-500" : "bg-gray-300"}`}>
           {(record.werknemer_naam || "?").charAt(0)}
         </div>
         <div>
           <p className="text-sm font-medium">{record.werknemer_naam}</p>
-          <div className="flex items-center gap-1 text-xs text-gray-400">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <Clock className="w-3 h-3" />
             {editField === "start_tijd" ? (
               <TimeEditor value={editValue} onChange={setEditValue} onSave={handleSave} onCancel={handleCancel} />
             ) : (
-              <button onClick={() => handleEdit("start_tijd")} className="hover:text-blue-500 flex items-center gap-0.5">
-                {record.start_tijd} <Pencil className="w-2.5 h-2.5 opacity-0 group-hover:opacity-100" />
+              <button onClick={() => handleEdit("start_tijd")} className="hover:text-blue-500 flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-blue-50 transition-colors">
+                {record.start_tijd} <Pencil className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
               </button>
             )}
             {(record.stop_tijd || isActive) && (
@@ -141,8 +152,8 @@ function RecordRow({ record, tick, onUpdateTime }) {
                   editField === "stop_tijd" ? (
                     <TimeEditor value={editValue} onChange={setEditValue} onSave={handleSave} onCancel={handleCancel} />
                   ) : (
-                    <button onClick={() => handleEdit("stop_tijd")} className="hover:text-blue-500">
-                      {record.stop_tijd}
+                    <button onClick={() => handleEdit("stop_tijd")} className="hover:text-blue-500 flex items-center gap-0.5 px-1 py-0.5 rounded hover:bg-blue-50 transition-colors">
+                      {record.stop_tijd} <Pencil className="w-2.5 h-2.5 opacity-40 group-hover:opacity-100" />
                     </button>
                   )
                 ) : (
@@ -153,17 +164,28 @@ function RecordRow({ record, tick, onUpdateTime }) {
           </div>
         </div>
       </div>
-      <div className="text-right">
-        {isActive && record.start_tijd && (
-          <LiveTimer startTime={record.start_tijd} />
-        )}
-        {!isActive && record.stop_tijd && record.start_tijd && (
-          <span className="text-sm font-semibold text-gray-600">
-            {formatDuration(record.start_tijd, record.stop_tijd)}
-          </span>
-        )}
-        {isActive && (
-          <p className="text-[10px] text-green-600 font-medium animate-pulse">Actief</p>
+      <div className="flex items-center gap-2">
+        <div className="text-right">
+          {isActive && record.start_tijd && (
+            <LiveTimer startTime={record.start_tijd} />
+          )}
+          {!isActive && record.stop_tijd && record.start_tijd && (
+            <span className="text-sm font-semibold text-gray-600">
+              {formatDuration(record.start_tijd, record.stop_tijd)}
+            </span>
+          )}
+          {isActive && (
+            <p className="text-[10px] text-green-600 font-medium animate-pulse">Actief</p>
+          )}
+        </div>
+        {!isActive && onDelete && (
+          <button
+            onClick={() => onDelete(record.id)}
+            className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
+            title="Verwijderen"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
         )}
       </div>
     </div>

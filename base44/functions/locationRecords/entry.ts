@@ -13,6 +13,12 @@ Deno.serve(async (req) => {
       return Response.json({ ok: true });
     }
 
+    // Delete action
+    if (action === 'delete' && record_id) {
+      await base44.asServiceRole.entities.Klokregistratie.delete(record_id);
+      return Response.json({ ok: true });
+    }
+
     if (!eindklant_id) {
       return Response.json({ error: 'Missende eindklant_id' }, { status: 400 });
     }
