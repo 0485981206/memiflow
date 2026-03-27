@@ -169,6 +169,14 @@ export default function Location() {
     setActivePage(page);
   }, []);
 
+  const handleRefresh = useCallback(async () => {
+    if (!klant) return;
+    const data = await callFunction("klokLogin", { pincode: "0000", klant_id: klant.id });
+    setWerknemers(data.werknemers || []);
+    setActieveRegistraties(data.actieveRegistraties || []);
+    loadTijdelijkeWerknemers(klant.id);
+  }, [klant]);
+
   if (autoLogging) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#0f2744] to-[#1a3a5c] flex items-center justify-center">
@@ -200,13 +208,6 @@ export default function Location() {
   if (activePage === "nfc") {
     return <LocationNfc klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
   }
-
-  const handleRefresh = useCallback(async () => {
-    const data = await callFunction("klokLogin", { pincode: "0000", klant_id: klant.id });
-    setWerknemers(data.werknemers || []);
-    setActieveRegistraties(data.actieveRegistraties || []);
-    loadTijdelijkeWerknemers(klant.id);
-  }, [klant]);
 
   return (
     <EmployeeBoard
