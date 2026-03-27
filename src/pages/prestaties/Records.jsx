@@ -32,8 +32,8 @@ function EditableCell({ value, onSave, type = "text", className = "" }) {
       <input
         type={type}
         value={val}
-        onChange={(e) => setVal(type === "number" ? e.target.value : e.target.value)}
-        className="border rounded px-1 py-0.5 text-xs w-16"
+        onChange={(e) => setVal(e.target.value)}
+        className={`border rounded px-1 py-0.5 text-xs ${type === "date" ? "w-28" : "w-16"}`}
         autoFocus
         onKeyDown={(e) => { if (e.key === "Enter") save(); if (e.key === "Escape") setEditing(false); }}
       />
@@ -78,6 +78,27 @@ export default function Records() {
   const handleUpdateField = (id, field, value) => {
     const parsed = field === "uren" || field === "totaal_uren" ? (parseFloat(value) || 0) : value;
     updateMut.mutate({ id, data: { [field]: parsed } });
+  };
+
+  const handleUpdateDatum = async (prestatie, newDatum) => {
+    if (!newDatum || newDatum === prestatie.datum) return;
+    // Update de prestatie datum
+    const dayNames = { 0: "Zo", 1: "Ma", 2: "Di", 3: "Wo", 4: "Do", 5: "Vr", 6: "Za" };
+    const newDay = dayNames[new Date(newDatum).getDay()] || "";
+    await base44.entities.Prestatie.update(prestatie.id, { datum: newDatum, dag: newDay });
+    // Sync gekoppelde klokregistratie als bron is "klok" of "nfc"
+    if ((prestatie.bron === "klok" || prestatie.bron === "nfc") && prestatie.id) {
+      try {
+        const klokRecords = await base44.entities.Klokregistratie.filter({ prestatie_id: prestatie.id });
+        for (const kr of klokRecords) {
+          await base44.entities.Klokregistratie.update(kr.id, { datum: newDatum });
+        }
+      } catch (e) {
+        console.warn("Klokregistratie sync mislukt:", e);
+      }
+    }
+    queryClient.invalidateQueries({ queryKey: ["prestaties-records"] });
+    queryClient.invalidateQueries({ queryKey: ["prestaties"] });
   };
 
   const handleUpdateCheckin = (id, prestatie, slotNum, type, value) => {
@@ -159,7 +180,13 @@ export default function Records() {
                     <tr key={p.id || i} className="border-t hover:bg-muted/30">
                       <td className="p-2 font-medium">{p.werknemer_naam || "—"}</td>
                       <td className="p-2 font-mono text-muted-foreground">{p.externe_id || "—"}</td>
-                      <td className="p-2">{p.datum}</td>
+                      <td className="p-2">
+                        <EditableCell
+                          value={p.datum || ""}
+                          type="date"
+                          onSave={(v) => handleUpdateDatum(p, v)}
+                        />
+                      </td>
                       <td className="p-2 text-muted-foreground">{p.dag || "—"}</td>
                       <td className="p-2 text-muted-foreground">{p.firma || "—"}</td>
                       <td className="p-2 text-right font-medium">
