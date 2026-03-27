@@ -41,6 +41,15 @@ const AuthenticatedApp = () => {
     if (authError.type === 'user_not_registered') {
       return <UserNotRegisteredError />;
     } else if (authError.type === 'auth_required') {
+      // Allow /location without auth
+      if (window.location.pathname === '/location') {
+        return (
+          <Routes>
+            <Route path="/location" element={<Location />} />
+            <Route path="*" element={null} />
+          </Routes>
+        );
+      }
       navigateToLogin();
       return null;
     }
