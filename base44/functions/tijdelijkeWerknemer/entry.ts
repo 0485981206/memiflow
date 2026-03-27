@@ -7,9 +7,6 @@ Deno.serve(async (req) => {
 
     if (action === 'create') {
       const now = new Date();
-      const hours = String(now.getUTCHours() + 1).padStart(2, '0');
-      const minutes = String(now.getMinutes()).padStart(2, '0');
-      const currentTime = `${hours}:${minutes}`;
       const today = now.toISOString().split('T')[0];
 
       const record = await base44.asServiceRole.entities.TijdelijkeWerknemer.create({
@@ -20,8 +17,7 @@ Deno.serve(async (req) => {
         eindklant_id: params.eindklant_id,
         eindklant_naam: params.eindklant_naam || '',
         datum: today,
-        start_tijd: currentTime,
-        status: 'ingecheckt',
+        status: 'nieuw',
         aangemaakt_door: params.aangemaakt_door || '',
       });
 

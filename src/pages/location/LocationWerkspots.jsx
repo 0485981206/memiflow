@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, MapPin, Loader2, Search, X } from "lucide-react";
+import { Plus, MapPin, Loader2, Search, X, User, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -142,7 +142,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
             <Input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Zoek werkspot op naam..."
+              placeholder="Zoek werkspot of werknemer..."
               className="pl-9 pr-9 h-10"
             />
             {search && (
@@ -151,6 +151,39 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
               </button>
             )}
           </div>
+
+          {/* Employee search results */}
+          {search.trim() && (() => {
+            const q = search.toLowerCase();
+            const matchedEmployees = werknemers.filter(w => (w.naam || "").toLowerCase().includes(q));
+            if (matchedEmployees.length === 0) return null;
+            return (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-2">
+                <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider flex items-center gap-1">
+                  <User className="w-3 h-3" /> Gevonden werknemers
+                </p>
+                <div className="space-y-1">
+                  {matchedEmployees.map(w => {
+                    const assignedWerkspot = werkspots.find(ws => (ws.toegewezen_werknemers || []).includes(w.id));
+                    return (
+                      <div key={w.id} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
+                        <span className="font-medium">{w.naam}</span>
+                        {assignedWerkspot ? (
+                          <span className="text-green-600 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {assignedWerkspot.naam}
+                          </span>
+                        ) : (
+                          <span className="text-amber-600 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> Niet toegewezen
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
 
           {loading ? (
             <div className="text-center py-12 text-gray-400">

@@ -29,7 +29,7 @@
     "datum": {
       "type": "string",
       "format": "date",
-      "description": "Datum van check-in"
+      "description": "Datum van aanmaak"
     },
     "start_tijd": {
       "type": "string",
@@ -42,12 +42,13 @@
     "status": {
       "type": "string",
       "enum": [
+        "nieuw",
         "ingecheckt",
         "uitgecheckt",
         "gekoppeld"
       ],
-      "default": "ingecheckt",
-      "description": "Status: ingecheckt, uitgecheckt, of gekoppeld aan bestaande werknemer"
+      "default": "nieuw",
+      "description": "Status: nieuw, ingecheckt, uitgecheckt, of gekoppeld aan bestaande werknemer"
     },
     "gekoppeld_werknemer_id": {
       "type": "string",
