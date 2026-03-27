@@ -1,5 +1,4 @@
 import React, { useState, useCallback } from "react";
-import { appParams } from "@/lib/app-params";
 import PincodeLogin from "./PincodeLogin";
 import EmployeeBoard from "./EmployeeBoard";
 import LocationSelector from "../../components/location/LocationSelector";
@@ -16,8 +15,10 @@ export default function Location() {
   const [actionLoading, setActionLoading] = useState(false);
 
   const callFunction = async (name, payload) => {
-    const baseUrl = appParams.appBaseUrl || '';
-    const res = await fetch(`${baseUrl}/api/functions/${name}`, {
+    // Try server_url from URL params first, then current origin
+    const urlParams = new URLSearchParams(window.location.search);
+    const serverUrl = urlParams.get('server_url') || localStorage.getItem('base44_app_base_url') || window.location.origin;
+    const res = await fetch(`${serverUrl}/api/functions/${name}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
