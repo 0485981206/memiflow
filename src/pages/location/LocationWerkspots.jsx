@@ -51,7 +51,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
 
   const loadTijdelijkeWerknemers = async () => {
     const res = await base44.functions.invoke("tijdelijkeWerknemer", { action: "list", eindklant_id: klant.id });
-    setTijdelijkeWerknemers((res.data.records || []).filter(t => t.status === "nieuw"));
+    setTijdelijkeWerknemers((res.data.records || []).filter(t => t.status === "nieuw" || t.status === "ingecheckt"));
   };
 
   const handleCreate = async () => {

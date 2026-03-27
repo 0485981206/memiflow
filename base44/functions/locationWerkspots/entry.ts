@@ -29,8 +29,23 @@ Deno.serve(async (req) => {
     if (action === 'assign') {
       const ws = await base44.asServiceRole.entities.Werkspot.filter({ id: werkspot_id });
       if (!ws.length) return Response.json({ error: 'Werkspot niet gevonden' }, { status: 404 });
+
+      const newIds = werknemer_ids || [];
+
+      // Remove these workers from any other werkspots at this eindklant
+      const allWerkspots = await base44.asServiceRole.entities.Werkspot.filter({ eindklant_id: ws[0].eindklant_id });
+      for (const other of allWerkspots) {
+        if (other.id === werkspot_id) continue;
+        const otherAssigned = other.toegewezen_werknemers || [];
+        const cleaned = otherAssigned.filter(id => !newIds.includes(id));
+        if (cleaned.length !== otherAssigned.length) {
+          await base44.asServiceRole.entities.Werkspot.update(other.id, { toegewezen_werknemers: cleaned });
+        }
+      }
+
+      // Add to target werkspot
       const current = ws[0].toegewezen_werknemers || [];
-      const merged = [...new Set([...current, ...(werknemer_ids || [])])];
+      const merged = [...new Set([...current, ...newIds])];
       await base44.asServiceRole.entities.Werkspot.update(werkspot_id, { toegewezen_werknemers: merged });
       return Response.json({ ok: true });
     }
