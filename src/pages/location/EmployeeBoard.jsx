@@ -29,7 +29,12 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
   const [savingTijdelijk, setSavingTijdelijk] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [localWerknemers, setLocalWerknemers] = useState(werknemers);
-  const [collapsedGroups, setCollapsedGroups] = useState({});
+  const [collapsedGroups, setCollapsedGroups] = useState(() => {
+    const initial = {};
+    werkspots.forEach(ws => { initial[ws.naam] = true; });
+    initial["Niet toegewezen"] = true;
+    return initial;
+  });
 
   React.useEffect(() => {
     setLocalWerknemers(werknemers);
@@ -55,6 +60,11 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
 
   const handleStopTijdelijk = async (id) => {
     await base44.functions.invoke("tijdelijkeWerknemer", { action: "stop", id });
+    onTijdelijkAdded?.();
+  };
+
+  const handleDeleteTijdelijk = async (id) => {
+    await base44.functions.invoke("tijdelijkeWerknemer", { action: "delete", id });
     onTijdelijkAdded?.();
   };
 
@@ -329,8 +339,24 @@ export default function EmployeeBoard({ klant, werknemers = [], werkspots = [], 
                           Stop
                         </button>
                       )}
+                      {!isUitgecheckt && (
+                        <button
+                          onClick={() => handleDeleteTijdelijk(t.id)}
+                          className="mt-1 text-[10px] text-gray-400 hover:text-red-500 underline"
+                        >
+                          Verwijder
+                        </button>
+                      )}
                       {isUitgecheckt && (
-                        <p className="mt-1.5 text-[10px] text-gray-400">Wacht op koppeling</p>
+                        <div className="mt-1.5 flex items-center justify-center gap-2">
+                          <p className="text-[10px] text-gray-400">Wacht op koppeling</p>
+                          <button
+                            onClick={() => handleDeleteTijdelijk(t.id)}
+                            className="text-[10px] text-red-400 hover:text-red-600 underline"
+                          >
+                            Verwijder
+                          </button>
+                        </div>
                       )}
                     </div>
                   );

@@ -60,6 +60,11 @@ Deno.serve(async (req) => {
       return Response.json({ records });
     }
 
+    if (action === 'delete') {
+      await base44.asServiceRole.entities.TijdelijkeWerknemer.delete(params.id);
+      return Response.json({ ok: true });
+    }
+
     if (action === 'koppel') {
       await base44.asServiceRole.entities.TijdelijkeWerknemer.update(params.id, {
         gekoppeld_werknemer_id: params.werknemer_id,
