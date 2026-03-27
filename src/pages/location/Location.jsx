@@ -201,6 +201,13 @@ export default function Location() {
     return <LocationNfc klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
   }
 
+  const handleRefresh = useCallback(async () => {
+    const data = await callFunction("klokLogin", { pincode: "0000", klant_id: klant.id });
+    setWerknemers(data.werknemers || []);
+    setActieveRegistraties(data.actieveRegistraties || []);
+    loadTijdelijkeWerknemers(klant.id);
+  }, [klant]);
+
   return (
     <EmployeeBoard
       klant={klant}
@@ -212,6 +219,7 @@ export default function Location() {
       onNavigate={handleNavigate}
       actionLoading={actionLoading}
       onTijdelijkAdded={() => loadTijdelijkeWerknemers(klant.id)}
+      onRefresh={handleRefresh}
     />
   );
 }

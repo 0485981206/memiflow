@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus } from "lucide-react";
+import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus, RefreshCw } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,7 @@ import LocationSidebar from "../../components/location/LocationSidebar";
 import EmployeeDetailSheet from "../../components/location/EmployeeDetailSheet";
 import TijdelijkDetailSheet from "../../components/location/TijdelijkDetailSheet";
 
-export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], tijdelijkeWerknemers = [], onAction, onLogout, onNavigate, actionLoading, onTijdelijkAdded }) {
+export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], tijdelijkeWerknemers = [], onAction, onLogout, onNavigate, actionLoading, onTijdelijkAdded, onRefresh }) {
   if (!klant) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -144,8 +144,11 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
       <div className="flex-1 ml-20">
       {/* Header */}
       <div className="bg-[#0f2744] text-white px-4 py-4 flex items-center justify-between">
-        <div>
+        <div className="flex items-center gap-2">
           <h1 className="text-lg font-bold">{klant.naam}</h1>
+          <button onClick={onRefresh} className="text-white/60 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/10">
+            <RefreshCw className="w-4 h-4" />
+          </button>
           <p className="text-xs text-white/60">
             {format(now, "EEEE d MMMM yyyy", { locale: nl })} — {format(now, "HH:mm")}
           </p>
