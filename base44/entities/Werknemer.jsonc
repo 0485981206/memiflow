@@ -49,6 +49,15 @@
       "default": "actief",
       "description": "Status van de werknemer"
     },
+    "location_status": {
+      "type": "string",
+      "enum": [
+        "actief",
+        "inactief"
+      ],
+      "default": "actief",
+      "description": "Locatie status voor teamleader weergave"
+    },
     "startdatum": {
       "type": "string",
       "format": "date",

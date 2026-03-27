@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus } from "lucide-react";
+import { Play, Square, LogOut, Loader2, Clock, CheckCircle2, Search, X, UserPlus, Info } from "lucide-react";
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import LocationSidebar from "../../components/location/LocationSidebar";
+import EmployeeDetailSheet from "../../components/location/EmployeeDetailSheet";
 
 export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], tijdelijkeWerknemers = [], onAction, onLogout, onNavigate, actionLoading, onTijdelijkAdded }) {
   if (!klant) {
@@ -26,6 +27,13 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   const [showTijdelijkForm, setShowTijdelijkForm] = useState(false);
   const [tijdelijkForm, setTijdelijkForm] = useState({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
   const [savingTijdelijk, setSavingTijdelijk] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [localWerknemers, setLocalWerknemers] = useState(werknemers);
+
+  // Sync werknemers when props change
+  React.useEffect(() => {
+    setLocalWerknemers(werknemers);
+  }, [werknemers]);
 
   const handleAddTijdelijk = async () => {
     if (!tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()) return;
@@ -50,14 +58,30 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     onTijdelijkAdded?.();
   };
 
-  const filteredWerknemers = useMemo(() => {
-    if (!search.trim()) return werknemers;
-    const q = search.toLowerCase();
-    return werknemers.filter((w) =>
-      (w.naam || "").toLowerCase().includes(q) ||
-      (w.functie || "").toLowerCase().includes(q)
-    );
-  }, [werknemers, search]);
+  const { actieveWerknemers, inactieveWerknemers } = useMemo(() => {
+    let filtered = localWerknemers;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      filtered = localWerknemers.filter((w) =>
+        (w.naam || "").toLowerCase().includes(q) ||
+        (w.functie || "").toLowerCase().includes(q)
+      );
+    }
+    const actief = filtered.filter(w => w.location_status !== "inactief");
+    const inactief = filtered.filter(w => w.location_status === "inactief");
+    return { actieveWerknemers: actief, inactieveWerknemers: inactief };
+  }, [localWerknemers, search]);
+
+  const handleEmployeeClick = (w, e) => {
+    e.stopPropagation();
+    setSelectedEmployee(w);
+  };
+
+  const handleStatusChange = (werknemerId, newStatus) => {
+    setLocalWerknemers(prev => prev.map(w => 
+      w.id === werknemerId ? { ...w, location_status: newStatus } : w
+    ));
+  };
 
   const actieveMap = {};
   actieveRegistraties.forEach((r) => {
@@ -192,9 +216,9 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           <p className="text-xs font-semibold text-orange-600">Tijdelijk toevoegen</p>
         </div>
 
-        {/* Regular employees */}
-        {filteredWerknemers.map((w) => {
-          const isActive = !!actieveMap[w.id];
+        {/* Actieve werknemers */}
+        {actieveWerknemers.map((w) => {
+          const isCheckedIn = !!actieveMap[w.id];
           const reg = actieveMap[w.id];
           const isSelected = selected.includes(w.id);
 
@@ -202,24 +226,30 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
             <div
               key={w.id}
               onClick={() => toggleSelect(w.id)}
-              className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer ${
+              className={`rounded-xl border-2 p-4 text-center transition-all duration-200 cursor-pointer relative group ${
                 isSelected
                   ? "border-blue-500 bg-blue-50 shadow-md"
-                  : isActive
+                  : isCheckedIn
                   ? "border-green-300 bg-green-50"
                   : "border-gray-200 bg-white hover:border-gray-300"
               }`}
             >
+              <button
+                onClick={(e) => handleEmployeeClick(w, e)}
+                className="absolute top-2 right-2 p-1 rounded-full bg-gray-100 text-gray-400 hover:bg-blue-100 hover:text-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <Info className="w-3.5 h-3.5" />
+              </button>
               <div
                 className={`w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg ${
-                  isActive ? "bg-green-500" : "bg-gray-300"
+                  isCheckedIn ? "bg-green-500" : "bg-gray-300"
                 }`}
               >
                 {(w.naam || "?").charAt(0)}
               </div>
               <p className="text-sm font-semibold text-gray-800 truncate">{w.naam || "Onbekend"}</p>
               {w.functie && <p className="text-[10px] text-gray-400 truncate">{w.functie}</p>}
-              {isActive && reg && (
+              {isCheckedIn && reg && (
                 <div className="mt-2 flex items-center justify-center gap-1 text-xs text-green-700 font-medium">
                   <Clock className="w-3 h-3" /> {reg.start_tijd}
                 </div>
@@ -233,6 +263,37 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
           );
         })}
       </div>
+
+      {/* Niet actieve werknemers */}
+      {inactieveWerknemers.length > 0 && (
+        <div className="px-4 pb-4">
+          <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Niet actief ({inactieveWerknemers.length})</h3>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+            {inactieveWerknemers.map((w) => (
+              <div
+                key={w.id}
+                onClick={(e) => handleEmployeeClick(w, e)}
+                className="rounded-xl border-2 border-gray-200 bg-gray-100 p-4 text-center cursor-pointer hover:border-gray-300 relative opacity-60"
+              >
+                <div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg bg-gray-400">
+                  {(w.naam || "?").charAt(0)}
+                </div>
+                <p className="text-sm font-semibold text-gray-500 truncate">{w.naam || "Onbekend"}</p>
+                <p className="text-[10px] text-gray-400">Niet actief</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Employee detail sheet */}
+      <EmployeeDetailSheet
+        werknemer={selectedEmployee}
+        klant={klant}
+        isOpen={!!selectedEmployee}
+        onClose={() => setSelectedEmployee(null)}
+        onStatusChange={handleStatusChange}
+      />
 
       {/* Tijdelijk toevoegen dialog */}
       <Dialog open={showTijdelijkForm} onOpenChange={setShowTijdelijkForm}>
