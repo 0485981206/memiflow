@@ -61,18 +61,20 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   };
 
   const { actieveWerknemers, inactieveWerknemers } = useMemo(() => {
-    let filtered = localWerknemers;
+    // Filter out checked-in employees
+    let filtered = localWerknemers.filter(w => !actieveMap[w.id]);
     if (search.trim()) {
       const q = search.toLowerCase();
-      filtered = localWerknemers.filter((w) =>
+      filtered = filtered.filter((w) =>
         (w.naam || "").toLowerCase().includes(q) ||
+        (w.alias || "").toLowerCase().includes(q) ||
         (w.functie || "").toLowerCase().includes(q)
       );
     }
     const actief = filtered.filter(w => w.location_status !== "inactief");
     const inactief = filtered.filter(w => w.location_status === "inactief");
     return { actieveWerknemers: actief, inactieveWerknemers: inactief };
-  }, [localWerknemers, search]);
+  }, [localWerknemers, search, actieveMap]);
 
   const handleEmployeeClick = (w, e) => {
     e.stopPropagation();
@@ -85,10 +87,20 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     ));
   };
 
-  const actieveMap = {};
-  actieveRegistraties.forEach((r) => {
-    actieveMap[r.werknemer_id] = r;
-  });
+  const handleWerknemerUpdated = (werknemerId, updates) => {
+    setLocalWerknemers(prev => prev.map(w =>
+      w.id === werknemerId ? { ...w, ...updates } : w
+    ));
+    setSelectedEmployee(prev => prev ? { ...prev, ...updates } : prev);
+  };
+
+  const actieveMap = useMemo(() => {
+    const map = {};
+    actieveRegistraties.forEach((r) => {
+      map[r.werknemer_id] = r;
+    });
+    return map;
+  }, [actieveRegistraties]);
 
   const toggleSelect = (id) => {
     setSelected((prev) =>
@@ -345,13 +357,9 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
               >
                 {(w.naam || "?").charAt(0)}
               </div>
-              <p className="text-sm font-semibold text-gray-800 truncate">{w.naam || "Onbekend"}</p>
-              {w.functie && <p className="text-[10px] text-gray-400 truncate">{w.functie}</p>}
-              {isCheckedIn && reg && (
-                <div className="mt-2 flex items-center justify-center gap-1 text-xs text-green-700 font-medium">
-                  <Clock className="w-3 h-3" /> {reg.start_tijd}
-                </div>
-              )}
+              <p className="text-sm font-semibold text-gray-800 truncate">{w.alias || w.naam || "Onbekend"}</p>
+              {w.alias && <p className="text-[10px] text-gray-400 truncate">{w.naam}</p>}
+              {!w.alias && w.functie && <p className="text-[10px] text-gray-400 truncate">{w.functie}</p>}
               {isSelected && (
                 <div className="mt-1">
                   <CheckCircle2 className="w-5 h-5 text-blue-500 mx-auto" />
@@ -376,8 +384,9 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
                 <div className="w-12 h-12 rounded-full mx-auto mb-2 flex items-center justify-center text-white font-bold text-lg bg-gray-400">
                   {(w.naam || "?").charAt(0)}
                 </div>
-                <p className="text-sm font-semibold text-gray-500 truncate">{w.naam || "Onbekend"}</p>
-                <p className="text-[10px] text-gray-400">Niet actief</p>
+                <p className="text-sm font-semibold text-gray-500 truncate">{w.alias || w.naam || "Onbekend"}</p>
+                {w.alias && <p className="text-[10px] text-gray-400 truncate">{w.naam}</p>}
+                {!w.alias && <p className="text-[10px] text-gray-400">Niet actief</p>}
               </div>
             ))}
           </div>
@@ -391,6 +400,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
         isOpen={!!selectedEmployee}
         onClose={() => setSelectedEmployee(null)}
         onStatusChange={handleStatusChange}
+        onWerknemerUpdated={handleWerknemerUpdated}
       />
 
       {/* Tijdelijk detail sheet */}

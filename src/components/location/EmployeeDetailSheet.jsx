@@ -3,15 +3,30 @@ import { base44 } from "@/api/base44Client";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Clock, ArrowRight, Loader2, UserX, UserCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { MapPin, Clock, ArrowRight, Loader2, UserX, UserCheck, Pencil, Check, X } from "lucide-react";
 import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 
-export default function EmployeeDetailSheet({ werknemer, klant, isOpen, onClose, onStatusChange }) {
+export default function EmployeeDetailSheet({ werknemer, klant, isOpen, onClose, onStatusChange, onWerknemerUpdated }) {
   const [werkspots, setWerkspots] = useState([]);
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [editingName, setEditingName] = useState(false);
+  const [editAlias, setEditAlias] = useState("");
+  const [editVoornaam, setEditVoornaam] = useState("");
+  const [editAchternaam, setEditAchternaam] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen || !werknemer) return;
+    setEditingName(false);
+    setEditAlias(werknemer.alias || "");
+    setEditVoornaam(werknemer.voornaam || "");
+    setEditAchternaam(werknemer.achternaam || "");
+  }, [isOpen, werknemer]);
 
   useEffect(() => {
     if (!isOpen || !werknemer) return;
@@ -71,7 +86,8 @@ export default function EmployeeDetailSheet({ werknemer, klant, isOpen, onClose,
               {(werknemer.naam || "?").charAt(0)}
             </div>
             <div className="flex-1">
-              <SheetTitle className="text-lg">{werknemer.naam}</SheetTitle>
+              <SheetTitle className="text-lg">{werknemer.alias || werknemer.naam}</SheetTitle>
+              {werknemer.alias && <p className="text-xs text-muted-foreground">{werknemer.naam}</p>}
               {werknemer.functie && <p className="text-sm text-muted-foreground">{werknemer.functie}</p>}
               <Badge variant={isInactief ? "secondary" : "default"} className={`mt-1 ${isInactief ? "bg-gray-200 text-gray-600" : "bg-green-100 text-green-700"}`}>
                 {isInactief ? "Niet actief" : "Actief"}
@@ -86,6 +102,66 @@ export default function EmployeeDetailSheet({ werknemer, klant, isOpen, onClose,
           </div>
         ) : (
           <div className="py-4 space-y-6">
+            {/* Naam & alias bewerken */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-semibold text-gray-700 flex items-center gap-2">
+                  <Pencil className="w-4 h-4" /> Naam & alias
+                </h3>
+                {!editingName && (
+                  <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setEditingName(true)}>
+                    <Pencil className="w-3 h-3" /> Bewerken
+                  </Button>
+                )}
+              </div>
+              {editingName ? (
+                <div className="space-y-2 bg-gray-50 rounded-lg p-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Voornaam</Label>
+                      <Input value={editVoornaam} onChange={(e) => setEditVoornaam(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Achternaam</Label>
+                      <Input value={editAchternaam} onChange={(e) => setEditAchternaam(e.target.value)} className="h-8 text-sm" />
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Alias / bijnaam</Label>
+                    <Input value={editAlias} onChange={(e) => setEditAlias(e.target.value)} placeholder="Optioneel - wordt getoond i.p.v. echte naam" className="h-8 text-sm" />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-1">
+                    <Button variant="ghost" size="sm" className="h-7 gap-1" onClick={() => setEditingName(false)}>
+                      <X className="w-3 h-3" /> Annuleren
+                    </Button>
+                    <Button size="sm" className="h-7 gap-1" disabled={savingName || !editVoornaam.trim() || !editAchternaam.trim()} onClick={async () => {
+                      setSavingName(true);
+                      await base44.entities.Werknemer.update(werknemer.id, {
+                        voornaam: editVoornaam.trim(),
+                        achternaam: editAchternaam.trim(),
+                        alias: editAlias.trim() || null,
+                      });
+                      setSavingName(false);
+                      setEditingName(false);
+                      onWerknemerUpdated?.(werknemer.id, {
+                        voornaam: editVoornaam.trim(),
+                        achternaam: editAchternaam.trim(),
+                        alias: editAlias.trim() || null,
+                        naam: `${editVoornaam.trim()} ${editAchternaam.trim()}`,
+                      });
+                    }}>
+                      {savingName ? <Loader2 className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />} Opslaan
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg px-3 py-2 text-sm space-y-1">
+                  <p><span className="text-gray-500">Naam:</span> {werknemer.naam}</p>
+                  {werknemer.alias && <p><span className="text-gray-500">Alias:</span> {werknemer.alias}</p>}
+                </div>
+              )}
+            </div>
+
             {/* Toegewezen werkplaatsen */}
             <div>
               <h3 className="text-sm font-semibold text-gray-700 mb-2 flex items-center gap-2">
