@@ -25,8 +25,11 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
 
   const assignedWerknemers = useMemo(() => {
     const regular = werknemers.filter((w) => assigned.includes(w.id));
-    return regular;
-  }, [werknemers, assigned]);
+    const tijdelijk = tijdelijkeWerknemers
+      .filter((t) => assigned.includes(t.id))
+      .map((t) => ({ id: t.id, naam: `${t.voornaam} ${t.achternaam}`, isTijdelijk: true }));
+    return [...regular, ...tijdelijk];
+  }, [werknemers, tijdelijkeWerknemers, assigned]);
 
   const isCheckedIn = useMemo(() => {
     if (assigned.length === 0) return false;
@@ -45,6 +48,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
       .filter((w) => !assigned.includes(w.id))
       .filter((w) => !q || (w.naam || "").toLowerCase().includes(q));
     const tijdelijkAvailable = tijdelijkeWerknemers
+      .filter((t) => !assigned.includes(t.id))
       .filter((t) => !q || `${t.voornaam} ${t.achternaam}`.toLowerCase().includes(q))
       .map((t) => ({ id: t.id, naam: `${t.voornaam} ${t.achternaam}`, isTijdelijk: true }));
     return [...tijdelijkAvailable, ...regularAvailable];
@@ -122,7 +126,7 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
                     <div className="space-y-1">
                       {filteredAssigned.map((w) => (
                         <div key={w.id} className="flex items-center justify-between bg-gray-50 rounded-lg px-3 py-2">
-                          <span className="text-sm">{w.naam}</span>
+                          <span className="text-sm">{w.naam} {w.isTijdelijk && <span className="text-[10px] text-orange-500 font-medium">(tijdelijk)</span>}</span>
                           <button onClick={() => onRemoveWorker(werkspot.id, w.id)} className="text-gray-400 hover:text-red-500 transition-colors">
                             <X className="w-4 h-4" />
                           </button>
