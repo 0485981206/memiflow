@@ -9,7 +9,7 @@ Deno.serve(async (req) => {
       const now = new Date();
       const today = now.toISOString().split('T')[0];
 
-      const record = await base44.asServiceRole.entities.TijdelijkeWerknemer.create({
+      const createData = {
         voornaam: params.voornaam,
         achternaam: params.achternaam,
         telefoon: params.telefoon || '',
@@ -19,7 +19,9 @@ Deno.serve(async (req) => {
         datum: today,
         status: 'nieuw',
         aangemaakt_door: params.aangemaakt_door || '',
-      });
+      };
+      if (params.alias) createData.alias = params.alias;
+      const record = await base44.asServiceRole.entities.TijdelijkeWerknemer.create(createData);
 
       return Response.json({ ok: true, record });
     }

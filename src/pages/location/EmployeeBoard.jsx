@@ -26,7 +26,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   const [mode, setMode] = useState(null);
   const [search, setSearch] = useState("");
   const [showTijdelijkForm, setShowTijdelijkForm] = useState(false);
-  const [tijdelijkForm, setTijdelijkForm] = useState({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
+  const [tijdelijkForm, setTijdelijkForm] = useState({ voornaam: "", achternaam: "", alias: "", telefoon: "", opmerking: "" });
   const [savingTijdelijk, setSavingTijdelijk] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedTijdelijk, setSelectedTijdelijk] = useState(null);
@@ -44,12 +44,13 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
       action: "create",
       voornaam: tijdelijkForm.voornaam.trim(),
       achternaam: tijdelijkForm.achternaam.trim(),
+      alias: tijdelijkForm.alias.trim() || undefined,
       telefoon: tijdelijkForm.telefoon.trim(),
       opmerking: tijdelijkForm.opmerking.trim(),
       eindklant_id: klant.id,
       eindklant_naam: klant.naam,
     });
-    setTijdelijkForm({ voornaam: "", achternaam: "", telefoon: "", opmerking: "" });
+    setTijdelijkForm({ voornaam: "", achternaam: "", alias: "", telefoon: "", opmerking: "" });
     setShowTijdelijkForm(false);
     setSavingTijdelijk(false);
     onTijdelijkAdded?.();
@@ -290,7 +291,8 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
             }`}>
               {(t.voornaam || "?").charAt(0)}
             </div>
-            <p className="text-sm font-semibold text-gray-800 truncate">{t.voornaam} {t.achternaam}</p>
+            <p className="text-sm font-semibold text-gray-800 truncate">{t.alias || `${t.voornaam} ${t.achternaam}`}</p>
+            {t.alias && <p className="text-[10px] text-gray-400 truncate">{t.voornaam} {t.achternaam}</p>}
             <p className={`text-[10px] font-medium ${
               isNieuw ? "text-orange-500" :
               isUitgecheckt ? "text-gray-500" : "text-orange-600"
@@ -421,6 +423,7 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
               <Input placeholder="Voornaam *" value={tijdelijkForm.voornaam} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, voornaam: e.target.value })} />
               <Input placeholder="Achternaam *" value={tijdelijkForm.achternaam} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, achternaam: e.target.value })} />
             </div>
+            <Input placeholder="Alias / bijnaam (optioneel)" value={tijdelijkForm.alias} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, alias: e.target.value })} />
             <Input placeholder="Telefoonnummer" value={tijdelijkForm.telefoon} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, telefoon: e.target.value })} />
             <Input placeholder="Opmerking" value={tijdelijkForm.opmerking} onChange={(e) => setTijdelijkForm({ ...tijdelijkForm, opmerking: e.target.value })} />
             <div className="flex justify-end gap-2 pt-2">
