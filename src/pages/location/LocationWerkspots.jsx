@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { Plus, MapPin, Loader2, Search, X, User, AlertCircle } from "lucide-react";
+import { Plus, MapPin, Loader2, Search, X, User, AlertCircle, UserPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -26,6 +26,10 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [afwijkingQueue, setAfwijkingQueue] = useState([]);
   const [afwijkingQueueIndex, setAfwijkingQueueIndex] = useState(0);
   const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
+
+  // Quick assign state
+  const [quickAssignOpen, setQuickAssignOpen] = useState(false);
+  const [quickAssignWorker, setQuickAssignWorker] = useState(null);
 
   const loadWerkspots = async () => {
     setLoading(true);
@@ -170,23 +174,28 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                   <User className="w-3 h-3" /> Gevonden werknemers ({matchedEmployees.length + matchedTijdelijk.length})
                 </p>
                 <div className="space-y-1">
-                  {matchedTijdelijk.map(t => (
-                    <div key={`t-${t.id}`} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
-                      <span className="font-medium">{t.voornaam} {t.achternaam} <span className="text-[10px] text-orange-500 font-medium">(tijdelijk)</span></span>
-                      {(() => {
-                        const ws = werkspots.find(ws => (ws.toegewezen_werknemers || []).includes(t.id));
-                        return ws ? (
+                  {matchedTijdelijk.map(t => {
+                    const ws = werkspots.find(ws => (ws.toegewezen_werknemers || []).includes(t.id));
+                    return (
+                      <div key={`t-${t.id}`} className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm">
+                        <span className="font-medium">{t.voornaam} {t.achternaam} <span className="text-[10px] text-orange-500 font-medium">(tijdelijk)</span></span>
+                        {ws ? (
                           <span className="text-green-600 flex items-center gap-1">
                             <MapPin className="w-3 h-3" /> {ws.naam}
                           </span>
                         ) : (
-                          <span className="text-amber-600 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> Niet toegewezen
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  ))}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                            onClick={() => { setQuickAssignWorker({ id: t.id, naam: `${t.voornaam} ${t.achternaam}`, isTijdelijk: true }); setQuickAssignOpen(true); }}
+                          >
+                            <UserPlus className="w-3 h-3" /> Toewijzen
+                          </Button>
+                        )}
+                      </div>
+                    );
+                  })}
                   {matchedEmployees.map(w => {
                     const assignedWerkspot = werkspots.find(ws => (ws.toegewezen_werknemers || []).includes(w.id));
                     return (
@@ -197,9 +206,14 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                             <MapPin className="w-3 h-3" /> {assignedWerkspot.naam}
                           </span>
                         ) : (
-                          <span className="text-amber-600 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> Niet toegewezen
-                          </span>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50"
+                            onClick={() => { setQuickAssignWorker({ id: w.id, naam: w.naam }); setQuickAssignOpen(true); }}
+                          >
+                            <UserPlus className="w-3 h-3" /> Toewijzen
+                          </Button>
                         )}
                       </div>
                     );
@@ -266,6 +280,32 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           werkspot={afwijkingWerkspot}
           onAfwijkingDone={handleAfwijkingDone}
         />
+
+        {/* Quick assign dialog */}
+        <Dialog open={quickAssignOpen} onOpenChange={(o) => { setQuickAssignOpen(o); if (!o) setQuickAssignWorker(null); }}>
+          <DialogContent className="max-w-sm">
+            <DialogHeader>
+              <DialogTitle>Toewijzen aan werkspot</DialogTitle>
+            </DialogHeader>
+            <p className="text-sm text-gray-600 mb-3">Kies een werkspot voor <strong>{quickAssignWorker?.naam}</strong>:</p>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {werkspots.map(ws => (
+                <button
+                  key={ws.id}
+                  onClick={async () => {
+                    await handleAssign(ws.id, [quickAssignWorker.id]);
+                    setQuickAssignOpen(false);
+                    setQuickAssignWorker(null);
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm bg-gray-50 hover:bg-blue-50 hover:border-blue-200 border rounded-lg transition-colors text-left"
+                >
+                  <MapPin className="w-4 h-4 text-blue-500" />
+                  {ws.naam}
+                </button>
+              ))}
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
