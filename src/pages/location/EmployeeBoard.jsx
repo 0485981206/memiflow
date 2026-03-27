@@ -60,6 +60,14 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     onTijdelijkAdded?.();
   };
 
+  const actieveMap = useMemo(() => {
+    const map = {};
+    actieveRegistraties.forEach((r) => {
+      map[r.werknemer_id] = r;
+    });
+    return map;
+  }, [actieveRegistraties]);
+
   const { actieveWerknemers, inactieveWerknemers } = useMemo(() => {
     // Filter out checked-in employees
     let filtered = localWerknemers.filter(w => !actieveMap[w.id]);
@@ -93,14 +101,6 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     ));
     setSelectedEmployee(prev => prev ? { ...prev, ...updates } : prev);
   };
-
-  const actieveMap = useMemo(() => {
-    const map = {};
-    actieveRegistraties.forEach((r) => {
-      map[r.werknemer_id] = r;
-    });
-    return map;
-  }, [actieveRegistraties]);
 
   const toggleSelect = (id) => {
     setSelected((prev) =>
