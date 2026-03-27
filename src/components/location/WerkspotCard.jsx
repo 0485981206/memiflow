@@ -232,9 +232,6 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
 
       {/* Action buttons */}
       <div className={`flex gap-2 pt-2 border-t ${isAnyLoading ? "pointer-events-none" : ""}`}>
-        <Button variant="outline" size="sm" className="flex-1 gap-1.5" onClick={() => setOpen(true)} disabled={isAnyLoading}>
-          <UserPlus className="w-3.5 h-3.5" /> Toewijzen
-        </Button>
         {isCheckedIn ? (
           <Button variant="destructive" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckout?.(werkspot)} disabled={assigned.length === 0 || isAnyLoading}>
             {isActionLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />}
