@@ -32,6 +32,11 @@
         "inactief"
       ],
       "default": "actief"
+    },
+    "auto_checkin": {
+      "type": "boolean",
+      "default": false,
+      "description": "Automatisch inchecken van toegewezen werknemers elke werkdag om 08:00"
     }
   },
   "required": [

@@ -1,5 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2 } from "lucide-react";
+import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2, Timer } from "lucide-react";
+import { base44 } from "@/api/base44Client";
+import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 const SPOT_COLORS = [
@@ -93,6 +95,21 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
       </div>
 
       {werkspot.beschrijving && <p className="text-xs text-gray-500">{werkspot.beschrijving}</p>}
+
+      {/* Auto check-in toggle */}
+      <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
+        <div className="flex items-center gap-2">
+          <Timer className="w-3.5 h-3.5 text-muted-foreground" />
+          <span className="text-xs font-medium">Auto check-in (08:00)</span>
+        </div>
+        <Switch
+          checked={!!werkspot.auto_checkin}
+          onCheckedChange={async (checked) => {
+            await base44.entities.Werkspot.update(werkspot.id, { auto_checkin: checked });
+          }}
+          className="scale-90"
+        />
+      </div>
 
       {/* Assigned employees */}
       <div className="space-y-1.5">
