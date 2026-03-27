@@ -35,9 +35,13 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
   }, []);
 
   const filteredRecords = useMemo(() => {
-    if (!search.trim()) return records;
-    const q = search.toLowerCase();
-    return records.filter(r => (r.werknemer_naam || "").toLowerCase().includes(q));
+    // Alleen volledige records (gestopt, met in én uit)
+    let result = records.filter(r => r.status === "gestopt" && r.start_tijd && r.stop_tijd);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      result = result.filter(r => (r.werknemer_naam || "").toLowerCase().includes(q));
+    }
+    return result;
   }, [records, search]);
 
   // Group by datum
@@ -147,33 +151,14 @@ export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh
                       </h2>
                       <span className="text-xs text-muted-foreground">
                         — {dayRecords.length} registratie{dayRecords.length !== 1 ? "s" : ""}
-                        {dayActief.length > 0 && <span className="text-green-600 font-medium"> · {dayActief.length} actief</span>}
                       </span>
                     </div>
 
-                    {dayActief.length > 0 && (
-                      <div className="mb-3">
-                        <p className="text-xs font-semibold text-green-700 mb-2 flex items-center gap-1.5 pl-1">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Actief ({dayActief.length})
-                        </p>
-                        <div className="space-y-2">
-                          {dayActief.map(r => (
-                            <RecordRow key={r.id} record={r} tick={tick} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {dayGestopt.length > 0 && (
-                      <div>
-                        <p className="text-xs font-semibold text-gray-400 mb-2 pl-1">Gestopt ({dayGestopt.length})</p>
-                        <div className="space-y-2">
-                          {dayGestopt.map(r => (
-                            <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <div className="space-y-2">
+                      {dayRecords.map(r => (
+                        <RecordRow key={r.id} record={r} onUpdateTime={handleUpdateTime} onDelete={handleDelete} />
+                      ))}
+                    </div>
                   </div>
                 );
               })}
