@@ -4,7 +4,7 @@ import Sidebar from "./Sidebar";
 import QuickBar from "../dashboard/QuickBar";
 
 export default function AppLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
 
   return (
     <div className="min-h-screen bg-background">
