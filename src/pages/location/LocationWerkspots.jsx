@@ -92,11 +92,9 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     if (ids.length === 0) return;
     setCheckinLoading(true);
 
-    // Split IDs into regular employees and tijdelijke werknemers
     const regularIds = ids.filter(id => werknemers.some(w => w.id === id));
     const tijdelijkIds = ids.filter(id => tijdelijkeWerknemers.some(t => t.id === id));
 
-    // Start regular employees
     if (regularIds.length > 0) {
       await base44.functions.invoke("klokRegistratie", {
         action: "start",
@@ -106,7 +104,6 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
       });
     }
 
-    // Start tijdelijke werknemers
     for (const id of tijdelijkIds) {
       const t = tijdelijkeWerknemers.find(tw => tw.id === id);
       if (t && t.status === "nieuw") {
@@ -115,6 +112,36 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           id,
         });
       }
+    }
+
+    setCheckinLoading(false);
+    loadRegistraties();
+    loadTijdelijkeWerknemers();
+  };
+
+  // Check-out: stop all assigned werknemers of the werkspot
+  const handleCheckout = async (werkspot) => {
+    const ids = werkspot.toegewezen_werknemers || [];
+    if (ids.length === 0) return;
+    setCheckinLoading(true);
+
+    const regularIds = ids.filter(id => actieveRegistraties.some(r => r.werknemer_id === id));
+    const tijdelijkIds = ids.filter(id => tijdelijkeWerknemers.some(t => t.id === id && t.status === "ingecheckt"));
+
+    if (regularIds.length > 0) {
+      await base44.functions.invoke("klokRegistratie", {
+        action: "stop",
+        werknemer_ids: regularIds,
+        eindklant_id: klant.id,
+        eindklant_naam: klant.naam,
+      });
+    }
+
+    for (const id of tijdelijkIds) {
+      await base44.functions.invoke("tijdelijkeWerknemer", {
+        action: "stop",
+        id,
+      });
     }
 
     setCheckinLoading(false);
@@ -272,6 +299,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                   onAssign={handleAssign}
                   onRemoveWorker={handleRemoveWorker}
                   onCheckin={handleCheckin}
+                  onCheckout={handleCheckout}
                   onAfwijking={handleAfwijking}
                 />
               ))}
