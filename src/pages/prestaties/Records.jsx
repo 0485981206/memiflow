@@ -4,7 +4,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Clock, FileText, AlertTriangle, Search, Pencil, Check, X } from "lucide-react";
+import { Clock, FileText, AlertTriangle, Search, Pencil, Check, X, MapPin } from "lucide-react";
+import KlokRegistratiesTab from "../../components/prestaties/KlokRegistratiesTab";
 
 function EditableCell({ value, onSave, type = "text", className = "" }) {
   const [editing, setEditing] = useState(false);
@@ -106,16 +107,41 @@ export default function Records() {
     updateMut.mutate({ id, data: { [field]: value } });
   };
 
+  const [activeTab, setActiveTab] = useState("import");
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold flex items-center gap-2">
           <FileText className="w-6 h-6 text-accent" />
-          Geïmporteerde Records
+          Records
         </h1>
-        <span className="text-xs text-muted-foreground">Max. 50 records</span>
       </div>
 
+      {/* Tabs */}
+      <div className="flex gap-1 bg-muted/60 rounded-lg p-1 w-fit">
+        <button
+          onClick={() => setActiveTab("import")}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+            activeTab === "import" ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" /> Geïmporteerd
+        </button>
+        <button
+          onClick={() => setActiveTab("klok")}
+          className={`px-4 py-2 text-sm font-medium rounded-md transition-colors flex items-center gap-1.5 ${
+            activeTab === "klok" ? "bg-white shadow text-foreground" : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <MapPin className="w-3.5 h-3.5" /> Klokregistraties
+        </button>
+      </div>
+
+      {activeTab === "klok" ? (
+        <KlokRegistratiesTab />
+      ) : (
+      <>
       {/* Search */}
       <div className="relative max-w-sm">
         <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -229,6 +255,8 @@ export default function Records() {
           </div>
         )}
       </Card>
+      </>
+      )}
     </div>
   );
 }
