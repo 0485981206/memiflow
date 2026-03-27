@@ -20,6 +20,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 
 export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
   const [autoCheckinLoading, setAutoCheckinLoading] = useState(false);
+  const [autoCheckinLocal, setAutoCheckinLocal] = useState(!!werkspot.auto_checkin);
+  React.useEffect(() => { setAutoCheckinLocal(!!werkspot.auto_checkin); }, [werkspot.auto_checkin]);
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -104,10 +106,11 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
           <span className="text-xs font-medium">Auto check-in (08:00)</span>
         </div>
         <Switch
-          checked={!!werkspot.auto_checkin}
+          checked={autoCheckinLocal}
           disabled={autoCheckinLoading}
           onCheckedChange={async (checked) => {
             if (navigator.vibrate) navigator.vibrate(8);
+            setAutoCheckinLocal(checked);
             setAutoCheckinLoading(true);
             await base44.entities.Werkspot.update(werkspot.id, { auto_checkin: checked });
             setAutoCheckinLoading(false);
