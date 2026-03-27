@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Building2, Key, Eye, EyeOff, RefreshCw, Save, Users } from "lucide-react";
 
 function generatePin() {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  return String(Math.floor(1000 + Math.random() * 9000));
 }
 
 export default function KlantPincodes() {
@@ -57,7 +57,7 @@ export default function KlantPincodes() {
         <Key className="w-6 h-6 text-accent" /> Klant Pincodes
       </h1>
       <p className="text-sm text-muted-foreground">
-        Beheer de 6-cijferige pincodes voor de klokregistratie. Teamleaders gebruiken deze pincode om in te loggen op <strong>/location</strong>.
+        Beheer de 4-cijferige pincodes voor de klokregistratie. Teamleaders gebruiken deze pincode om in te loggen op <strong>/location</strong>.
       </p>
 
       {isLoading ? (
@@ -92,15 +92,15 @@ export default function KlantPincodes() {
                       <>
                         <Input
                           value={pin}
-                          onChange={(e) => setEditPins((p) => ({ ...p, [k.id]: e.target.value.replace(/\D/g, "").slice(0, 6) }))}
+                          onChange={(e) => setEditPins((p) => ({ ...p, [k.id]: e.target.value.replace(/\D/g, "").slice(0, 4) }))}
                           className="w-32 text-center font-mono text-lg tracking-widest"
-                          maxLength={6}
-                          placeholder="000000"
+                          maxLength={4}
+                          placeholder="0000"
                         />
                         <Button size="sm" variant="outline" onClick={() => handleGenerate(k.id)} title="Genereer pincode">
                           <RefreshCw className="w-4 h-4" />
                         </Button>
-                        <Button size="sm" onClick={() => handleSave(k.id)} disabled={pin.length !== 6 || saving[k.id]}>
+                        <Button size="sm" onClick={() => handleSave(k.id)} disabled={pin.length !== 4 || saving[k.id]}>
                           <Save className="w-4 h-4 mr-1" /> Opslaan
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setEditPins((p) => { const n = { ...p }; delete n[k.id]; return n; })}>
@@ -110,7 +110,7 @@ export default function KlantPincodes() {
                     ) : (
                       <>
                         <div className="w-32 text-center font-mono text-lg tracking-widest text-gray-700">
-                          {pin ? (visible ? pin : "••••••") : <span className="text-gray-300 text-sm">Geen pincode</span>}
+                          {pin ? (visible ? pin : "••••") : <span className="text-gray-300 text-sm">Geen pincode</span>}
                         </div>
                         {pin && (
                           <Button size="icon" variant="ghost" onClick={() => toggleShow(k.id)} className="h-8 w-8">

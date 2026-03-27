@@ -5,6 +5,7 @@ export default function PincodeLogin({ onLogin, error, loading }) {
   const [pin, setPin] = useState("");
   const [attempts, setAttempts] = useState(0);
   const [locked, setLocked] = useState(false);
+  const [stayLoggedIn, setStayLoggedIn] = useState(false);
   const [countdown, setCountdown] = useState(0);
   const timerRef = useRef(null);
 
@@ -41,11 +42,11 @@ export default function PincodeLogin({ onLogin, error, loading }) {
 
   const handleDigit = (d) => {
     if (locked || loading) return;
-    if (pin.length < 6) {
+    if (pin.length < 4) {
       const newPin = pin + d;
       setPin(newPin);
-      if (newPin.length === 6) {
-        onLogin(newPin);
+      if (newPin.length === 4) {
+        onLogin(newPin, stayLoggedIn);
       }
     }
   };
@@ -59,12 +60,12 @@ export default function PincodeLogin({ onLogin, error, loading }) {
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">HR.iQ</h1>
           <p className="text-sm text-gray-500 mt-1">Klokregistratie</p>
-          <p className="text-xs text-gray-400 mt-1">Voer uw 6-cijferige pincode in</p>
+          <p className="text-xs text-gray-400 mt-1">Voer uw 4-cijferige pincode in</p>
         </div>
 
         {/* Pin dots */}
         <div className="flex justify-center gap-3 mb-6">
-          {Array.from({ length: 6 }).map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div
               key={i}
               className={`w-4 h-4 rounded-full border-2 transition-all duration-200 ${
@@ -131,6 +132,17 @@ export default function PincodeLogin({ onLogin, error, loading }) {
             <Loader2 className="w-4 h-4 animate-spin" /> Inloggen...
           </div>
         )}
+
+        {/* Blijf ingelogd */}
+        <label className="flex items-center justify-center gap-2 mt-4 cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={stayLoggedIn}
+            onChange={(e) => setStayLoggedIn(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-[#0f2744] focus:ring-[#0f2744]"
+          />
+          <span className="text-sm text-gray-500">Blijf ingelogd</span>
+        </label>
       </div>
     </div>
   );

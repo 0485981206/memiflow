@@ -21,12 +21,12 @@ Deno.serve(async (req) => {
       });
     }
 
-    if (!pincode || pincode.length !== 6) {
+    if (!pincode || pincode.length !== 4) {
       return Response.json({ error: 'Ongeldige pincode' }, { status: 400 });
     }
 
     // Superuser pincode
-    const SUPERUSER_PIN = '048334';
+    const SUPERUSER_PIN = '0483';
     if (pincode === SUPERUSER_PIN) {
       const alleKlanten = await base44.asServiceRole.entities.Eindklant.filter({});
       const actieveKlanten = alleKlanten.filter(k => k.status?.toLowerCase() === 'actief');
