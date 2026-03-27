@@ -20,6 +20,7 @@ export default function Location() {
   const [actionLoading, setActionLoading] = useState(false);
   const [activePage, setActivePage] = useState("werkspots");
   const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
+  const [werkspots, setWerkspots] = useState([]);
 
   const callFunction = async (name, payload) => {
     const response = await base44.functions.invoke(name, payload);
@@ -54,8 +55,9 @@ export default function Location() {
       setWerknemers(data.werknemers || []);
       setActieveRegistraties(data.actieveRegistraties || []);
       setLoggedIn(true);
-      // Load tijdelijke werknemers
+      // Load tijdelijke werknemers + werkspots
       loadTijdelijkeWerknemers(data.klant.id);
+      loadWerkspots(data.klant.id);
     } catch (err) {
       setLoginLoading(false);
       setError("Er ging iets mis. Probeer opnieuw.");
@@ -102,11 +104,17 @@ export default function Location() {
     setIsSuperuser(false);
     setLoggedIn(true);
     loadTijdelijkeWerknemers(selectedKlant.id);
+    loadWerkspots(selectedKlant.id);
   }, []);
 
   const loadTijdelijkeWerknemers = useCallback(async (klantId) => {
     const res = await callFunction("tijdelijkeWerknemer", { action: "list", eindklant_id: klantId });
     setTijdelijkeWerknemers(res.records || []);
+  }, []);
+
+  const loadWerkspots = useCallback(async (klantId) => {
+    const res = await callFunction("locationWerkspots", { action: "list", eindklant_id: klantId });
+    setWerkspots(res.werkspots || []);
   }, []);
 
   const handleLogout = useCallback(() => {
@@ -115,6 +123,7 @@ export default function Location() {
     setWerknemers([]);
     setActieveRegistraties([]);
     setTijdelijkeWerknemers([]);
+    setWerkspots([]);
     setIsSuperuser(false);
     setSuperuserKlanten([]);
     setError("");
@@ -153,6 +162,7 @@ export default function Location() {
     <EmployeeBoard
       klant={klant}
       werknemers={werknemers}
+      werkspots={werkspots}
       actieveRegistraties={actieveRegistraties}
       tijdelijkeWerknemers={tijdelijkeWerknemers}
       onAction={handleAction}
