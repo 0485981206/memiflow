@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { toast } from "sonner";
 import { CircleUserRound, MapPin, ClipboardList, LogOut, UserPlus, Nfc, RefreshCw } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -11,6 +12,16 @@ const items = [
 ];
 
 export default function LocationSidebar({ activePage = "home", onNavigate, onLogout, onRefresh }) {
+  const [refreshing, setRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    if (refreshing || !onRefresh) return;
+    setRefreshing(true);
+    await onRefresh();
+    setRefreshing(false);
+    toast.success("Vernieuwen gelukt");
+  };
+
   return (
     <TooltipProvider>
       <aside className="fixed top-0 left-0 h-screen w-20 flex flex-col items-center py-5 z-50" style={{ backgroundColor: "#0c1f36" }}>
@@ -41,10 +52,11 @@ export default function LocationSidebar({ activePage = "home", onNavigate, onLog
           <Tooltip delayDuration={0}>
             <TooltipTrigger asChild>
               <button
-                onClick={onRefresh}
-                className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors mb-1"
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="w-14 h-14 rounded-xl flex items-center justify-center text-white/40 hover:text-white hover:bg-white/10 transition-colors mb-1 disabled:opacity-50"
               >
-                <RefreshCw className="w-7 h-7" />
+                <RefreshCw className={`w-7 h-7 ${refreshing ? "animate-spin" : ""}`} />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right" className="text-sm font-medium">Vernieuwen</TooltipContent>
