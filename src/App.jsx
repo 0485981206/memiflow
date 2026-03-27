@@ -58,28 +58,26 @@ const AuthenticatedApp = () => {
 
   return (
     <Routes>
-      <Route element={
-        <AuthGuard>
-          <AppLayout />
-        </AuthGuard>
-      }>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/werknemers" element={<Werknemers />} />
-        <Route path="/eindklanten" element={<Eindklanten />} />
-        <Route path="/plaatsingen" element={<Plaatsingen />} />
-        <Route path="/prestaties/kalender" element={<Kalender />} />
-        <Route path="/prestaties/kalenderoverzicht" element={<Kalenderoverzicht />} />
-        <Route path="/prestaties/overzicht" element={<Overzicht />} />
-        <Route path="/prestaties/codes" element={<Codes />} />
-        <Route path="/prestaties/import" element={<PrestatieImport />} />
-        <Route path="/prestaties/records" element={<Records />} />
-        <Route path="/loonfiches" element={<Loonfiches />} />
-        <Route path="/rapporten" element={<Rapporten />} />
-        <Route path="/instellingen" element={<Instellingen />} />
-        <Route path="/workspace" element={<Workspace />} />
-        <Route path="/finance" element={<Finance />} />
-        <Route path="/klant-pincodes" element={<KlantPincodes />} />
-        <Route path="/acerta/kalender" element={<AcertaKalender />} />
+      <Route element={<AuthGuard />}>
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/werknemers" element={<Werknemers />} />
+          <Route path="/eindklanten" element={<Eindklanten />} />
+          <Route path="/plaatsingen" element={<Plaatsingen />} />
+          <Route path="/prestaties/kalender" element={<Kalender />} />
+          <Route path="/prestaties/kalenderoverzicht" element={<Kalenderoverzicht />} />
+          <Route path="/prestaties/overzicht" element={<Overzicht />} />
+          <Route path="/prestaties/codes" element={<Codes />} />
+          <Route path="/prestaties/import" element={<PrestatieImport />} />
+          <Route path="/prestaties/records" element={<Records />} />
+          <Route path="/loonfiches" element={<Loonfiches />} />
+          <Route path="/rapporten" element={<Rapporten />} />
+          <Route path="/instellingen" element={<Instellingen />} />
+          <Route path="/workspace" element={<Workspace />} />
+          <Route path="/finance" element={<Finance />} />
+          <Route path="/klant-pincodes" element={<KlantPincodes />} />
+          <Route path="/acerta/kalender" element={<AcertaKalender />} />
+        </Route>
       </Route>
       <Route path="/location" element={<Location />} />
       <Route path="*" element={<PageNotFound />} />

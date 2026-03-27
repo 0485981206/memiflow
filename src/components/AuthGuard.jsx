@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
+import { Outlet } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 
-export default function AuthGuard({ children }) {
+export default function AuthGuard() {
   const [checking, setChecking] = useState(true);
   const [authenticated, setAuthenticated] = useState(false);
 
@@ -26,5 +27,5 @@ export default function AuthGuard({ children }) {
 
   if (!authenticated) return null;
 
-  return children;
+  return <Outlet />;
 }
