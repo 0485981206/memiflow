@@ -194,19 +194,19 @@ export default function Location() {
   }
 
   if (activePage === "werkspots") {
-    return <LocationWerkspots klant={klant} werknemers={werknemers} onNavigate={handleNavigate} onLogout={handleLogout} />;
+    return <LocationWerkspots klant={klant} werknemers={werknemers} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={handleRefresh} />;
   }
 
   if (activePage === "records") {
-    return <LocationRecords klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
+    return <LocationRecords klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={handleRefresh} />;
   }
 
   if (activePage === "tijdelijk") {
-    return <LocationTijdelijk klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
+    return <LocationTijdelijk klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={handleRefresh} />;
   }
 
   if (activePage === "nfc") {
-    return <LocationNfc klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} />;
+    return <LocationNfc klant={klant} onNavigate={handleNavigate} onLogout={handleLogout} onRefresh={handleRefresh} />;
   }
 
   return (

@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
-export default function LocationRecords({ klant, onNavigate, onLogout }) {
+export default function LocationRecords({ klant, onNavigate, onLogout, onRefresh }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -58,7 +58,7 @@ export default function LocationRecords({ klant, onNavigate, onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <LocationSidebar activePage="records" onNavigate={onNavigate} onLogout={onLogout} />
+      <LocationSidebar activePage="records" onNavigate={onNavigate} onLogout={onLogout} onRefresh={onRefresh} />
       <div className="flex-1 ml-20">
         <div className="bg-[#0f2744] text-white px-6 py-4">
           <h1 className="text-lg font-bold">Registraties — {klant.naam}</h1>

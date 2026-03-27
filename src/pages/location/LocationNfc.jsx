@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Nfc, Play, Square, XCircle, AlertTriangle } from "lucide-react";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
-export default function LocationNfc({ klant, onNavigate, onLogout }) {
+export default function LocationNfc({ klant, onNavigate, onLogout, onRefresh }) {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [supported, setSupported] = useState(true);
@@ -103,7 +103,7 @@ export default function LocationNfc({ klant, onNavigate, onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <LocationSidebar activePage="nfc" onNavigate={onNavigate} onLogout={onLogout} />
+      <LocationSidebar activePage="nfc" onNavigate={onNavigate} onLogout={onLogout} onRefresh={onRefresh} />
       <div className="flex-1 ml-20 flex flex-col">
         <div className="bg-[#0f2744] text-white px-6 py-4">
           <h1 className="text-lg font-bold">NFC Badge Scanner</h1>

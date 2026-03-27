@@ -7,7 +7,7 @@ import { format } from "date-fns";
 import { nl } from "date-fns/locale";
 import LocationSidebar from "../../components/location/LocationSidebar";
 
-export default function LocationTijdelijk({ klant, onNavigate, onLogout }) {
+export default function LocationTijdelijk({ klant, onNavigate, onLogout, onRefresh }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
@@ -56,7 +56,7 @@ export default function LocationTijdelijk({ klant, onNavigate, onLogout }) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <LocationSidebar activePage="tijdelijk" onNavigate={onNavigate} onLogout={onLogout} />
+      <LocationSidebar activePage="tijdelijk" onNavigate={onNavigate} onLogout={onLogout} onRefresh={onRefresh} />
       <div className="flex-1 ml-20">
         <div className="bg-[#0f2744] text-white px-4 py-4 flex items-center justify-between">
           <div>

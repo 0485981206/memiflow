@@ -9,7 +9,7 @@ import LocationSidebar from "../../components/location/LocationSidebar";
 import WerkspotCard from "../../components/location/WerkspotCard";
 import AfwijkingSheet from "../../components/location/AfwijkingSheet";
 
-export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout }) {
+export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout, onRefresh }) {
   const [werkspots, setWerkspots] = useState([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -161,7 +161,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      <LocationSidebar activePage="werkspots" onNavigate={onNavigate} onLogout={onLogout} />
+      <LocationSidebar activePage="werkspots" onNavigate={onNavigate} onLogout={onLogout} onRefresh={onRefresh} />
       <div className="flex-1 ml-20">
         <div className="bg-[#0f2744] text-white px-6 py-4 flex items-center justify-between">
           <div>
