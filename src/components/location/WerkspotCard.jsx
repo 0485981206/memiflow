@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle } from "lucide-react";
+import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2 } from "lucide-react";
 import WorkTimer from "./WorkTimer";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, geplandAantal }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, geplandAantal, checkinLoading = false }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [selected, setSelected] = useState([]);
@@ -231,12 +231,12 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
           <UserPlus className="w-3.5 h-3.5" /> Toewijzen
         </Button>
         {isCheckedIn ? (
-          <Button variant="destructive" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckout?.(werkspot)} disabled={assigned.length === 0}>
-            <LogOut className="w-3.5 h-3.5" /> Check-out
+          <Button variant="destructive" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckout?.(werkspot)} disabled={assigned.length === 0 || checkinLoading}>
+            {checkinLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogOut className="w-3.5 h-3.5" />} Check-out
           </Button>
         ) : (
-          <Button variant="default" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckin?.(werkspot)} disabled={assigned.length === 0}>
-            <LogIn className="w-3.5 h-3.5" /> Check-in
+          <Button variant="default" size="sm" className="flex-1 gap-1.5" onClick={() => onCheckin?.(werkspot)} disabled={assigned.length === 0 || checkinLoading}>
+            {checkinLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <LogIn className="w-3.5 h-3.5" />} Check-in
           </Button>
         )}
         <Button

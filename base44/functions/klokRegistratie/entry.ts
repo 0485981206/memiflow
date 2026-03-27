@@ -45,6 +45,19 @@ Deno.serve(async (req) => {
           continue;
         }
 
+        // Check if already completed today (gestopt)
+        const completed = await base44.asServiceRole.entities.Klokregistratie.filter({
+          werknemer_id: wId,
+          eindklant_id,
+          datum: today,
+          status: 'gestopt'
+        });
+
+        if (completed.length > 0) {
+          results.push({ werknemer_id: wId, naam, status: 'al_uitgecheckt' });
+          continue;
+        }
+
         // Always start at 08:00
         const startTijd = '08:00';
         const klok = await base44.asServiceRole.entities.Klokregistratie.create({
