@@ -9,6 +9,7 @@ import LocationSidebar from "../../components/location/LocationSidebar";
 import WerkspotCard from "../../components/location/WerkspotCard";
 import WerkspotListView from "../../components/location/WerkspotListView";
 import AfwijkingSheet from "../../components/location/AfwijkingSheet";
+import AfwijkingWorkerSelector from "../../components/location/AfwijkingWorkerSelector";
 
 export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout, onRefresh }) {
   const [werkspots, setWerkspots] = useState([]);
@@ -24,11 +25,10 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [viewMode, setViewMode] = useState("grid");
 
   // Afwijking state
+  const [afwijkingSelectorOpen, setAfwijkingSelectorOpen] = useState(false);
   const [afwijkingOpen, setAfwijkingOpen] = useState(false);
   const [afwijkingWerkspot, setAfwijkingWerkspot] = useState(null);
   const [afwijkingWerknemer, setAfwijkingWerknemer] = useState(null);
-  const [afwijkingQueue, setAfwijkingQueue] = useState([]);
-  const [afwijkingQueueIndex, setAfwijkingQueueIndex] = useState(0);
   const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
 
   // Quick assign state
@@ -185,41 +185,32 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     loadTijdelijkeWerknemers();
   };
 
-  // Afwijking: open sheet for each werknemer in the werkspot
+  // Afwijking: open worker selector first
   const handleAfwijking = (werkspot) => {
     const ids = werkspot.toegewezen_werknemers || [];
     if (ids.length === 0) return;
-    const queue = ids.map((id) => {
-      const w = werknemers.find((w) => w.id === id);
-      return w ? { id: w.id, naam: w.naam } : { id, naam: "Onbekend" };
-    });
     setAfwijkingWerkspot(werkspot);
-    setAfwijkingQueue(queue);
-    setAfwijkingQueueIndex(0);
-    setAfwijkingWerknemer(queue[0]);
+    setAfwijkingSelectorOpen(true);
+  };
+
+  const handleAfwijkingWorkerSelected = (worker) => {
+    setAfwijkingSelectorOpen(false);
+    setAfwijkingWerknemer(worker);
     setAfwijkingOpen(true);
   };
 
   const handleAfwijkingDone = () => {
-    const nextIndex = afwijkingQueueIndex + 1;
-    if (nextIndex < afwijkingQueue.length) {
-      setAfwijkingQueueIndex(nextIndex);
-      setAfwijkingWerknemer(afwijkingQueue[nextIndex]);
-    } else {
-      setAfwijkingOpen(false);
-      setAfwijkingWerkspot(null);
-      setAfwijkingWerknemer(null);
-      setAfwijkingQueue([]);
-      setAfwijkingQueueIndex(0);
-    }
+    setAfwijkingOpen(false);
+    setAfwijkingWerkspot(null);
+    setAfwijkingWerknemer(null);
+    loadRegistraties();
+    loadTijdelijkeWerknemers();
   };
 
   const handleAfwijkingClose = () => {
     setAfwijkingOpen(false);
     setAfwijkingWerkspot(null);
     setAfwijkingWerknemer(null);
-    setAfwijkingQueue([]);
-    setAfwijkingQueueIndex(0);
   };
 
   return (
@@ -395,7 +386,17 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           </DialogContent>
         </Dialog>
 
-        {/* Afwijking Sheet - walks through each werknemer */}
+        {/* Afwijking worker selector */}
+        <AfwijkingWorkerSelector
+          isOpen={afwijkingSelectorOpen}
+          onClose={() => { setAfwijkingSelectorOpen(false); setAfwijkingWerkspot(null); }}
+          werkspot={afwijkingWerkspot}
+          werknemers={werknemers}
+          tijdelijkeWerknemers={tijdelijkeWerknemers}
+          onSelect={handleAfwijkingWorkerSelected}
+        />
+
+        {/* Afwijking Sheet */}
         <AfwijkingSheet
           isOpen={afwijkingOpen}
           onClose={handleAfwijkingClose}

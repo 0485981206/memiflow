@@ -263,15 +263,6 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
             {isActionLoading ? "Bezig..." : "Check-in"}
           </Button>
         )}
-        <Button
-          variant="outline"
-          size="sm"
-          className="gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-700"
-          onClick={() => { if (navigator.vibrate) navigator.vibrate(8); onAfwijking?.(werkspot); }}
-          disabled={assigned.length === 0 || isAnyLoading}
-        >
-          <AlertTriangle className="w-3.5 h-3.5" />
-        </Button>
       </div>
 
       {/* Delete confirmation */}
