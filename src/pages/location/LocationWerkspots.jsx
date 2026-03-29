@@ -352,6 +352,7 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
             ) : (
               <WerkspotListView
                 werkspots={werkspots.filter((ws) => !search.trim() || ws.naam.toLowerCase().includes(search.toLowerCase()))}
+                allWerkspots={werkspots}
                 werknemers={werknemers}
                 tijdelijkeWerknemers={tijdelijkeWerknemers}
                 actieveRegistraties={actieveRegistraties}

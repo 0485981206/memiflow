@@ -11,7 +11,7 @@ const SPOT_BORDER_COLORS = [
   "border-l-teal-500", "border-l-indigo-500", "border-l-orange-500", "border-l-cyan-500",
 ];
 
-export default function WerkspotListView({ werkspots = [], werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, loadingWerkspotId = null, isAnyLoading = false }) {
+export default function WerkspotListView({ werkspots = [], allWerkspots, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, loadingWerkspotId = null, isAnyLoading = false }) {
   const werknemerMap = useMemo(() => {
     const map = new Map();
     werknemers.forEach(w => map.set(w.id, w));
@@ -25,12 +25,13 @@ export default function WerkspotListView({ werkspots = [], werknemers = [], tijd
     return map;
   }, [actieveRegistraties]);
 
-  // Compute unassigned workers
+  // Compute unassigned workers using ALL werkspots (not just filtered)
+  const allWs = allWerkspots || werkspots;
   const assignedIds = useMemo(() => {
     const set = new Set();
-    werkspots.forEach(ws => (ws.toegewezen_werknemers || []).forEach(id => set.add(id)));
+    allWs.forEach(ws => (ws.toegewezen_werknemers || []).forEach(id => set.add(id)));
     return set;
-  }, [werkspots]);
+  }, [allWs]);
 
   const unassignedWorkers = useMemo(() => {
     const regular = werknemers.filter(w => !assignedIds.has(w.id));
