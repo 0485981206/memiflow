@@ -37,6 +37,19 @@
       "type": "boolean",
       "default": false,
       "description": "Automatisch inchecken van toegewezen werknemers elke werkdag om 08:00"
+    },
+    "is_gepauzeerd": {
+      "type": "boolean",
+      "default": false,
+      "description": "Of de werkspot momenteel gepauzeerd is"
+    },
+    "pauze_reden": {
+      "type": "string",
+      "description": "Reden van de huidige pauze"
+    },
+    "pauze_start": {
+      "type": "string",
+      "description": "Starttijd van de pauze (HH:mm)"
     }
   },
   "required": [

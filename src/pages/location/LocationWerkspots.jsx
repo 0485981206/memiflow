@@ -10,6 +10,7 @@ import WerkspotCard from "../../components/location/WerkspotCard";
 import WerkspotListView from "../../components/location/WerkspotListView";
 import AfwijkingSheet from "../../components/location/AfwijkingSheet";
 import AfwijkingWorkerSelector from "../../components/location/AfwijkingWorkerSelector";
+import PauzeSheet from "../../components/location/PauzeSheet";
 
 export default function LocationWerkspots({ klant, werknemers = [], onNavigate, onLogout, onRefresh }) {
   const [werkspots, setWerkspots] = useState([]);
@@ -30,6 +31,10 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
   const [afwijkingWerkspot, setAfwijkingWerkspot] = useState(null);
   const [afwijkingWerknemer, setAfwijkingWerknemer] = useState(null);
   const [tijdelijkeWerknemers, setTijdelijkeWerknemers] = useState([]);
+
+  // Pauze state
+  const [pauzeOpen, setPauzeOpen] = useState(false);
+  const [pauzeWerkspot, setPauzeWerkspot] = useState(null);
 
   // Quick assign state
   const [quickAssignOpen, setQuickAssignOpen] = useState(false);
@@ -183,6 +188,35 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
     setLoadingWerkspotId(null);
     await loadRegistraties();
     loadTijdelijkeWerknemers();
+  };
+
+  // Pauze handlers
+  const handlePauze = (werkspot) => {
+    setPauzeWerkspot(werkspot);
+    setPauzeOpen(true);
+  };
+
+  const handlePauzeConfirm = async (werkspot, reden) => {
+    const now = new Date();
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    await base44.entities.Werkspot.update(werkspot.id, {
+      is_gepauzeerd: true,
+      pauze_reden: reden,
+      pauze_start: `${hh}:${mm}`,
+    });
+    setPauzeOpen(false);
+    setPauzeWerkspot(null);
+    await loadWerkspots();
+  };
+
+  const handleHervatten = async (werkspot) => {
+    await base44.entities.Werkspot.update(werkspot.id, {
+      is_gepauzeerd: false,
+      pauze_reden: null,
+      pauze_start: null,
+    });
+    await loadWerkspots();
   };
 
   // Afwijking: open worker selector first
@@ -343,6 +377,8 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                     onRemoveWorker={handleRemoveWorker}
                     onCheckin={handleCheckin}
                     onCheckout={handleCheckout}
+                    onPauze={handlePauze}
+                    onHervatten={handleHervatten}
                     onAfwijking={handleAfwijking}
                     isActionLoading={loadingWerkspotId === ws.id}
                     isAnyLoading={!!loadingWerkspotId || assignLoading}
@@ -358,6 +394,8 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
                 actieveRegistraties={actieveRegistraties}
                 onCheckin={handleCheckin}
                 onCheckout={handleCheckout}
+                onPauze={handlePauze}
+                onHervatten={handleHervatten}
                 onAfwijking={handleAfwijking}
                 loadingWerkspotId={loadingWerkspotId}
                 isAnyLoading={!!loadingWerkspotId || assignLoading}
@@ -405,6 +443,14 @@ export default function LocationWerkspots({ klant, werknemers = [], onNavigate, 
           klant={klant}
           werkspot={afwijkingWerkspot}
           onAfwijkingDone={handleAfwijkingDone}
+        />
+
+        {/* Pauze Sheet */}
+        <PauzeSheet
+          isOpen={pauzeOpen}
+          onClose={() => { setPauzeOpen(false); setPauzeWerkspot(null); }}
+          werkspot={pauzeWerkspot}
+          onConfirm={handlePauzeConfirm}
         />
 
         {/* Quick assign dialog */}

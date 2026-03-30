@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
-import { MapPin, Clock, User, LogIn, LogOut, AlertTriangle, ChevronRight, Loader2, UserX } from "lucide-react";
+import { MapPin, Clock, User, LogIn, LogOut, AlertTriangle, ChevronRight, Loader2, UserX, Pause, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import LiveTimer from "./LiveTimer";
 
 const SPOT_COLORS = [
   "bg-blue-500", "bg-purple-500", "bg-amber-500", "bg-rose-500",
@@ -11,7 +12,7 @@ const SPOT_BORDER_COLORS = [
   "border-l-teal-500", "border-l-indigo-500", "border-l-orange-500", "border-l-cyan-500",
 ];
 
-export default function WerkspotListView({ werkspots = [], allWerkspots, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onAfwijking, loadingWerkspotId = null, isAnyLoading = false }) {
+export default function WerkspotListView({ werkspots = [], allWerkspots, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], onCheckin, onCheckout, onPauze, onHervatten, onAfwijking, loadingWerkspotId = null, isAnyLoading = false }) {
   const werknemerMap = useMemo(() => {
     const map = new Map();
     werknemers.forEach(w => map.set(w.id, w));
@@ -51,6 +52,8 @@ export default function WerkspotListView({ werkspots = [], allWerkspots, werknem
           tijdelijkeWerknemers={tijdelijkeWerknemers}
           onCheckin={onCheckin}
           onCheckout={onCheckout}
+          onPauze={onPauze}
+          onHervatten={onHervatten}
           onAfwijking={onAfwijking}
           isActionLoading={loadingWerkspotId === ws.id}
           isAnyLoading={isAnyLoading}
@@ -116,7 +119,7 @@ function UnassignedGroup({ workers, actieveMap }) {
   );
 }
 
-function WerkspotListItem({ ws, colorIndex = 0, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
+function WerkspotListItem({ ws, colorIndex = 0, werknemerMap, actieveMap, tijdelijkeWerknemers, onCheckin, onCheckout, onPauze, onHervatten, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
   const [expanded, setExpanded] = useState(false);
   const assigned = ws.toegewezen_werknemers || [];
   const workers = assigned.map(id => werknemerMap.get(id)).filter(Boolean);
@@ -137,7 +140,19 @@ function WerkspotListItem({ ws, colorIndex = 0, werknemerMap, actieveMap, tijdel
           <span className="text-xs text-gray-400">({workers.length} werknemer{workers.length !== 1 ? "s" : ""})</span>
         </div>
         <div className={`flex gap-1.5 ${isAnyLoading ? "pointer-events-none" : ""}`} onClick={(e) => e.stopPropagation()}>
-          {!hasActiveWorker && (
+          {hasActiveWorker ? (
+            <>
+              {ws.is_gepauzeerd ? (
+                <Button size="sm" className="h-7 text-xs gap-1 bg-green-600 hover:bg-green-700" onClick={() => onHervatten?.(ws)} disabled={isAnyLoading}>
+                  <Play className="w-3 h-3" /> Hervatten
+                </Button>
+              ) : (
+                <Button variant="outline" size="sm" className="h-7 text-xs gap-1 text-amber-600 border-amber-200 hover:bg-amber-50" onClick={() => onPauze?.(ws)} disabled={isAnyLoading}>
+                  <Pause className="w-3 h-3" /> Pauze
+                </Button>
+              )}
+            </>
+          ) : (
             <Button size="sm" className="h-7 text-xs gap-1" onClick={() => onCheckin?.(ws)} disabled={workers.length === 0 || isAnyLoading}>
               {isActionLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : <LogIn className="w-3 h-3" />}
               {isActionLoading ? "Bezig..." : "Check-in"}
@@ -172,9 +187,7 @@ function WerkspotListItem({ ws, colorIndex = 0, werknemerMap, actieveMap, tijdel
                     </div>
                   </div>
                   {isActive && startTijd && (
-                    <div className="flex items-center gap-1 text-xs text-green-700 font-medium">
-                      <Clock className="w-3 h-3" /> {startTijd}
-                    </div>
+                    <LiveTimer startTijd={startTijd} pauzeTijd={ws.is_gepauzeerd ? ws.pauze_start : null} className={`text-xs font-medium ${ws.is_gepauzeerd ? "text-amber-600" : "text-green-700"}`} />
                   )}
                   {!isActive && (
                     <span className="text-[10px] text-gray-400">Niet gestart</span>

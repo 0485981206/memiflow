@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2, Timer } from "lucide-react";
+import { Trash2, Users, UserPlus, X, Check, Search, LogIn, LogOut, AlertTriangle, Loader2, Timer, Pause, Play } from "lucide-react";
+import LiveTimer from "./LiveTimer";
 import { base44 } from "@/api/base44Client";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -18,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
-export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
+export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onPauze, onHervatten, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
   const [autoCheckinLoading, setAutoCheckinLoading] = useState(false);
   const [autoCheckinLocal, setAutoCheckinLocal] = useState(!!werkspot.auto_checkin);
   React.useEffect(() => { setAutoCheckinLocal(!!werkspot.auto_checkin); }, [werkspot.auto_checkin]);
@@ -98,6 +99,24 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
       </div>
 
       {werkspot.beschrijving && <p className="text-xs text-gray-500">{werkspot.beschrijving}</p>}
+
+      {/* Live timer */}
+      {isCheckedIn && (() => {
+        // Find earliest start time from active registrations
+        const startTijden = assigned.map(id => {
+          const reg = actieveRegistraties.find(r => r.werknemer_id === id);
+          if (reg) return reg.start_tijd;
+          const tw = tijdelijkeWerknemers.find(t => t.id === id && t.status === "ingecheckt");
+          return tw?.start_tijd;
+        }).filter(Boolean);
+        const earliest = startTijden.sort()[0];
+        return earliest ? (
+          <div className={`flex items-center justify-center py-1.5 rounded-lg text-sm font-semibold ${werkspot.is_gepauzeerd ? "bg-amber-50 text-amber-600" : "bg-green-50 text-green-700"}`}>
+            <LiveTimer startTijd={earliest} pauzeTijd={werkspot.is_gepauzeerd ? werkspot.pauze_start : null} className={werkspot.is_gepauzeerd ? "text-amber-600" : "text-green-700"} />
+            {werkspot.is_gepauzeerd && <span className="ml-2 text-xs">(Pauze)</span>}
+          </div>
+        ) : null;
+      })()}
 
       {/* Auto check-in toggle */}
       <div className="flex items-center justify-between bg-muted/50 rounded-lg px-3 py-2">
@@ -241,16 +260,38 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
       {/* Action buttons */}
       <div className={`flex gap-2 pt-2 border-t ${isAnyLoading ? "pointer-events-none" : ""}`}>
         {isCheckedIn ? (
-          <Button
-            variant="destructive"
-            size="sm"
-            className={`flex-1 gap-1.5 transition-all duration-150 ${isActionLoading ? "animate-pulse" : ""}`}
-            onClick={() => { if (navigator.vibrate) navigator.vibrate(12); onCheckout?.(werkspot); }}
-            disabled={assigned.length === 0 || isAnyLoading}
-          >
-            {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
-            {isActionLoading ? "Bezig..." : "Check-out"}
-          </Button>
+          <>
+            {werkspot.is_gepauzeerd ? (
+              <Button
+                size="sm"
+                className="flex-1 gap-1.5 bg-green-600 hover:bg-green-700"
+                onClick={() => { if (navigator.vibrate) navigator.vibrate(12); onHervatten?.(werkspot); }}
+                disabled={isAnyLoading}
+              >
+                <Play className="w-4 h-4" /> Hervatten
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex-1 gap-1.5 text-amber-600 border-amber-200 hover:bg-amber-50"
+                onClick={() => { if (navigator.vibrate) navigator.vibrate(12); onPauze?.(werkspot); }}
+                disabled={isAnyLoading}
+              >
+                <Pause className="w-4 h-4" /> Pauze
+              </Button>
+            )}
+            <Button
+              variant="destructive"
+              size="sm"
+              className={`flex-1 gap-1.5 transition-all duration-150 ${isActionLoading ? "animate-pulse" : ""}`}
+              onClick={() => { if (navigator.vibrate) navigator.vibrate(12); onCheckout?.(werkspot); }}
+              disabled={assigned.length === 0 || isAnyLoading}
+            >
+              {isActionLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}
+              {isActionLoading ? "Bezig..." : "Check-out"}
+            </Button>
+          </>
         ) : (
           <Button
             variant="default"
