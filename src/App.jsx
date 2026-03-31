@@ -31,6 +31,7 @@ import NfcBadges from './pages/NfcBadges';
 import NfcCheckin from './pages/NfcCheckin';
 import TijdelijkeWerknemers from './pages/TijdelijkeWerknemers';
 import Afwijkingen from './pages/Afwijkingen';
+import DatabaseDocs from './pages/DatabaseDocs';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -85,6 +86,7 @@ const AuthenticatedApp = () => {
           <Route path="/nfc-badges" element={<NfcBadges />} />
           <Route path="/tijdelijke-werknemers" element={<TijdelijkeWerknemers />} />
           <Route path="/afwijkingen" element={<Afwijkingen />} />
+          <Route path="/database-docs" element={<DatabaseDocs />} />
           <Route path="/acerta/kalender" element={<AcertaKalender />} />
         </Route>
       </Route>
