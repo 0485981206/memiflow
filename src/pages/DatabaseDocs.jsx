@@ -3,12 +3,14 @@ import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Database, GitBranch, Shield, List, Loader2, CheckCircle2, Copy } from "lucide-react";
+import { Download, Database, GitBranch, Shield, List, Loader2, CheckCircle2, Copy, Navigation } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import SchemaSection from "../components/docs/SchemaSection";
 import RelationsSection from "../components/docs/RelationsSection";
 import PermissionsSection from "../components/docs/PermissionsSection";
 import EnumsSection from "../components/docs/EnumsSection";
+import NavigatieSection from "../components/docs/NavigatieSection";
+import ExportAllButton from "../components/docs/ExportAllButton";
 
 const ENTITIES = [
   "Werknemer", "Eindklant", "Werkspot", "Plaatsing", "Prestatie",
@@ -51,10 +53,13 @@ export default function DatabaseDocs() {
           <h1 className="text-2xl font-bold">Database Documentatie & Backup</h1>
           <p className="text-sm text-muted-foreground">Volledige documentatie van je database schema, relaties en permissies</p>
         </div>
-        <Button onClick={handleBackup} disabled={backupLoading} className="gap-2">
-          {backupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
-          {backupLoading ? "Backup bezig..." : "Backup naar Supabase"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <ExportAllButton />
+          <Button onClick={handleBackup} disabled={backupLoading} className="gap-2">
+            {backupLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Database className="w-4 h-4" />}
+            {backupLoading ? "Backup bezig..." : "Backup naar Supabase"}
+          </Button>
+        </div>
       </div>
 
       {backupResult && (
@@ -76,14 +81,17 @@ export default function DatabaseDocs() {
         </Card>
       )}
 
-      <Tabs defaultValue="csv" className="space-y-4">
-        <TabsList className="grid grid-cols-5 w-full">
+      <Tabs defaultValue="navigatie" className="space-y-4">
+        <TabsList className="grid grid-cols-6 w-full">
+          <TabsTrigger value="navigatie" className="gap-1"><Navigation className="w-3 h-3" /> Navigatie</TabsTrigger>
           <TabsTrigger value="csv" className="gap-1"><Download className="w-3 h-3" /> CSV Export</TabsTrigger>
           <TabsTrigger value="schema" className="gap-1"><Database className="w-3 h-3" /> Schema</TabsTrigger>
           <TabsTrigger value="relations" className="gap-1"><GitBranch className="w-3 h-3" /> Relaties</TabsTrigger>
           <TabsTrigger value="permissions" className="gap-1"><Shield className="w-3 h-3" /> Permissies</TabsTrigger>
           <TabsTrigger value="enums" className="gap-1"><List className="w-3 h-3" /> Enums</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="navigatie"><NavigatieSection /></TabsContent>
 
         <TabsContent value="csv">
           <Card>
