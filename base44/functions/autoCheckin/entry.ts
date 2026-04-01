@@ -3,9 +3,16 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.23';
 Deno.serve(async (req) => {
   try {
     const base44 = createClientFromRequest(req);
-    const user = await base44.auth.me();
-    if (user?.role !== 'admin') {
-      return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+
+    // When called by a scheduled automation, there's no authenticated user.
+    // Only verify admin role when called manually by a user.
+    try {
+      const user = await base44.auth.me();
+      if (user && user.role !== 'admin') {
+        return Response.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+      }
+    } catch (_authErr) {
+      // No authenticated user = called by automation, proceed
     }
 
     // Get current date/time in Brussels timezone

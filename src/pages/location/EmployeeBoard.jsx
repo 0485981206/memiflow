@@ -11,17 +11,6 @@ import EmployeeDetailSheet from "../../components/location/EmployeeDetailSheet";
 import TijdelijkDetailSheet from "../../components/location/TijdelijkDetailSheet";
 
 export default function EmployeeBoard({ klant, werknemers = [], actieveRegistraties = [], tijdelijkeWerknemers = [], onAction, onLogout, onNavigate, actionLoading, onTijdelijkAdded, onRefresh }) {
-  if (!klant) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
-          <p className="text-gray-500">Laden...</p>
-        </div>
-      </div>
-    );
-  }
-
   const [selected, setSelected] = useState([]);
   const [mode, setMode] = useState(null);
   const [search, setSearch] = useState("");
@@ -32,10 +21,20 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   const [selectedTijdelijk, setSelectedTijdelijk] = useState(null);
   const [localWerknemers, setLocalWerknemers] = useState(werknemers);
 
-  // Sync werknemers when props change
   React.useEffect(() => {
     setLocalWerknemers(werknemers);
   }, [werknemers]);
+
+  if (!klant) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
+          <p className="text-gray-500">Laden...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddTijdelijk = async () => {
     if (!tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()) return;

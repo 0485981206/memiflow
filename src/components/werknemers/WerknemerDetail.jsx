@@ -63,13 +63,14 @@ function EditableStatusField({ value, onSave }) {
 }
 
 function EditableField({ label, value, fieldKey, onSave, type = "text", hidden, options = [] }) {
-  if (hidden) return null;
   const [editing, setEditing] = useState(false);
   const [val, setVal] = useState(value || "");
   const [saving, setSaving] = useState(false);
   const listId = options.length ? `dl-detail-${fieldKey}` : undefined;
 
   useEffect(() => { setVal(value || ""); }, [value]);
+
+  if (hidden) return null;
 
   const handleSave = async () => {
     setSaving(true);
