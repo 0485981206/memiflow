@@ -20,8 +20,16 @@ Deno.serve(async (req) => {
     const brusselsFormatter = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Brussels', year: 'numeric', month: '2-digit', day: '2-digit' });
     const today = brusselsFormatter.format(now); // YYYY-MM-DD
 
+    const hourFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Brussels', hour: 'numeric', hour12: false });
+    const brusselsHour = parseInt(hourFormatter.format(now), 10);
+
+    // Only run at 08:00 Brussels time (handles summer/winter automatically)
+    if (brusselsHour !== 8) {
+      return Response.json({ message: `Niet 08:00 in België (huidig uur: ${brusselsHour}), overgeslagen`, skipped: true });
+    }
+
     const dayFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'Europe/Brussels', weekday: 'short' });
-    const dayOfWeek = dayFormatter.format(now); // Mon, Tue, etc.
+    const dayOfWeek = dayFormatter.format(now);
 
     // Skip weekends
     if (dayOfWeek === 'Sat' || dayOfWeek === 'Sun') {

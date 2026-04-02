@@ -48,6 +48,30 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     return { actieveWerknemers: actief, inactieveWerknemers: inactief };
   }, [localWerknemers, search, actieveMap]);
 
+  const handleAddTijdelijk = async () => {
+    if (!klant || !tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()) return;
+    setSavingTijdelijk(true);
+    await base44.functions.invoke("tijdelijkeWerknemer", {
+      action: "create",
+      voornaam: tijdelijkForm.voornaam.trim(),
+      achternaam: tijdelijkForm.achternaam.trim(),
+      alias: tijdelijkForm.alias.trim() || undefined,
+      telefoon: tijdelijkForm.telefoon.trim(),
+      opmerking: tijdelijkForm.opmerking.trim(),
+      eindklant_id: klant.id,
+      eindklant_naam: klant.naam,
+    });
+    setTijdelijkForm({ voornaam: "", achternaam: "", alias: "", telefoon: "", opmerking: "" });
+    setShowTijdelijkForm(false);
+    setSavingTijdelijk(false);
+    onTijdelijkAdded?.();
+  };
+
+  const handleStopTijdelijk = async (id) => {
+    await base44.functions.invoke("tijdelijkeWerknemer", { action: "stop", id });
+    onTijdelijkAdded?.();
+  };
+
   if (!klant) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
