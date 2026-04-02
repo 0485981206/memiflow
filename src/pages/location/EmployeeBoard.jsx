@@ -25,41 +25,6 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     setLocalWerknemers(werknemers);
   }, [werknemers]);
 
-  if (!klant) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
-          <p className="text-gray-500">Laden...</p>
-        </div>
-      </div>
-    );
-  }
-
-  const handleAddTijdelijk = async () => {
-    if (!tijdelijkForm.voornaam.trim() || !tijdelijkForm.achternaam.trim()) return;
-    setSavingTijdelijk(true);
-    await base44.functions.invoke("tijdelijkeWerknemer", {
-      action: "create",
-      voornaam: tijdelijkForm.voornaam.trim(),
-      achternaam: tijdelijkForm.achternaam.trim(),
-      alias: tijdelijkForm.alias.trim() || undefined,
-      telefoon: tijdelijkForm.telefoon.trim(),
-      opmerking: tijdelijkForm.opmerking.trim(),
-      eindklant_id: klant.id,
-      eindklant_naam: klant.naam,
-    });
-    setTijdelijkForm({ voornaam: "", achternaam: "", alias: "", telefoon: "", opmerking: "" });
-    setShowTijdelijkForm(false);
-    setSavingTijdelijk(false);
-    onTijdelijkAdded?.();
-  };
-
-  const handleStopTijdelijk = async (id) => {
-    await base44.functions.invoke("tijdelijkeWerknemer", { action: "stop", id });
-    onTijdelijkAdded?.();
-  };
-
   const actieveMap = useMemo(() => {
     const map = {};
     actieveRegistraties.forEach((r) => {
@@ -69,7 +34,6 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
   }, [actieveRegistraties]);
 
   const { actieveWerknemers, inactieveWerknemers } = useMemo(() => {
-    // Filter out checked-in employees
     let filtered = localWerknemers.filter(w => !actieveMap[w.id]);
     if (search.trim()) {
       const q = search.toLowerCase();
@@ -83,6 +47,17 @@ export default function EmployeeBoard({ klant, werknemers = [], actieveRegistrat
     const inactief = filtered.filter(w => w.location_status === "inactief");
     return { actieveWerknemers: actief, inactieveWerknemers: inactief };
   }, [localWerknemers, search, actieveMap]);
+
+  if (!klant) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-gray-400" />
+          <p className="text-gray-500">Laden...</p>
+        </div>
+      </div>
+    );
+  }
 
   const handleEmployeeClick = (w, e) => {
     e.stopPropagation();

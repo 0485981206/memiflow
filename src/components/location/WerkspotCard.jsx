@@ -4,6 +4,7 @@ import LiveTimer from "./LiveTimer";
 import { base44 } from "@/api/base44Client";
 import { Switch } from "@/components/ui/switch";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { useToast } from "@/components/ui/use-toast";
 
 const SPOT_COLORS = [
   { border: "border-l-blue-500", dot: "bg-blue-500" },
@@ -20,6 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 
 export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerknemers = [], actieveRegistraties = [], colorIndex = 0, onDelete, onAssign, onRemoveWorker, onCheckin, onCheckout, onPauze, onHervatten, onAfwijking, isActionLoading = false, isAnyLoading = false }) {
+  const { toast } = useToast();
   const [autoCheckinLoading, setAutoCheckinLoading] = useState(false);
   const [autoCheckinLocal, setAutoCheckinLocal] = useState(!!werkspot.auto_checkin);
   React.useEffect(() => { setAutoCheckinLocal(!!werkspot.auto_checkin); }, [werkspot.auto_checkin]);
@@ -133,6 +135,18 @@ export default function WerkspotCard({ werkspot, werknemers = [], tijdelijkeWerk
             setAutoCheckinLoading(true);
             await base44.entities.Werkspot.update(werkspot.id, { auto_checkin: checked });
             setAutoCheckinLoading(false);
+            const aantalWerknemers = (werkspot.toegewezen_werknemers || []).length;
+            if (checked) {
+              toast({
+                title: "✅ Auto check-in ingeschakeld",
+                description: `${aantalWerknemers} toegewezen werknemer${aantalWerknemers !== 1 ? "s" : ""} in "${werkspot.naam}" worden elke werkdag automatisch ingecheckt om 08:00.`,
+              });
+            } else {
+              toast({
+                title: "Auto check-in uitgeschakeld",
+                description: `Automatisch inchecken voor "${werkspot.naam}" is gestopt.`,
+              });
+            }
           }}
           className="scale-90"
         />
