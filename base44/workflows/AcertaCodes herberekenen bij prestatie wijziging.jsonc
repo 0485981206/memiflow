@@ -1,0 +1,39 @@
+{
+  "name": "AcertaCodes herberekenen bij prestatie wijziging",
+  "description": "Herberekent automatisch de AcertaCode records wanneer een prestatie wordt aangemaakt, gewijzigd of verwijderd",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create",
+        "update",
+        "delete"
+      ],
+      "entity_name": "Prestatie"
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "acertacodes_herberekenen_bij_prestatie_wijziging",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_function": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "onPrestatieChange",
+            "args": {}
+          },
+          "then": "end"
+        }
+      }
+    ]
+  },
+  "x-base44-migrated-from-automation": {
+    "legacy_payload_function": "onPrestatieChange"
+  }
+}
